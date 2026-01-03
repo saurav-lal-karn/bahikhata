@@ -15,4 +15,4 @@ GOOSE := @goose
 
 .PHONY: goose
 goose:
-	${GOOSE} -dir ./internal/migrations create ${name} sql
+	${GOOSE} -dir ./migrations create ${name} sql

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/sauravkarn541/bahikhata/internal/config"
-	"github.com/sauravkarn541/bahikhata/internal/routes"
+	"github.com/sauravkarn541/bahikhata/internal/route"
 )
 
 var log = config.GetLogger()
@@ -16,6 +16,6 @@ func main() {
 
 	env := app.Env
 
-	router := routes.SetupRouter(&app)
+	router := route.SetupRouter(&app)
 	router.Run(env.AppHost + ":" + env.AppPort)
 }

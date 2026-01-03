@@ -1,4 +1,4 @@
-package routes
+package route
 
 import (
 	"github.com/gin-contrib/cors"
@@ -37,6 +37,9 @@ func SetupRouter(app *config.Application) *gin.Engine {
 
 	expenseRouter := api.Group("/expenses")
 	RegisterExpenseRoutes(app, expenseRouter)
+
+	familyRouter := api.Group("/families")
+	RegisterFamilyRoutes(app, familyRouter)
 
 	return router
 }

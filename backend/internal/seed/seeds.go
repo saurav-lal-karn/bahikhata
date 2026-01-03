@@ -1,4 +1,4 @@
-package seeds
+package seed
 
 import "github.com/sauravkarn541/bahikhata/internal/config"
 

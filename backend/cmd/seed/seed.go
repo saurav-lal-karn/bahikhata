@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/sauravkarn541/bahikhata/internal/config"
-	"github.com/sauravkarn541/bahikhata/internal/seeds"
+	"github.com/sauravkarn541/bahikhata/internal/seed"
 )
 
 type Seeder struct {
@@ -19,9 +19,9 @@ func SeedInit() *Seeder {
 }
 
 func (s *Seeder) Seed() {
-	seeds.SeedBaseData(s.app)
+	seed.SeedBaseData(s.app)
 	if s.app.Env.AppMode != "production" {
-		seeds.SeedDevData(s.app)
+		seed.SeedDevData(s.app)
 	}
 }
 

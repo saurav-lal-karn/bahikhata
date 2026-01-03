@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/sauravkarn541/bahikhata/internal/helpers"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 )
 
 type Env struct {
@@ -50,7 +50,7 @@ func NewEnv() *Env {
 		DBPort:        os.Getenv("DB_PORT"),
 		AccessKey:     os.Getenv("ACCESS_KEY"),
 		RefreshKey:    os.Getenv("REFRESH_KEY"),
-		AccessKeyTTL:  helpers.GetEnvAsInt("ACCESS_KEY_TTL", 3600),
-		RefreshKeyTTL: helpers.GetEnvAsInt("REFRESH_KEY_TTL", 86400),
+		AccessKeyTTL:  helper.GetEnvAsInt("ACCESS_KEY_TTL", 3600),
+		RefreshKeyTTL: helper.GetEnvAsInt("REFRESH_KEY_TTL", 86400),
 	}
 }

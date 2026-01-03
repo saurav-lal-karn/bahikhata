@@ -5,7 +5,7 @@ package config
 import (
 	"strings"
 
-	"github.com/sauravkarn541/bahikhata/internal/helpers"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 )
 
 // getParamsJWT - read parameters from env
@@ -16,7 +16,7 @@ import (
 	the appropriate type using strconv.Atoi() where needed. The function returns the parameter
 	struct and any errors encountered during the retrieval or conversion process.
 */
-func getParamsJWT(env *Env) (params helpers.JWTParameters, err error) {
+func getParamsJWT(env *Env) (params helper.JWTParameters, err error) {
 	params.AccessKey = []byte(strings.TrimSpace(env.AccessKey))
 	params.AccessKeyTTL = env.AccessKeyTTL
 	params.RefreshKey = []byte(strings.TrimSpace(env.RefreshKey))
@@ -30,11 +30,11 @@ func getParamsJWT(env *Env) (params helpers.JWTParameters, err error) {
 	setParamsJWT() sets the retrieved parameters in the jwtUtils.JWTParams struct.
 	This struct is used globally throughout the project.
 */
-func setParamsJWT(c helpers.JWTParameters) {
-	helpers.JWTParams.AccessKey = c.AccessKey
-	helpers.JWTParams.AccessKeyTTL = c.AccessKeyTTL
-	helpers.JWTParams.RefreshKey = c.RefreshKey
-	helpers.JWTParams.RefreshKeyTTL = c.RefreshKeyTTL
+func setParamsJWT(c helper.JWTParameters) {
+	helper.JWTParams.AccessKey = c.AccessKey
+	helper.JWTParams.AccessKeyTTL = c.AccessKeyTTL
+	helper.JWTParams.RefreshKey = c.RefreshKey
+	helper.JWTParams.RefreshKeyTTL = c.RefreshKeyTTL
 }
 
 // InitJWTParams
@@ -43,7 +43,7 @@ func setParamsJWT(c helpers.JWTParameters) {
 	the parameters, and then calls setParamsJWT() to set the parameters globally in jwtUtils.JWTParams.
 */
 func InitJWTParams(env *Env) {
-	var JWT helpers.JWTParameters
+	var JWT helper.JWTParameters
 	JWT, err := getParamsJWT(env)
 	if err != nil {
 		return

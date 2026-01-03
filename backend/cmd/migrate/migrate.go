@@ -12,7 +12,7 @@ func main() {
 	env := config.NewEnv()
 	dsn := config.NewDsn("postgres", env.DBUser, env.DBPassword, env.DBHostName, env.DBPort, env.DBName)
 
-	migrationsDir := "internal/migrations"
+	migrationsDir := "migrations"
 
 	// open db connection
 	db, err := sql.Open("postgres", dsn+"?sslmode=disable")

@@ -1,10 +1,10 @@
-package seeds
+package seed
 
 import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sauravkarn541/bahikhata/internal/models"
+	models "github.com/sauravkarn541/bahikhata/internal/model"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
