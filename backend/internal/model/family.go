@@ -16,7 +16,7 @@ type Family struct {
 	DeletedAt gorm.DeletedAt `json:"deleted_at"`
 }
 
-// TableName specifies the table name for ExpenseCategory
+// TableName specifies the table name for Family
 func (Family) TableName() string {
 	return "family"
 }
