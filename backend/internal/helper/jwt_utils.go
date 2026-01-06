@@ -32,11 +32,6 @@ type MyCustomClaims struct {
 	UserId  string `json:"userId,omitempty"`
 	Email   string `json:"email,omitempty"`
 	Role    string `json:"role,omitempty"`
-	Scope   string `json:"scope,omitempty"`
-	TwoFA   string `json:"twoFA,omitempty"`
-	SiteLan string `json:"siteLan,omitempty"`
-	Custom1 string `json:"custom1,omitempty"`
-	Custom2 string `json:"custom2,omitempty"`
 }
 
 // JWTClaims ...
@@ -82,11 +77,6 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 			UserId:  customClaims.UserId,
 			Email:   customClaims.Email,
 			Role:    customClaims.Role,
-			Scope:   customClaims.Scope,
-			TwoFA:   customClaims.TwoFA,
-			SiteLan: customClaims.SiteLan,
-			Custom1: customClaims.Custom1,
-			Custom2: customClaims.Custom2,
 		},
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(ttl))),

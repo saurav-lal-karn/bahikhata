@@ -1,9 +1,12 @@
 package route
 
 import (
+	"net/http"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sauravkarn541/bahikhata/internal/config"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 )
 
 func SetupRouter(app *config.Application) *gin.Engine {
@@ -20,9 +23,7 @@ func SetupRouter(app *config.Application) *gin.Engine {
 
 	// Test health checkup of backend
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Backend is up and running",
-		})
+		helper.SuccessResponse(c, http.StatusOK, "Backend is up and running", nil)
 	})
 
 	// Setup api group

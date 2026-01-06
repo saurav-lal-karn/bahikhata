@@ -5,7 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/sauravkarn541/bahikhata/internal/model"
+	"github.com/sauravkarn541/bahikhata/internal/dto"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
@@ -18,49 +19,77 @@ func NewUserController(svc service.UserService) *UserController {
 }
 
 func (ctrl *UserController) CreateUser(c *gin.Context) {
-	var user model.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var req dto.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
 	}
 
-	if err := ctrl.svc.CreateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	user := req.ToUser()
+
+	if err := ctrl.svc.CreateUser(user); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": user})
+	userResponse := dto.UserResponse{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+	}
+
+	helper.SuccessResponse(c, http.StatusCreated, "User created successfully", userResponse)
 }
 
 func (ctrl *UserController) ListUsers(c *gin.Context) {
 	users, err := ctrl.svc.ListUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "List Users route called", "users": users})
+
+	var userResponses []dto.UserResponse
+	for _, user := range users {
+		userResponses = append(userResponses, dto.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		})
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "List Users route called", userResponses)
 }
 
 func (ctrl *UserController) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid ID format")
 		return
 	}
-	
+
 	user, err := ctrl.svc.GetUserById(parsedId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Get User route called", "user": user})
+
+	userResponse := dto.UserResponse{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Get User route called", userResponse)
 }
 
 func (ctrl *UserController) UpdateUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Update User route called"})
+	helper.SuccessResponse(c, http.StatusOK, "Update User route called", nil)
 }
 
 func (ctrl *UserController) DeleteUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Delete User route called"})
+	helper.SuccessResponse(c, http.StatusOK, "Delete User route called", nil)
 }

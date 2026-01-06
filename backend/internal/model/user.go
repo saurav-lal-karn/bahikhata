@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -24,4 +25,8 @@ type User struct {
 	CreatedAt       time.Time      `json:"created_at" gorm:"type:timestamp"`
 	UpdatedAt       time.Time      `json:"updated_at" gorm:"type:timestamp"`
 	DeletedAt       gorm.DeletedAt `json:"deleted_at"`
+}
+
+func (u *User) ComparePassword(password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 }

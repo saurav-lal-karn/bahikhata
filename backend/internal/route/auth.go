@@ -3,36 +3,20 @@ package route
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sauravkarn541/bahikhata/internal/config"
+	"github.com/sauravkarn541/bahikhata/internal/controller"
+	"github.com/sauravkarn541/bahikhata/internal/repository"
+	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
 func RegisterAuthRoutes(app *config.Application, rg *gin.RouterGroup) {
-	rg.POST("/login", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Login route called",
-		})
-	})
 
-	rg.POST("/register", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Register route called",
-		})
-	})
+	userRepo := repository.NewUserRepository(app.DB)
+	authSvc := service.NewAuthService(userRepo)
+	authCtrl := controller.NewAuthController(authSvc)
 
-	rg.POST("/logout", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Logout route called",
-		})
-	})
-
-	rg.GET("/refresh", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Refresh route called",
-		})
-	})
-
-	rg.POST("/forgot-password", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Forgot Password route called",
-		})
-	})
+	rg.POST("/login", authCtrl.Login)
+	rg.POST("/register", authCtrl.Register)
+	rg.POST("/logout", authCtrl.Logout)
+	rg.GET("/refresh", authCtrl.Refresh)
+	rg.POST("/forgot-password", authCtrl.ForgotPassword)
 }
