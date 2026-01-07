@@ -15,7 +15,7 @@ type AuthService interface {
 	Login(email string, password string) (*helper.JWTPayload, error)
 	Register(firstname string, lastname string, email string, password string) (*helper.JWTPayload, error)
 	Logout() error
-	Refresh() error
+	Refresh(refreshToken string) (*helper.JWTPayload, error)
 	ForgotPassword(email string) error
 }
 
@@ -45,8 +45,14 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 		Role:    user.Role,
 	}
 
-	// Issue new tokens
-	accessToken, refreshToken, err := helper.GetJWT(claims, "access")
+	// Issue new access token
+	accessToken, _, err := helper.GetJWT(claims, "access")
+	if err != nil {
+		return nil, err
+	}
+
+	// Issue new refresh token
+	refreshToken, _, err := helper.GetJWT(claims, "refresh")
 	if err != nil {
 		return nil, err
 	}
@@ -94,8 +100,14 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 		Role:    createdUser.Role,
 	}
 
-	// Issue new tokens
-	accessToken, refreshToken, err := helper.GetJWT(claims, "access")
+	// Issue new access token
+	accessToken, _, err := helper.GetJWT(claims, "access")
+	if err != nil {
+		return nil, err
+	}
+
+	// Issue new refresh token
+	refreshToken, _, err := helper.GetJWT(claims, "refresh")
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +124,37 @@ func(s *authService) Logout() error {
 	return nil
 }
 
-func(s *authService) Refresh() error {
-	return nil
+func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
+	// Validate the refresh token
+	claims, err := helper.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create new claims (reuse existing user info from token)
+	// Optionally we could fetch fresh user from DB here to ensure active status
+	newClaims := helper.MyCustomClaims{
+		UserId: claims.UserId,
+		Email:  claims.Email,
+		Role:   claims.Role,
+	}
+
+	// Issue new access token
+	newAccessToken, _, err := helper.GetJWT(newClaims, "access")
+	if err != nil {
+		return nil, err
+	}
+
+	// Issue new refresh token
+	newRefreshToken, _, err := helper.GetJWT(newClaims, "refresh")
+	if err != nil {
+		return nil, err
+	}
+
+	return &helper.JWTPayload{
+		AccessJWT:  newAccessToken,
+		RefreshJWT: newRefreshToken,
+	}, nil
 }
 
 func(s *authService) ForgotPassword(email string) error {

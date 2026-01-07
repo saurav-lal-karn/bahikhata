@@ -56,6 +56,20 @@ func ValidateRefreshJWT(token *jwt.Token) (interface{}, error) {
 	return JWTParams.RefreshKey, nil
 }
 
+// ValidateToken parses and validates a token string, returning claims if valid
+func ValidateToken(tokenString string) (*MyCustomClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, ValidateRefreshJWT)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
+		return &claims.MyCustomClaims, nil
+	}
+
+	return nil, fmt.Errorf("invalid token")
+}
+
 // GetJWT - issue new tokens
 func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, error) {
 	var (
