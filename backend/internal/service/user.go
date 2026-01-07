@@ -42,7 +42,11 @@ func (s *userService) CreateUser(user *model.User) error {
 	user.ID = uuid.New()
 	// Set other defaults if necessary
 	
-	return s.repo.Create(user)
+	_, err = s.repo.Create(user)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *userService) ListUsers() ([]model.User, error) {

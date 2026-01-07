@@ -40,7 +40,19 @@ func(a *AuthController) Login(c *gin.Context) {
 }
 
 func(a *AuthController) Register(c *gin.Context) {
-	helper.SuccessResponse(c, http.StatusOK, "Register route called", nil)
+	var req dto.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	user, err := a.svc.Register(req.FirstName, req.LastName, req.Email, req.Password)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Register successful", user)
 }
 
 func(a *AuthController) Logout(c *gin.Context) {
