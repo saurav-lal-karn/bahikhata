@@ -14,17 +14,21 @@ import (
 type AuthService interface {
 	Login(email string, password string) (*helper.JWTPayload, error)
 	Register(firstname string, lastname string, email string, password string) (*helper.JWTPayload, error)
-	Logout() error
+	Logout(refreshToken string) error
 	Refresh(refreshToken string) (*helper.JWTPayload, error)
 	ForgotPassword(email string) error
 }
 
 type authService struct {
-	userRepo repository.UserRepository
+	userRepo         repository.UserRepository
+	refreshTokenRepo repository.RefreshTokenRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository) AuthService {
-	return &authService{userRepo: userRepo}
+func NewAuthService(userRepo repository.UserRepository, refreshTokenRepo repository.RefreshTokenRepository) AuthService {
+	return &authService{
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+	}
 }
 
 func (s *authService) Login(email string, password string) (*helper.JWTPayload, error) {
@@ -53,6 +57,15 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 
 	// Issue new refresh token
 	refreshToken, _, err := helper.GetJWT(claims, "refresh")
+	if err != nil {
+		return nil, err
+	}
+
+	// Store refresh token
+	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+		UserID:       user.ID,
+		RefreshToken: refreshToken,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +125,15 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 		return nil, err
 	}
 
+	// Store refresh token
+	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+		UserID:       createdUser.ID,
+		RefreshToken: refreshToken,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	jwtPayload := helper.JWTPayload{
 		AccessJWT:  accessToken,
 		RefreshJWT: refreshToken,
@@ -120,8 +142,15 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 	return &jwtPayload, nil
 }
 
-func(s *authService) Logout() error {
-	return nil
+func(s *authService) Logout(refreshToken string) error {
+	// Validate the refresh token
+	_, err := helper.ValidateToken(refreshToken)
+	if err != nil {
+		return err
+	}
+
+	// Delete the refresh token from the database
+	return s.refreshTokenRepo.Revoke(refreshToken)
 }
 
 func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
@@ -139,6 +168,18 @@ func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
 		Role:   claims.Role,
 	}
 
+	// Check if token exists in DB
+	storedToken, err := s.refreshTokenRepo.GetByToken(refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// Revoke old token (Refresh Token Rotation)
+	err = s.refreshTokenRepo.Revoke(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
 	// Issue new access token
 	newAccessToken, _, err := helper.GetJWT(newClaims, "access")
 	if err != nil {
@@ -147,6 +188,15 @@ func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
 
 	// Issue new refresh token
 	newRefreshToken, _, err := helper.GetJWT(newClaims, "refresh")
+	if err != nil {
+		return nil, err
+	}
+
+	// Store new refresh token
+	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+		UserID:       storedToken.UserID,
+		RefreshToken: newRefreshToken,
+	})
 	if err != nil {
 		return nil, err
 	}

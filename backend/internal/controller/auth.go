@@ -61,7 +61,14 @@ func(a *AuthController) Logout(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
 	}
-	helper.SuccessResponse(c, http.StatusOK, "Logout route called", nil)
+
+	err := a.svc.Logout(req.RefreshToken)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Logout successful", nil)
 }
 
 func(a *AuthController) Refresh(c *gin.Context) {

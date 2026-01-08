@@ -11,12 +11,13 @@ import (
 func RegisterAuthRoutes(app *config.Application, rg *gin.RouterGroup) {
 
 	userRepo := repository.NewUserRepository(app.DB)
-	authSvc := service.NewAuthService(userRepo)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(app.DB)
+	authSvc := service.NewAuthService(userRepo, refreshTokenRepo)
 	authCtrl := controller.NewAuthController(authSvc)
 
 	rg.POST("/login", authCtrl.Login)
 	rg.POST("/register", authCtrl.Register)
 	rg.POST("/logout", authCtrl.Logout)
-	rg.GET("/refresh", authCtrl.Refresh)
+	rg.POST("/refresh", authCtrl.Refresh)
 	rg.POST("/forgot-password", authCtrl.ForgotPassword)
 }
