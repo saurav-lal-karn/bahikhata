@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -32,7 +33,7 @@ func NewAuthService(userRepo repository.UserRepository, refreshTokenRepo reposit
 }
 
 func (s *authService) Login(email string, password string) (*helper.JWTPayload, error) {
-	user, err := s.userRepo.GetByEmail(email)
+	user, err := s.userRepo.GetByEmail(context.TODO(), email)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 }
 
 func(s *authService) Register(firstname string, lastname string, email string, password string) (*helper.JWTPayload, error) {
-	_, err := s.userRepo.GetByEmail(email)
+	_, err := s.userRepo.GetByEmail(context.TODO(), email)
 	if err == nil {
 		return nil, errors.New("user already exists")
 	}
@@ -102,7 +103,7 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 
 	user.ID = uuid.New()
 
-	createdUser, err := s.userRepo.Create(user)
+	createdUser, err := s.userRepo.Create(context.TODO(), user)
 	if err != nil {
 		return nil, err
 	}

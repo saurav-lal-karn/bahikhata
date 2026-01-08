@@ -27,7 +27,7 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 
 	user := req.ToUser()
 
-	if err := ctrl.svc.CreateUser(user); err != nil {
+	if err := ctrl.svc.CreateUser(c.Request.Context(), user); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -43,7 +43,7 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 }
 
 func (ctrl *UserController) ListUsers(c *gin.Context) {
-	users, err := ctrl.svc.ListUsers()
+	users, err := ctrl.svc.ListUsers(c.Request.Context())
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -70,7 +70,7 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.svc.GetUserById(parsedId)
+	user, err := ctrl.svc.GetUserById(c.Request.Context(), parsedId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

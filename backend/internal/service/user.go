@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -10,11 +11,11 @@ import (
 )
 
 type UserService interface {
-	ListUsers() ([]model.User, error)
-	CreateUser(user *model.User) error
-	GetUserById(id uuid.UUID) (*model.User, error)
-	UpdateUser(user *model.User) error
-	DeleteUser(id uuid.UUID) error
+	ListUsers(ctx context.Context) ([]model.User, error)
+	CreateUser(ctx context.Context, user *model.User) error
+	GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error)
+	UpdateUser(ctx context.Context, user *model.User) error
+	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
 type userService struct {
@@ -25,7 +26,7 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) CreateUser(user *model.User) error {
+func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 	// hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -34,7 +35,7 @@ func (s *userService) CreateUser(user *model.User) error {
 	user.Password = string(hashedPassword)
 
 	// Check if user already exists
-	_, err = s.repo.GetByEmail(user.Email)
+	_, err = s.repo.GetByEmail(ctx, user.Email)
 	if err == nil {
 		return errors.New("user already exists")
 	}
@@ -42,25 +43,25 @@ func (s *userService) CreateUser(user *model.User) error {
 	user.ID = uuid.New()
 	// Set other defaults if necessary
 	
-	_, err = s.repo.Create(user)
+	_, err = s.repo.Create(ctx, user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *userService) ListUsers() ([]model.User, error) {
-	return s.repo.ListUsers()
+func (s *userService) ListUsers(ctx context.Context) ([]model.User, error) {
+	return s.repo.ListUsers(ctx)
 }
 
-func (s *userService) GetUserById(id uuid.UUID) (*model.User, error) {
-	return s.repo.GetUserById(id)
+func (s *userService) GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	return s.repo.GetUserById(ctx, id)
 }
 
-func (s *userService) UpdateUser(user *model.User) error {
-	return s.repo.UpdateUser(user)
+func (s *userService) UpdateUser(ctx context.Context, user *model.User) error {
+	return s.repo.UpdateUser(ctx, user)
 }
 
-func (s *userService) DeleteUser(id uuid.UUID) error {
-	return s.repo.DeleteUser(id)
+func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteUser(ctx, id)
 }
