@@ -15,11 +15,11 @@ This document serves as a step-by-step guide to completing the Bahikhata project
 - [x] **JWT Implementation**: Implement token generation and validation middleware.
 - [ ] **Family Management**:
   - [x] Define Family struct (`internal/models/family.go`).
-  - [ ] Implement "Create Family" logic.
+  - [x] Implement "Create Family" logic.
   - [ ] Implement "Invite Member" logic.
   - [ ] Implement "Join Family" logic.
 - [ ] **Frontend Auth**:
-  - [ ] Create Login Page.
+  - [ ] Create Login Page. 
   - [ ] Create Register Page.
   - [ ] Implement Auth Context/Hooks for session management.
 
