@@ -29,9 +29,9 @@ var JWTParams JWTParameters
 
 // MyCustomClaims ...
 type MyCustomClaims struct {
-	UserId  string `json:"userId,omitempty"`
-	Email   string `json:"email,omitempty"`
-	Role    string `json:"role,omitempty"`
+	UserId string `json:"userId,omitempty"`
+	Email  string `json:"email,omitempty"`
+	Role   string `json:"role,omitempty"`
 }
 
 // JWTClaims ...
@@ -88,9 +88,9 @@ func GetJWT(customClaims MyCustomClaims, tokenType string) (string, string, erro
 	// Create the Claims
 	claims := JWTClaims{
 		MyCustomClaims{
-			UserId:  customClaims.UserId,
-			Email:   customClaims.Email,
-			Role:    customClaims.Role,
+			UserId: customClaims.UserId,
+			Email:  customClaims.Email,
+			Role:   customClaims.Role,
 		},
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(ttl))),

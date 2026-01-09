@@ -27,7 +27,7 @@ func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
 
 	family := req.ToFamily()
 
-	if err := ctrl.svc.CreateFamily(family); err != nil {
+	if err := ctrl.svc.CreateFamily(c.Request.Context(), family); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -39,9 +39,9 @@ func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
 
 	helper.SuccessResponse(c, http.StatusCreated, "Family created successfully", familyResponse)
 }
-	
+
 func (ctrl *FamilyController) ListFamilies(c *gin.Context) {
-	families, err := ctrl.svc.ListFamilies()
+	families, err := ctrl.svc.ListFamilies(c.Request.Context())
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -66,7 +66,7 @@ func (ctrl *FamilyController) GetFamily(c *gin.Context) {
 		return
 	}
 
-	family, err := ctrl.svc.GetFamilyById(parsedId)
+	family, err := ctrl.svc.GetFamilyById(c.Request.Context(), parsedId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -79,7 +79,6 @@ func (ctrl *FamilyController) GetFamily(c *gin.Context) {
 
 	helper.SuccessResponse(c, http.StatusOK, "Family fetched successfully", familyResponse)
 }
-
 
 func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 	id := c.Param("id")
@@ -98,7 +97,7 @@ func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 	family := req.ToFamily()
 	family.ID = parsedId
 
-	if err := ctrl.svc.UpdateFamily(family); err != nil {
+	if err := ctrl.svc.UpdateFamily(c.Request.Context(), family); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -119,11 +118,10 @@ func (ctrl *FamilyController) DeleteFamily(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.svc.DeleteFamily(parsedId); err != nil {
+	if err := ctrl.svc.DeleteFamily(c.Request.Context(), parsedId); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Family deleted successfully", nil)
 }
-

@@ -42,7 +42,7 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 
 	user.ID = uuid.New()
 	// Set other defaults if necessary
-	
+
 	_, err = s.repo.Create(ctx, user)
 	if err != nil {
 		return err

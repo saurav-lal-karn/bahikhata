@@ -1,17 +1,19 @@
 package service
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
 )
 
 type FamilyService interface {
-	CreateFamily(family *model.Family) (error)
-	GetFamilyById(id uuid.UUID) (*model.Family, error)
-	ListFamilies() ([]model.Family, error)
-	UpdateFamily(family *model.Family) error
-	DeleteFamily(id uuid.UUID) error
+	CreateFamily(ctx context.Context, family *model.Family) error
+	GetFamilyById(ctx context.Context, id uuid.UUID) (*model.Family, error)
+	ListFamilies(ctx context.Context) ([]model.Family, error)
+	UpdateFamily(ctx context.Context, family *model.Family) error
+	DeleteFamily(ctx context.Context, id uuid.UUID) error
 }
 
 type familyService struct {
@@ -22,23 +24,23 @@ func NewFamilyService(repo repository.FamilyRepository) FamilyService {
 	return &familyService{repo: repo}
 }
 
-func (s *familyService) CreateFamily(family *model.Family) error {
+func (s *familyService) CreateFamily(ctx context.Context, family *model.Family) error {
 	family.ID = uuid.New()
-	return s.repo.CreateFamily(family)
+	return s.repo.CreateFamily(ctx, family)
 }
 
-func (s *familyService) GetFamilyById(id uuid.UUID) (*model.Family, error) {
-	return s.repo.GetFamilyById(id)
+func (s *familyService) GetFamilyById(ctx context.Context, id uuid.UUID) (*model.Family, error) {
+	return s.repo.GetFamilyById(ctx, id)
 }
 
-func (s *familyService) ListFamilies() ([]model.Family, error) {
-	return s.repo.ListFamilies()
+func (s *familyService) ListFamilies(ctx context.Context) ([]model.Family, error) {
+	return s.repo.ListFamilies(ctx)
 }
 
-func (s *familyService) UpdateFamily(family *model.Family) error {
-	return s.repo.UpdateFamily(family)
+func (s *familyService) UpdateFamily(ctx context.Context, family *model.Family) error {
+	return s.repo.UpdateFamily(ctx, family)
 }
 
-func (s *familyService) DeleteFamily(id uuid.UUID) error {
-	return s.repo.DeleteFamily(id)
+func (s *familyService) DeleteFamily(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteFamily(ctx, id)
 }

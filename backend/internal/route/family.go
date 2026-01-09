@@ -18,4 +18,4 @@ func RegisterFamilyRoutes(app *config.Application, rg *gin.RouterGroup) {
 	rg.GET("/:id", familyController.GetFamily)
 	rg.PUT("/:id", familyController.UpdateFamily)
 	rg.DELETE("/:id", familyController.DeleteFamily)
-}	
+}

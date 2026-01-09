@@ -13,11 +13,11 @@ import (
 )
 
 type AuthService interface {
-	Login(email string, password string) (*helper.JWTPayload, error)
-	Register(firstname string, lastname string, email string, password string) (*helper.JWTPayload, error)
-	Logout(refreshToken string) error
-	Refresh(refreshToken string) (*helper.JWTPayload, error)
-	ForgotPassword(email string) error
+	Login(ctx context.Context, email string, password string) (*helper.JWTPayload, error)
+	Register(ctx context.Context, user *model.User) (*helper.JWTPayload, error)
+	Logout(ctx context.Context, refreshToken string) error
+	Refresh(ctx context.Context, refreshToken string) (*helper.JWTPayload, error)
+	ForgotPassword(ctx context.Context, email string) error
 }
 
 type authService struct {
@@ -32,8 +32,8 @@ func NewAuthService(userRepo repository.UserRepository, refreshTokenRepo reposit
 	}
 }
 
-func (s *authService) Login(email string, password string) (*helper.JWTPayload, error) {
-	user, err := s.userRepo.GetByEmail(context.TODO(), email)
+func (s *authService) Login(ctx context.Context, email string, password string) (*helper.JWTPayload, error) {
+	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -45,9 +45,9 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 	}
 
 	claims := helper.MyCustomClaims{
-		UserId:  user.ID.String(),
-		Email:   user.Email,
-		Role:    user.Role,
+		UserId: user.ID.String(),
+		Email:  user.Email,
+		Role:   user.Role,
 	}
 
 	// Issue new access token
@@ -63,7 +63,7 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 	}
 
 	// Store refresh token
-	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+	err = s.refreshTokenRepo.Create(ctx, &model.RefreshToken{
 		UserID:       user.ID,
 		RefreshToken: refreshToken,
 	})
@@ -79,8 +79,8 @@ func (s *authService) Login(email string, password string) (*helper.JWTPayload, 
 	return &jwtPayload, nil
 }
 
-func(s *authService) Register(firstname string, lastname string, email string, password string) (*helper.JWTPayload, error) {
-	_, err := s.userRepo.GetByEmail(context.TODO(), email)
+func (s *authService) Register(ctx context.Context, user *model.User) (*helper.JWTPayload, error) {
+	_, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil {
 		return nil, errors.New("user already exists")
 	}
@@ -89,29 +89,23 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 		return nil, err
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	user := &model.User{
-		FirstName: firstname,
-		LastName:  lastname,
-		Email:     email,
-		Password:  string(hashedPassword),
-	}
-
 	user.ID = uuid.New()
+	user.Password = string(hashedPassword)
 
-	createdUser, err := s.userRepo.Create(context.TODO(), user)
+	createdUser, err := s.userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
 	claims := helper.MyCustomClaims{
-		UserId:  createdUser.ID.String(),
-		Email:   createdUser.Email,
-		Role:    createdUser.Role,
+		UserId: createdUser.ID.String(),
+		Email:  createdUser.Email,
+		Role:   createdUser.Role,
 	}
 
 	// Issue new access token
@@ -127,7 +121,7 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 	}
 
 	// Store refresh token
-	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+	err = s.refreshTokenRepo.Create(ctx, &model.RefreshToken{
 		UserID:       createdUser.ID,
 		RefreshToken: refreshToken,
 	})
@@ -143,7 +137,7 @@ func(s *authService) Register(firstname string, lastname string, email string, p
 	return &jwtPayload, nil
 }
 
-func(s *authService) Logout(refreshToken string) error {
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	// Validate the refresh token
 	_, err := helper.ValidateToken(refreshToken)
 	if err != nil {
@@ -151,10 +145,10 @@ func(s *authService) Logout(refreshToken string) error {
 	}
 
 	// Delete the refresh token from the database
-	return s.refreshTokenRepo.Revoke(refreshToken)
+	return s.refreshTokenRepo.Revoke(ctx, refreshToken)
 }
 
-func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
+func (s *authService) Refresh(ctx context.Context, refreshToken string) (*helper.JWTPayload, error) {
 	// Validate the refresh token
 	claims, err := helper.ValidateToken(refreshToken)
 	if err != nil {
@@ -170,13 +164,13 @@ func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
 	}
 
 	// Check if token exists in DB
-	storedToken, err := s.refreshTokenRepo.GetByToken(refreshToken)
+	storedToken, err := s.refreshTokenRepo.GetByToken(ctx, refreshToken)
 	if err != nil {
 		return nil, errors.New("invalid refresh token")
 	}
 
 	// Revoke old token (Refresh Token Rotation)
-	err = s.refreshTokenRepo.Revoke(refreshToken)
+	err = s.refreshTokenRepo.Revoke(ctx, refreshToken)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +188,7 @@ func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
 	}
 
 	// Store new refresh token
-	err = s.refreshTokenRepo.Create(&model.RefreshToken{
+	err = s.refreshTokenRepo.Create(ctx, &model.RefreshToken{
 		UserID:       storedToken.UserID,
 		RefreshToken: newRefreshToken,
 	})
@@ -208,6 +202,6 @@ func(s *authService) Refresh(refreshToken string) (*helper.JWTPayload, error) {
 	}, nil
 }
 
-func(s *authService) ForgotPassword(email string) error {
+func (s *authService) ForgotPassword(ctx context.Context, email string) error {
 	return nil
 }

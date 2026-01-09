@@ -58,12 +58,12 @@ func TestValidateToken_Expired(t *testing.T) {
 	}
 
 	claims := MyCustomClaims{UserId: "123"}
-	
+
 	// Create a token that is already expired
-	// Note: GetJWT sets expiry based on TTL. 
-	// However, GetJWT uses time.Now(), so we might need to manually create an expired token to be sure, 
+	// Note: GetJWT sets expiry based on TTL.
+	// However, GetJWT uses time.Now(), so we might need to manually create an expired token to be sure,
 	// or rely on the negative TTL if GetJWT handles it (it adds minute * TTL).
-	
+
 	// Let's manually create one to be safe and independent of GetJWT implementation details for this edge case
 	tokenClaims := JWTClaims{
 		MyCustomClaims: claims,
@@ -76,5 +76,5 @@ func TestValidateToken_Expired(t *testing.T) {
 
 	_, err := ValidateToken(tokenString)
 	assert.Error(t, err)
-    // The exact error message depends on jwt library, usually "token is expired"
+	// The exact error message depends on jwt library, usually "token is expired"
 }
