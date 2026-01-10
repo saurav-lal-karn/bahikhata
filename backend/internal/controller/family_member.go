@@ -38,20 +38,23 @@ func (ctrl *FamilyMemberController) CreateFamilyMember(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "Family member created successfully", familyMemberResponse)
 }
 
-// func (ctrl *FamilyMemberController) ListFamilyMembers(c *gin.Context) {
-// 	familyMembers, err := ctrl.svc.ListFamilyMembers(c.Request.Context())
-// 	if err != nil {
-// 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
+func (ctrl *FamilyMemberController) ListFamilyMembers(c *gin.Context) {
+	familyId := c.Param("family_id")
+	familyMembers, err := ctrl.svc.GetFamilyMembersByFamilyId(c.Request.Context(), familyId)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-// 	familyMemberResponses := make([]dto.FamilyMemberResponse, len(familyMembers))
-// 	for i, familyMember := range familyMembers {
-// 		familyMemberResponses[i] = dto.FamilyMemberResponse{
-// 			ID:   familyMember.ID.String(),
-// 			Name: familyMember.Name,
-// 		}
-// 	}
+	familyMemberResponses := make([]dto.UserResponse, len(familyMembers))
+	for i, familyMember := range familyMembers {
+		familyMemberResponses[i] = dto.UserResponse{
+			ID:   familyMember.ID,
+			FirstName: familyMember.FirstName,
+			LastName: familyMember.LastName,
+			Email: familyMember.Email,
+		}
+	}
 
-// 	helper.SuccessResponse(c, http.StatusOK, "Family members listed successfully", familyMemberResponses)
-// }
+	helper.SuccessResponse(c, http.StatusOK, "Family members listed successfully", familyMemberResponses)
+}

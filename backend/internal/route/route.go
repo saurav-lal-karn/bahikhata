@@ -42,5 +42,8 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	familyRouter := api.Group("/families")
 	RegisterFamilyRoutes(app, familyRouter)
 
+	familyMemberRouter := api.Group("/family-members")
+	RegisterFamilyMemberRoutes(app, familyMemberRouter)
+
 	return router
 }

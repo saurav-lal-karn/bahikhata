@@ -16,8 +16,8 @@ This document serves as a step-by-step guide to completing the Bahikhata project
 - [ ] **Family Management**:
   - [x] Define Family struct (`internal/models/family.go`).
   - [x] Implement "Create Family" logic.
-  - [ ] Implement "Invite Member" logic.
-  - [ ] Implement "Join Family" logic.
+  - [x] Implement "Invite Member" logic.
+  - [x] Implement "Join Family" logic.
 - [ ] **Frontend Auth**:
   - [ ] Create Login Page. 
   - [ ] Create Register Page.

@@ -1,13 +1,21 @@
 package model
 
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
 type FamilyMember struct {
-	ID        string `json:"id"`
-	FamilyID  string `json:"family_id"`
-	UserID    string `json:"user_id"`
-	Role      string `json:"role"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	DeletedAt string `json:"deleted_at"`
+	ID        uuid.UUID `json:"id"`
+	FamilyID  uuid.UUID `json:"family_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at"`
+	User      User      `json:"user"`
 }
 
 func (FamilyMember) TableName() string {
