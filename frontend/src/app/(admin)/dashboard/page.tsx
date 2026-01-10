@@ -1,41 +1,36 @@
 import type { Metadata } from "next";
-import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
-import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart";
-import RecentOrders from "@/components/ecommerce/RecentOrders";
-import DemographicCard from "@/components/ecommerce/DemographicCard";
+import { FinancialMetrics } from "@/components/dashboard/FinancialMetrics";
+import { CashFlowChart } from "@/components/dashboard/CashFlowChart";
+import { ExpenseBreakdown } from "@/components/dashboard/ExpenseBreakdown";
+import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 
 export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
+  title: "Bahikhata Dashboard | Personal Expense Tracker",
+  description: "Monitor your family ledgers, track expenses, and manage your budget with Bahikhata.",
 };
 
-export default function Ecommerce() {
+export default function Dashboard() {
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6">
-      <div className="col-span-12 space-y-6 xl:col-span-7">
-        <EcommerceMetrics />
+    <div className="space-y-6">
+      {/* Top Metrics Row */}
+      <FinancialMetrics />
 
-        <MonthlySalesChart />
-      </div>
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
+        {/* Main Chart Area */}
+        <div className="col-span-12 xl:col-span-8">
+          <CashFlowChart />
+        </div>
 
-      <div className="col-span-12 xl:col-span-5">
-        <MonthlyTarget />
-      </div>
+        {/* Categories breakdown */}
+        <div className="col-span-12 xl:col-span-4">
+          <ExpenseBreakdown />
+        </div>
 
-      <div className="col-span-12">
-        <StatisticsChart />
-      </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
+        {/* Recent Activity */}
+        <div className="col-span-12">
+          <RecentTransactions />
+        </div>
       </div>
     </div>
   );

@@ -10,11 +10,14 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-gray-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                <span className="text-xl font-bold italic">B</span>
-              </div>
-              <span className="text-2xl font-bold tracking-tight">Bahikhata</span>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/logo/logo-dark.png"
+                alt="Bahikhata Logo"
+                width={180}
+                height={50}
+                className="h-10 w-auto"
+              />
             </div>
             <div className="hidden md:flex items-center gap-8 text-gray-400 font-medium">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -154,10 +157,13 @@ export default function LandingPage() {
       <footer className="py-12 border-t border-white/10 bg-gray-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-              <span className="font-bold italic text-sm">B</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight">Bahikhata</span>
+            <Image
+              src="/images/logo/logo-dark.png"
+              alt="Bahikhata Logo"
+              width={140}
+              height={40}
+              className="h-8 w-auto opacity-80"
+            />
           </div>
           <p className="text-gray-500 text-sm">© 2026 Bahikhata Finance. All rights reserved.</p>
           <div className="flex gap-6 text-gray-400">
