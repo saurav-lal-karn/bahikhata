@@ -4,6 +4,9 @@ import { FinancialMetrics } from "@/components/dashboard/FinancialMetrics";
 import { CashFlowChart } from "@/components/dashboard/CashFlowChart";
 import { ExpenseBreakdown } from "@/components/dashboard/ExpenseBreakdown";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
+import { ExpenseTrends } from "@/components/dashboard/ExpenseTrends";
+import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
+import { InvestmentSummary } from "@/components/dashboard/InvestmentSummary";
 
 export const metadata: Metadata = {
   title: "Bahikhata Dashboard | Personal Expense Tracker",
@@ -17,14 +20,19 @@ export default function Dashboard() {
       <FinancialMetrics />
 
       <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {/* Main Chart Area */}
-        <div className="col-span-12 xl:col-span-8">
+        {/* Main Charts & Progress */}
+        <div className="col-span-12 xl:col-span-8 space-y-6">
           <CashFlowChart />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <ExpenseTrends />
+            <ExpenseBreakdown />
+          </div>
         </div>
 
-        {/* Categories breakdown */}
-        <div className="col-span-12 xl:col-span-4">
-          <ExpenseBreakdown />
+        {/* Sidebar Widgets */}
+        <div className="col-span-12 xl:col-span-4 space-y-6">
+          <InvestmentSummary />
+          <BudgetProgress />
         </div>
 
         {/* Recent Activity */}
