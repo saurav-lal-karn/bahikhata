@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 
@@ -8,6 +9,14 @@ import { AuthProvider } from '@/context/AuthContext';
 const outfit = Outfit({
   subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+  title: {
+    default: "Bahikhata | Personal Expense Tracker",
+    template: "%s | Bahikhata",
+  },
+  description: "Monitor your family ledgers, track expenses, and manage your budget with Bahikhata.",
+};
 
 export default function RootLayout({
   children,

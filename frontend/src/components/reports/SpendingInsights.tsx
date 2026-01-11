@@ -33,7 +33,7 @@ export const SpendingInsights = () => {
                   style={{ height: `${val}%` }}
                 ></div>
                 <div 
-                  className="absolute w-full bg-gradient-to-t from-purple-600 to-purple-400 opacity-60 group-hover:opacity-80 transition-all rounded-t-sm" 
+                  className="absolute bottom-0 w-full bg-gradient-to-t from-purple-600 to-purple-400 opacity-60 group-hover:opacity-80 transition-all rounded-t-sm" 
                   style={{ height: `${val * 0.6}%` }}
                 ></div>
               </div>
@@ -58,7 +58,7 @@ export const SpendingInsights = () => {
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 py-4">
           <div className="relative w-48 h-48">
             <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-              <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="currentColor" strokeWidth="3" className="text-gray-100 dark:text-gray-800"></circle>
+              <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="currentColor" strokeWidth="3" className="text-gray-200 dark:text-gray-800"></circle>
               <circle cx="18" cy="18" r="15.9" fill="transparent" strokeDasharray="30 100" stroke="currentColor" strokeWidth="3" className="text-purple-500"></circle>
               <circle cx="18" cy="18" r="15.9" fill="transparent" strokeDasharray="25 100" strokeDashoffset="-30" stroke="currentColor" strokeWidth="3" className="text-blue-500"></circle>
               <circle cx="18" cy="18" r="15.9" fill="transparent" strokeDasharray="15 100" strokeDashoffset="-55" stroke="currentColor" strokeWidth="3" className="text-green-500"></circle>

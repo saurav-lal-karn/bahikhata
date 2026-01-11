@@ -3,17 +3,18 @@ import React, { useEffect, useRef, useState,useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Users } from "lucide-react";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
   ChevronDownIcon,
+  DollarLineIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
   PieChartIcon,
   TableIcon,
 } from "../icons/index";
+import { TargetIcon, Users, Repeat as RepeatIcon, Wallet as WalletIcon } from "lucide-react";
 
 
 type NavItem = {
@@ -23,36 +24,106 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+type NavSection = {
+  title: string;
+  items: NavItem[];
+};
+
+const navigation: NavSection[] = [
   {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/dashboard",
+    title: "Overview",
+    items: [
+      {
+        icon: <GridIcon />,
+        name: "Dashboard",
+        path: "/dashboard",
+      },
+      {
+        icon: <ListIcon />,
+        name: "Reports",
+        path: "/reports",
+      },
+    ],
   },
   {
-    icon: <PieChartIcon />,
-    name: "Expenses",
-    path: "/expenses",
+    title: "Cash Flow",
+    items: [
+      {
+        icon: <TableIcon />,
+        name: "Income",
+        path: "/income",
+      },
+      {
+        icon: <PieChartIcon />,
+        name: "Expenses",
+        path: "/expenses",
+      },
+      {
+        icon: <WalletIcon className="w-5 h-5" />,
+        name: "Wallets",
+        path: "/accounts",
+      },
+    ],
   },
   {
-    icon: <TableIcon />,
-    name: "Income",
-    path: "/income",
+    title: "Planning & Goals",
+    items: [
+      {
+        icon: <TargetIcon className="w-5 h-5" />,
+        name: "Savings Goals",
+        path: "/goals",
+      },
+      {
+        icon: <ListIcon />,
+        name: "Budgets",
+        path: "/budgets",
+      },
+    ],
   },
   {
-    icon: <Users className="w-5 h-5" />,
-    name: "Family",
-    path: "/family",
+    title: "Assets & Liabilities",
+    items: [
+      {
+        icon: <DollarLineIcon />,
+        name: "Investments",
+        path: "/investments",
+      },
+      {
+        icon: <BoxCubeIcon />,
+        name: "Debts & Loans",
+        path: "/debts",
+      },
+      {
+        icon: <RepeatIcon className="w-5 h-5" />,
+        name: "Recurring Bills",
+        path: "/recurring",
+      },
+    ],
   },
   {
-    icon: <ListIcon />,
-    name: "Reports",
-    path: "/reports",
+    title: "House & Tax",
+    items: [
+      {
+        icon: <Users className="w-5 h-5" />,
+        name: "Family Ledger",
+        path: "/family",
+      },
+      {
+        icon: <TableIcon />,
+        name: "Tax Center",
+        path: "/tax",
+      },
+    ],
   },
   {
-    icon: <BoxCubeIcon />,
-    name: "Settings",
-    path: "/settings",
+    title: "System",
+    items: [
+      {
+        icon: <BoxCubeIcon />,
+        name: "Settings",
+        path: "/settings",
+      },
+    ],
   },
 ];
 
@@ -204,19 +275,20 @@ const AppSidebar: React.FC = () => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
     ["main"].forEach((menuType) => {
-      const items = navItems;
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                index,
-              });
-              submenuMatched = true;
-            }
-          });
-        }
+      navigation.forEach((section) => {
+        section.items.forEach((nav, index) => {
+          if (nav.subItems) {
+            nav.subItems.forEach((subItem) => {
+              if (isActive(subItem.path)) {
+                setOpenSubmenu({
+                  type: menuType as "main" | "others",
+                  index,
+                });
+                submenuMatched = true;
+              }
+            });
+          }
+        });
       });
     });
 
@@ -224,7 +296,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname,isActive]);
+  }, [pathname, isActive]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened
@@ -242,9 +314,9 @@ const AppSidebar: React.FC = () => {
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
-        prevOpenSubmenu &&
-        prevOpenSubmenu.type === menuType &&
-        prevOpenSubmenu.index === index
+          prevOpenSubmenu &&
+          prevOpenSubmenu.type === menuType &&
+          prevOpenSubmenu.index === index
       ) {
         return null;
       }
@@ -300,25 +372,27 @@ const AppSidebar: React.FC = () => {
           )}
         </Link>
       </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar pb-10">
         <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
+          <div className="flex flex-col gap-8">
+            {navigation.map((section) => (
+              <div key={section.title}>
+                <h2
+                  className={`mb-4 text-xs font-black uppercase tracking-[0.15em] flex leading-[20px] text-gray-400/80 dark:text-gray-500 ${
+                    !isExpanded && !isHovered
+                      ? "lg:justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    section.title
+                  ) : (
+                    <HorizontaLDots />
+                  )}
+                </h2>
+                {renderMenuItems(section.items, "main")}
+              </div>
+            ))}
           </div>
         </nav>
       </div>
