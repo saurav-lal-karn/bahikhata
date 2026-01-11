@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sauravkarn541/bahikhata/internal/config"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
+	"github.com/sauravkarn541/bahikhata/internal/middleware"
 )
 
 func SetupRouter(app *config.Application) *gin.Engine {
@@ -15,7 +16,7 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{app.Env.ClientUrl}
 	corsConfig.AllowCredentials = true
-	corsConfig.AllowHeaders = []string{"Authorization"}
+	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
 
 	// Update router params
 	router.Use(gin.Recovery())
@@ -29,20 +30,24 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	// Setup api group
 	api := router.Group("api")
 
-	// Register routes
+	// Register public routes
 	authRouter := api.Group("/auth")
 	RegisterAuthRoutes(app, authRouter)
 
-	userRouter := api.Group("/users")
+	// Protected routes
+	protected := api.Group("/")
+	protected.Use(middleware.AuthMiddleware())
+
+	userRouter := protected.Group("/users")
 	RegisterUserRoutes(app, userRouter)
 
-	expenseRouter := api.Group("/expenses")
+	expenseRouter := protected.Group("/expenses")
 	RegisterExpenseRoutes(app, expenseRouter)
 
-	familyRouter := api.Group("/families")
+	familyRouter := protected.Group("/families")
 	RegisterFamilyRoutes(app, familyRouter)
 
-	familyMemberRouter := api.Group("/family-members")
+	familyMemberRouter := protected.Group("/family-members")
 	RegisterFamilyMemberRoutes(app, familyMemberRouter)
 
 	return router

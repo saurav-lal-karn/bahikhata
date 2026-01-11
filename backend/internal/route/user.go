@@ -15,6 +15,7 @@ func RegisterUserRoutes(app *config.Application, rg *gin.RouterGroup) {
 	userCtrl := controller.NewUserController(userSvc)
 
 	rg.GET("/", userCtrl.ListUsers)
+	rg.GET("/me", userCtrl.GetMe)
 	rg.POST("/", userCtrl.CreateUser)
 	rg.GET("/:id", userCtrl.GetUser)
 	rg.PUT("/:id", userCtrl.UpdateUser)

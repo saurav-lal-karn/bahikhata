@@ -319,11 +319,8 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-
-
           </div>
         </nav>
-
       </div>
     </aside>
   );

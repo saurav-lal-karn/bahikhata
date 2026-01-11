@@ -7,10 +7,37 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { signup } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isChecked) {
+      setError("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await signup({ firstName, lastName, email, password });
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full bg-gray-950 text-white min-h-screen">
@@ -36,7 +63,12 @@ export default function SignUpForm() {
           </div>
 
           <div className="space-y-6">
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {error && (
+                <div className="p-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-xl">
+                  {error}
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-gray-300 mb-2 block font-bold text-xs uppercase tracking-wider">
@@ -45,7 +77,10 @@ export default function SignUpForm() {
                   <Input 
                     placeholder="Saurav" 
                     type="text" 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-blue-500 transition-all"
+                    required
                   />
                 </div>
                 <div>
@@ -55,7 +90,10 @@ export default function SignUpForm() {
                   <Input 
                     placeholder="Karn" 
                     type="text" 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-blue-500 transition-all"
+                    required
                   />
                 </div>
               </div>
@@ -67,7 +105,10 @@ export default function SignUpForm() {
                 <Input 
                   placeholder="name@example.com" 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-blue-500 transition-all"
+                  required
                 />
               </div>
 
@@ -79,7 +120,10 @@ export default function SignUpForm() {
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-blue-500 transition-all"
+                    required
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -100,8 +144,12 @@ export default function SignUpForm() {
               </div>
 
               <div>
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl py-4 font-black text-lg hover:from-blue-500 hover:to-purple-500 transition-all shadow-xl shadow-blue-500/20">
-                  Sign Up
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl py-4 font-black text-lg hover:from-blue-500 hover:to-purple-500 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Signing Up..." : "Sign Up"}
                 </Button>
               </div>
             </form>

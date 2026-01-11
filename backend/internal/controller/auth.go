@@ -58,16 +58,21 @@ func (a *AuthController) Register(c *gin.Context) {
 
 func (a *AuthController) Logout(c *gin.Context) {
 	var req dto.LogoutRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
-		return
+	// Try to bind JSON, but don't fail if it's empty (we'll check cookie)
+	_ = c.ShouldBindJSON(&req)
+
+	refreshToken := req.RefreshToken
+	if refreshToken == "" {
+		if cookieToken, err := c.Cookie(string(helper.RefreshTokenKey)); err == nil {
+			refreshToken = cookieToken
+		}
 	}
 
-	err := a.svc.Logout(c.Request.Context(), req.RefreshToken)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
+	if refreshToken != "" {
+		_ = a.svc.Logout(c.Request.Context(), refreshToken)
 	}
+
+	helper.ClearCookies(c)
 
 	helper.SuccessResponse(c, http.StatusOK, "Logout successful", nil)
 }

@@ -35,18 +35,22 @@ func TestJWTFlow(t *testing.T) {
 	assert.NotEmpty(t, refreshToken)
 	assert.NotEmpty(t, refreshID)
 
-	// 3. Validate Refresh Token (this is the new logic we want to test)
-	decodedClaims, err := ValidateToken(refreshToken)
+	// 3. Validate Refresh Token
+	decodedClaims, err := ValidateRefreshToken(refreshToken)
 	assert.NoError(t, err)
 	assert.NotNil(t, decodedClaims)
 	assert.Equal(t, claims.UserId, decodedClaims.UserId)
 	assert.Equal(t, claims.Email, decodedClaims.Email)
 
-	// 4. Try to validate Access Token with ValidateToken (should fail signature check if ValidateToken strictly uses RefreshKey)
-	// ValidateToken uses ValidateRefreshJWT which uses RefreshKey.
-	// Access token is signed with AccessKey.
-	// So validating access token with ValidateToken should fail.
-	_, err = ValidateToken(accessToken)
+	// 4. Validate Access Token
+	decodedClaims, err = ValidateAccessToken(accessToken)
+	assert.NoError(t, err)
+	assert.NotNil(t, decodedClaims)
+	assert.Equal(t, claims.UserId, decodedClaims.UserId)
+	assert.Equal(t, claims.Email, decodedClaims.Email)
+
+	// 5. Try to validate Access Token with ValidateRefreshToken (should fail signature check)
+	_, err = ValidateRefreshToken(accessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "signature is invalid")
 }
@@ -74,7 +78,7 @@ func TestValidateToken_Expired(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)
 	tokenString, _ := token.SignedString(JWTParams.RefreshKey)
 
-	_, err := ValidateToken(tokenString)
+	_, err := ValidateRefreshToken(tokenString)
 	assert.Error(t, err)
 	// The exact error message depends on jwt library, usually "token is expired"
 }

@@ -139,7 +139,7 @@ func (s *authService) Register(ctx context.Context, user *model.User) (*helper.J
 
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	// Validate the refresh token
-	_, err := helper.ValidateToken(refreshToken)
+	_, err := helper.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 
 func (s *authService) Refresh(ctx context.Context, refreshToken string) (*helper.JWTPayload, error) {
 	// Validate the refresh token
-	claims, err := helper.ValidateToken(refreshToken)
+	claims, err := helper.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,13 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CheckCircle, BarChart3, Users, Shield, PieChart } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
+  const { isAuthenticated, loading } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-950 text-white selection:bg-purple-500/30">
       {/* Navbar */}
@@ -22,13 +26,26 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center gap-8 text-gray-400 font-medium">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
               <a href="#about" className="hover:text-white transition-colors">About</a>
-              <Link href="/signin" className="hover:text-white transition-colors">Sign In</Link>
-              <Link 
-                href="/signup" 
-                className="px-5 py-2.5 bg-white text-gray-950 rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
-              >
-                Get Started
-              </Link>
+              {!loading && (
+                isAuthenticated ? (
+                  <Link 
+                    href="/dashboard" 
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-bold hover:from-purple-500 hover:to-blue-500 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/signin" className="hover:text-white transition-colors">Sign In</Link>
+                    <Link 
+                      href="/signup" 
+                      className="px-5 py-2.5 bg-white text-gray-950 rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -63,18 +80,31 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/signup" 
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl font-bold text-lg hover:from-purple-500 hover:to-blue-500 transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/20 flex items-center justify-center gap-2 group"
-            >
-              Start Your Ledger <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-sm flex items-center justify-center"
-            >
-              View Demo
-            </Link>
+            {!loading && (
+              isAuthenticated ? (
+                <Link 
+                  href="/dashboard" 
+                  className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl font-bold text-lg hover:from-purple-500 hover:to-blue-500 transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/20 flex items-center justify-center gap-2 group"
+                >
+                  Go to Dashboard <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              ) : (
+                <>
+                  <Link 
+                    href="/signup" 
+                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl font-bold text-lg hover:from-purple-500 hover:to-blue-500 transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/20 flex items-center justify-center gap-2 group"
+                  >
+                    Start Your Ledger <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link 
+                    href="/dashboard" 
+                    className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-sm flex items-center justify-center"
+                  >
+                    View Demo
+                  </Link>
+                </>
+              )
+            )}
           </div>
         </div>
       </section>
@@ -143,12 +173,23 @@ export default function LandingPage() {
             <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
               Join thousands of families who use Bahikhata to stay on top of their finances and reach their savings goals faster.
             </p>
-            <Link 
-              href="/signup" 
-              className="px-10 py-5 bg-white text-gray-950 rounded-2xl font-black text-xl hover:bg-gray-200 transition-all transform hover:scale-105 shadow-2xl shadow-white/20"
-            >
-              Start for Free
-            </Link>
+            {!loading && (
+              isAuthenticated ? (
+                <Link 
+                  href="/dashboard" 
+                  className="px-10 py-5 bg-white text-gray-950 rounded-2xl font-black text-xl hover:bg-gray-200 transition-all transform hover:scale-105 shadow-2xl shadow-white/20"
+                >
+                  Open Your Dashboard
+                </Link>
+              ) : (
+                <Link 
+                  href="/signup" 
+                  className="px-10 py-5 bg-white text-gray-950 rounded-2xl font-black text-xl hover:bg-gray-200 transition-all transform hover:scale-105 shadow-2xl shadow-white/20"
+                >
+                  Start for Free
+                </Link>
+              )
+            )}
           </div>
         </div>
       </section>

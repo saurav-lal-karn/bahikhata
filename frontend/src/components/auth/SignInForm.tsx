@@ -7,10 +7,31 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await login({ email, password });
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full bg-gray-950 text-white min-h-screen">
@@ -53,7 +74,12 @@ export default function SignInForm() {
               <div className="flex-grow border-t border-white/10"></div>
             </div>
 
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <div className="p-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-xl">
+                  {error}
+                </div>
+              )}
               <div>
                 <Label className="text-gray-300 mb-2 block font-bold text-xs uppercase tracking-wider">
                   Email Address
@@ -61,7 +87,10 @@ export default function SignInForm() {
                 <Input 
                   placeholder="name@example.com" 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-purple-500 transition-all"
+                  required
                 />
               </div>
 
@@ -73,7 +102,10 @@ export default function SignInForm() {
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:border-purple-500 transition-all"
+                    required
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -98,8 +130,12 @@ export default function SignInForm() {
               </div>
 
               <div>
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl py-4 font-black text-lg hover:from-purple-500 hover:to-blue-500 transition-all shadow-xl shadow-purple-500/20">
-                  Sign In
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl py-4 font-black text-lg hover:from-purple-500 hover:to-blue-500 transition-all shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Signing In..." : "Sign In"}
                 </Button>
               </div>
             </form>
