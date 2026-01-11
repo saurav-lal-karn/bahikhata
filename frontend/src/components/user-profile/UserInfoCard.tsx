@@ -6,19 +6,21 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { User, Mail, Phone, FileText, Edit3 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
+  const {user} = useAuth();
   const handleSave = () => {
     console.log("Saving changes...");
     closeModal();
   };
 
   const infoItems = [
-    { label: "First Name", value: "Saurav", icon: <User className="w-4 h-4" /> },
-    { label: "Last Name", value: "Karn", icon: <User className="w-4 h-4" /> },
-    { label: "Email Address", value: "saurav@example.com", icon: <Mail className="w-4 h-4" /> },
-    { label: "Phone Number", value: "+977 980 000000", icon: <Phone className="w-4 h-4" /> }
+    { label: "First Name", value: user?.first_name, icon: <User className="w-4 h-4" /> },
+    { label: "Last Name", value: user?.last_name, icon: <User className="w-4 h-4" /> },
+    { label: "Email Address", value: user?.email, icon: <Mail className="w-4 h-4" /> },
+    { label: "Role", value: user?.role, icon: <User className="w-4 h-4" /> }
   ];
 
   return (
@@ -49,14 +51,6 @@ export default function UserInfoCard() {
             </p>
           </div>
         ))}
-        <div className="col-span-1 md:col-span-2 space-y-1">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-             <FileText className="w-4 h-4" /> Bio / Summary
-          </p>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed italic">
-            Passionate family wealth manager focused on creating a sustainable financial legacy through organized budgeting and long-term asset allocation strategies.
-          </p>
-        </div>
       </div>
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-4xl p-10">

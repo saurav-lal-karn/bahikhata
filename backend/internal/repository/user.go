@@ -13,7 +13,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	ListUsers(ctx context.Context) ([]model.User, error)
 	GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error)
-	UpdateUser(ctx context.Context, user *model.User) error
+	UpdateUser(ctx context.Context, id uuid.UUID,  user *model.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -50,8 +50,8 @@ func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*model.
 	return &user, err
 }
 
-func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+func (r *userRepository) UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Save(user).Error
 }
 
 func (r *userRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {

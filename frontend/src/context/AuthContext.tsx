@@ -10,6 +10,12 @@ interface User {
   last_name: string;
   email: string;
   role: string;
+  user_name: string;
+  phone_number: string;
+  country: string;
+  avatar_url: string;
+  theme: string;
+  locale: string;
 }
 
 interface AuthContextType {

@@ -59,7 +59,7 @@ func (s *userService) GetUserById(ctx context.Context, id uuid.UUID) (*model.Use
 }
 
 func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error {
-	return s.repo.UpdateUser(ctx, user)
+	return s.repo.UpdateUser(ctx, id, user)
 }
 
 func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {

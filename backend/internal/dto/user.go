@@ -13,6 +13,11 @@ type UserResponse struct {
 	Email     string    `json:"email"`
 	UserName  string    `json:"user_name"`
 	Role      string    `json:"role"`
+	Country   string    `json:"country"`
+	AvatarUrl string    `json:"avatar_url"`
+	Theme     string    `json:"theme"`
+	Locale    string    `json:"locale"`
+	PhoneNumber string    `json:"phone_number"`
 	// No Password field here!
 }
 

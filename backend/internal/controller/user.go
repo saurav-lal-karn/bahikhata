@@ -117,6 +117,13 @@ func (ctrl *UserController) GetMe(c *gin.Context) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
+		UserName:  user.UserName,
+		Role:      user.Role,
+		Country:   user.Country,
+		AvatarUrl: user.AvatarUrl,
+		Theme:     user.Theme,
+		Locale:    user.Locale,
+		PhoneNumber: user.PhoneNumber,
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Current user retrieved successfully", userResponse)
