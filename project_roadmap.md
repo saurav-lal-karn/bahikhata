@@ -19,21 +19,30 @@ This document serves as a step-by-step guide to completing the Bahikhata project
   - [x] Implement "Invite Member" logic.
   - [x] Implement "Join Family" logic.
 - [ ] **Frontend Auth**:
-  - [ ] Create Login Page. 
-  - [ ] Create Register Page.
-  - [ ] Implement Auth Context/Hooks for session management.
+  - [x] Create Login Page. 
+  - [x] Create Register Page.
+  - [x] Implement Auth Context/Hooks for session management.
 
 ## Phase 3: Core Financial Features
-- [x] **Expense Models**: Define Expense/Category structs (`internal/models/expenses.go`).
-- [ ] **Expense API**:
-  - [ ] Create (Manual Entry).
-  - [ ] Read (List with filters).
-  - [ ] Update/Delete.
-- [ ] **Income API**: (Similar to Expenses).
-- [ ] **Frontend Core**:
-  - [ ] Dashboard Overview (Totals).
-  - [ ] Add Expense Form (Manual).
-  - [ ] Transaction List View.
+- [x] **Financial Models**:
+  - [x] **Expense Schema**: Amount, Category, Payment Method (String), Family ID, Created By (`internal/models/expenses.go`).
+  - [x] **Income Schema**: Source, Amount, Date, Family ID (`internal/models/income.go`).
+  - [x] **Categories & Tags**: Custom category management scoped to families, with support for global system categories.
+- [ ] **Transaction APIs**:
+  - [ ] **Expense API**: CRUD for expenses with family-level access control.
+  - [ ] **Income API**: CRUD for income streams.    
+  - [ ] **Search & Filters**: Filter by date range, category, and payment method.
+- [ ] **Budgeting Engine**:
+  - [ ] **Category Budgets**: Set and track monthly limits per category.
+  - [ ] **Family-wide Budget**: Aggregate budget for the entire household.
+- [ ] **Payments & Methods**:
+  - [ ] Track payment modes (UPI, Cash, Bank, Credit Card).
+  - [ ] Support for multiple accounts/wallets per family.
+- [ ] **Frontend Financial Dashboard**:
+  - [ ] **Real-time Overview**: Current balance, monthly spending, and income summary.
+  - [ ] **Interactive Charts**: Category-wise distribution (Pie) and Monthly trends (Bar/Line).
+  - [ ] **Ledger View**: paginated list of all transactions with advanced filtering.
+  - [ ] **Transaction Forms**: Dynamic forms for adding/edit income and expenses.
 
 ## Phase 4: Files & AI Integration
 - [ ] **File Upload System**:
@@ -48,9 +57,9 @@ This document serves as a step-by-step guide to completing the Bahikhata project
   - [ ] RAG (Retrieval-Augmented Generation) pipeline for document querying.
 
 ## Phase 5: Advanced Features
-- [ ] **Budgeting**:
-  - [ ] Budget Models (Limit, Category, Period).
-  - [ ] Alert System (Backend logic).
+- [ ] **Advanced Budgeting**:
+  - [ ] Real-time Over-budget Alert System (Push/Email).
+  - [ ] Smart Budget Suggestions based on history.
 - [ ] **Recurring Transactions**:
   - [ ] Subscription Models.
   - [ ] Scheduler (Cron job) to auto-create transactions.
