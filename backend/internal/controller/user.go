@@ -121,3 +121,41 @@ func (ctrl *UserController) GetMe(c *gin.Context) {
 
 	helper.SuccessResponse(c, http.StatusOK, "Current user retrieved successfully", userResponse)
 }
+
+func(ctrl *UserController) UpdateMe(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	uid, err := uuid.Parse(userId.(string))
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		return
+	}
+
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	user := req.ToUser()
+
+	if err := ctrl.svc.UpdateUser(c.Request.Context(), uid, user); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	userResponse := dto.UserResponse{
+		ID:        uid,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		UserName:  user.UserName,
+		Email:     user.Email,
+		Role:      user.Role,
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Current user updated successfully", userResponse)
+}

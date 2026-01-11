@@ -22,6 +22,11 @@ type User struct {
 	EmailVerified   bool           `json:"email_verified" gorm:"default:false"`
 	LastLoggedInAt  time.Time      `json:"last_logged_in_at" gorm:"default:null"`
 	EmailVerifiedAt time.Time      `json:"email_verified_at" gorm:"default:null"`
+	AvatarUrl       string         `json:"avatar_url" gorm:"type:text;default:null"`
+	PhoneNumber     string         `json:"phone_number" gorm:"type:text;default:null"`
+	TwoFactorEnabled bool           `json:"two_factor_enabled" gorm:"default:false"`
+	Theme           string         `json:"theme" gorm:"type:text;default:null"`
+	Locale string `json:"locale" gorm:"type:text;default:null"`
 	CreatedAt       time.Time      `json:"created_at" gorm:"type:timestamp"`
 	UpdatedAt       time.Time      `json:"updated_at" gorm:"type:timestamp"`
 	DeletedAt       gorm.DeletedAt `json:"deleted_at"`

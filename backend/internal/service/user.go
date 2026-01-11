@@ -14,7 +14,7 @@ type UserService interface {
 	ListUsers(ctx context.Context) ([]model.User, error)
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error)
-	UpdateUser(ctx context.Context, user *model.User) error
+	UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -58,7 +58,7 @@ func (s *userService) GetUserById(ctx context.Context, id uuid.UUID) (*model.Use
 	return s.repo.GetUserById(ctx, id)
 }
 
-func (s *userService) UpdateUser(ctx context.Context, user *model.User) error {
+func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error {
 	return s.repo.UpdateUser(ctx, user)
 }
 

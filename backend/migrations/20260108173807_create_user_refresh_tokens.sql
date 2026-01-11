@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 SELECT 'up SQL query';
-CREATE TABLE IF NOT EXISTS user_refresh_tokens (
+CREATE TABLE IF NOT EXISTS public.user_refresh_tokens (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     user_id UUID NOT NULL,
     refresh_token TEXT NOT NULL,
@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS user_refresh_tokens (
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';
-DROP TABLE IF EXISTS user_refresh_tokens;
+DROP TABLE IF EXISTS public.user_refresh_tokens;
 -- +goose StatementEnd

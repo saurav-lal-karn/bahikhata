@@ -11,6 +11,8 @@ type UserResponse struct {
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	Email     string    `json:"email"`
+	UserName  string    `json:"user_name"`
+	Role      string    `json:"role"`
 	// No Password field here!
 }
 
@@ -29,5 +31,23 @@ func (req *CreateUserRequest) ToUser() *model.User {
 		UserName:  req.Email,
 		Email:     req.Email,
 		Password:  req.Password,
+	}
+}
+
+type UpdateUserRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	UserName  string `json:"user_name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+}
+
+func (req *UpdateUserRequest) ToUser() *model.User {
+	return &model.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		UserName:  req.UserName,
+		Email:     req.Email,
+		Role:      req.Role,
 	}
 }
