@@ -16,6 +16,10 @@ interface User {
   avatar_url: string;
   theme: string;
   locale: string;
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
 }
 
 interface AuthContextType {

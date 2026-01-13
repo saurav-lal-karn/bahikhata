@@ -12,9 +12,11 @@ func RegisterFamilyRoutes(app *config.Application, rg *gin.RouterGroup) {
 	// Initialize controller, service, repository
 	familyRepo := repository.NewFamilyRepository(app.DB)
 	familyService := service.NewFamilyService(familyRepo)
-	familyController := controller.NewFamilyController(familyService)
+	emailService := service.NewEmailService()
+	familyController := controller.NewFamilyController(familyService, emailService)
 	rg.GET("", familyController.ListFamilies)
 	rg.POST("", familyController.CreateFamily)
+	rg.POST("/invite", familyController.InviteMember)
 	rg.GET("/:id", familyController.GetFamily)
 	rg.PUT("/:id", familyController.UpdateFamily)
 	rg.DELETE("/:id", familyController.DeleteFamily)

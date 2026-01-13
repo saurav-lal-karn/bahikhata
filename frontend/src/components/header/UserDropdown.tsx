@@ -26,6 +26,19 @@ export default function UserDropdown() {
     closeDropdown();
   };
 
+  const getAvatarUrl = (url?: string) => {
+    if (!url) return "/images/user/owner.jpg";
+    if (url.startsWith("http")) return url;
+    // Construct full URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+       const urlObj = new URL(apiUrl);
+       return `${urlObj.origin}${url}`;
+    } catch {
+       return url;
+    }
+  };
+
   return (
     <div className="relative">
       <button
@@ -36,7 +49,7 @@ export default function UserDropdown() {
           <Image
             width={40}
             height={40}
-            src="/images/user/owner.jpg"
+            src={getAvatarUrl(user?.avatar_url)}
             alt="User"
             className="w-full h-full object-cover"
           />

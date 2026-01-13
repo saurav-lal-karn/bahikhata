@@ -5,6 +5,7 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { familyService } from "@/services/familyService";
 
 interface AddFamilyMemberProps {
   onSuccess?: () => void;
@@ -14,7 +15,8 @@ interface AddFamilyMemberProps {
 export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     email: "",
-    name: "",
+    firstName: "",
+    lastName: "",
     role: "Member"
   });
 
@@ -23,10 +25,21 @@ export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onC
     { value: "Admin", label: "Family Admin (Can manage members)" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Inviting member:", formData);
-    if (onSuccess) onSuccess();
+    try {
+      await familyService.inviteMember({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        role: formData.role,
+      });
+      console.log("Invitation sent successfully");
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Failed to send invitation:", error);
+      // TODO: Show error toast/notification
+    }
   };
 
   return (
@@ -65,17 +78,33 @@ export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onC
 
       {/* Right Column: Form (7/12) */}
       <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-6">
-        <div className="space-y-2">
-          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Full Name</Label>
-          <div className="relative group">
-            <Input 
-              required
-              placeholder="e.g. Aakash Lalkarn"
-              value={formData.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-              className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-blue-500 transition-all pl-11 h-14"
-            />
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">First Name</Label>
+            <div className="relative group">
+              <Input 
+                required
+                placeholder="e.g. Aakash"
+                value={formData.firstName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, firstName: e.target.value})}
+                className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-blue-500 transition-all pl-11 h-14"
+              />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Last Name</Label>
+            <div className="relative group">
+              <Input 
+                required
+                placeholder="e.g. Lalkarn"
+                value={formData.lastName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, lastName: e.target.value})}
+                className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-blue-500 transition-all pl-11 h-14"
+              />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            </div>
           </div>
         </div>
 

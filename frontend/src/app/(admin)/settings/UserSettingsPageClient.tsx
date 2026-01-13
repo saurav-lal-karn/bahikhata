@@ -19,10 +19,100 @@ import {
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Button from "@/components/ui/button/Button";
+import { useAuth } from "@/context/AuthContext";
+import { userService } from "@/services/userService";
+import toast from "react-hot-toast";
 
 export default function UserSettingsPageClient() {
+  const { user, checkAuth } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
+    phone_number: user?.phone_number || "",
+    street: user?.street || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    postal_code: user?.postal_code || "",
+    country: user?.country || "",
+  });
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Update state when user data loads
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        phone_number: user.phone_number || "",
+        street: user.street || "",
+        city: user.city || "",
+        state: user.state || "",
+        postal_code: user.postal_code || "",
+        country: user.country || "",
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should be less than 5MB");
+      return;
+    }
+
+    const toastId = toast.loading("Uploading avatar...");
+    try {
+      await userService.uploadAvatar(file);
+      await checkAuth();
+      toast.success("Avatar updated successfully!", { id: toastId });
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload avatar.", { id: toastId });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleUpdate = async () => {
+    setIsLoading(true);
+    try {
+      await userService.updateMe(formData);
+      await checkAuth();
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast.error("Failed to update profile.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
+  const getAvatarUrl = (url?: string) => {
+    if (!url) return "/images/user/owner.jpg";
+    if (url.startsWith("http")) return url;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+       const urlObj = new URL(apiUrl);
+       return `${urlObj.origin}${url}`;
+    } catch {
+       return url;
+    }
+  };
+
   const tabs = [
     { id: "profile", label: "My Profile", icon: <User className="w-4 h-4" /> },
     { id: "security", label: "Security", icon: <Lock className="w-4 h-4" /> },
@@ -79,51 +169,93 @@ export default function UserSettingsPageClient() {
                   <div className="flex flex-col md:flex-row items-center gap-8">
                     <div className="relative group">
                       <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden border-8 border-white dark:border-gray-900 shadow-2xl transition-transform group-hover:scale-105 duration-300">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Saurav" alt="Avatar" className="w-full h-full object-cover" />
+                        <img src={getAvatarUrl(user?.avatar_url)} alt="Avatar" className="w-full h-full object-cover" />
+                         <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            className="hidden" 
+                            accept="image/png, image/jpeg, image/jpg"
+                          />
                       </div>
-                      <button className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl shadow-xl hover:scale-110 transition-transform border-4 border-white dark:border-gray-900">
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl shadow-xl hover:scale-110 transition-transform border-4 border-white dark:border-gray-900"
+                      >
                         <Camera className="w-5 h-5" />
                       </button>
                     </div>
                     <div className="text-center md:text-left">
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Saurav Karn</h3>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{user?.first_name} {user?.last_name}</h3>
                       <p className="text-sm text-gray-400 font-bold mb-5 flex items-center justify-center md:justify-start gap-2 italic">
-                        <Mail className="w-4 h-4 text-blue-500" /> saurav@example.com
+                        <Mail className="w-4 h-4 text-blue-500" /> {user?.email}
                       </p>
                       <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                         <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-emerald-100 dark:border-emerald-800/50">Verified Member</span>
-                        <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-indigo-100 dark:border-indigo-800/50">Workspace Admin</span>
+                        <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-indigo-100 dark:border-indigo-800/50">
+                          {user?.role === 'admin' ? 'Workspace Admin' : 'Member'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-8 space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-3">
+                            <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">First Name</Label>
+                            <Input name="first_name" value={formData.first_name} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                        </div>
+                        <div className="space-y-3">
+                            <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Last Name</Label>
+                            <Input name="last_name" value={formData.last_name} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                        </div>
+                    </div>
+                </div>
+                <div className="p-8 space-y-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-3">
-                      <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Public Handle</Label>
-                      <Input defaultValue="Saurav Karn" className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                      <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Email</Label>
+                      <Input value={user?.email || ""} disabled className="h-14 rounded-2xl bg-gray-100/50 dark:bg-gray-800/50 cursor-not-allowed opacity-60 border-none font-bold" />
                     </div>
-                    <div className="space-y-3">
-                      <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Primary Communications</Label>
-                      <Input defaultValue="saurav@example.com" disabled className="h-14 rounded-2xl bg-gray-100/50 dark:bg-gray-800/50 cursor-not-allowed opacity-60 border-none font-bold" />
+                     <div className="space-y-3">
+                      <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Phone Number</Label>
+                      <Input name="phone_number" value={formData.phone_number} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
                     </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Professional Headline</Label>
-                    <textarea 
-                      className="w-full rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-6 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 min-h-[120px] outline-none transition-all" 
-                      placeholder="Write a short summary about yourself..."
-                      defaultValue="Passionate family wealth manager focused on creating a sustainable financial legacy..."
-                    ></textarea>
-                  </div>
-
-                  <div className="flex justify-end pt-6 border-t border-gray-50 dark:border-gray-800">
-                    <Button className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl px-12 h-14 font-black shadow-2xl shadow-blue-500/30 transition-all active:scale-95">Synchronize Profile</Button>
                   </div>
                 </div>
-              </div>
+
+                  {/* Address Section */}
+                <div className="p-8 space-y-10">
+                  <div className="space-y-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+                    <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Address Details</h4>
+                     <div className="space-y-3">
+                        <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Street Address</Label>
+                        <Input name="street" value={formData.street} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div className="space-y-3">
+                          <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">City</Label>
+                          <Input name="city" value={formData.city} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                        </div>
+                         <div className="space-y-3">
+                          <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">State</Label>
+                          <Input name="state" value={formData.state} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                        </div>
+                         <div className="space-y-3">
+                          <Label className="text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest pl-1">Postal Code</Label>
+                          <Input name="postal_code" value={formData.postal_code} onChange={handleChange} className="h-14 rounded-2xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 focus:ring-blue-500/20 transition-all" />
+                        </div>
+                      </div>
+                  </div>
+                  </div>
+                  {/* Headline Removed */}
+                  <div className="flex justify-end pt-6 border-t border-gray-50 dark:border-gray-800">
+                    <Button onClick={handleUpdate} disabled={isLoading} className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl px-12 h-14 font-black shadow-2xl shadow-blue-500/30 transition-all active:scale-95">
+                      {isLoading ? "Saving..." : "Synchronize Profile"}
+                    </Button>
+                  </div>
+                </div>
 
               {/* Preferences */}
               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-10 shadow-sm">

@@ -16,8 +16,12 @@ type UserResponse struct {
 	Country   string    `json:"country"`
 	AvatarUrl string    `json:"avatar_url"`
 	Theme     string    `json:"theme"`
-	Locale    string    `json:"locale"`
+	Locale      string    `json:"locale"`
 	PhoneNumber string    `json:"phone_number"`
+	Street      string    `json:"street"`
+	City        string    `json:"city"`
+	State       string    `json:"state"`
+	PostalCode  string    `json:"postal_code"`
 	// No Password field here!
 }
 
@@ -44,15 +48,34 @@ type UpdateUserRequest struct {
 	LastName  string `json:"last_name"`
 	UserName  string `json:"user_name"`
 	Email     string `json:"email"`
-	Role      string `json:"role"`
+	UserType    string `json:"user_type"` // Example if role is user_type
+	Role        string `json:"role"`
+	Country     string `json:"country"`
+	PhoneNumber string `json:"phone_number"`
+	AvatarUrl   string `json:"avatar_url"`
+	Theme       string `json:"theme"`
+	Locale      string `json:"locale"`
+	Street      string `json:"street"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
 }
 
 func (req *UpdateUserRequest) ToUser() *model.User {
 	return &model.User{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		UserName:  req.UserName,
-		Email:     req.Email,
-		Role:      req.Role,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		UserName:    req.UserName,
+		Email:       req.Email,
+		Role:        req.Role, // Note: updating role might be restricted in service layer usually
+		Country:     req.Country,
+		PhoneNumber: req.PhoneNumber,
+		AvatarUrl:   req.AvatarUrl,
+		Theme:       req.Theme,
+		Locale:      req.Locale,
+		Street:      req.Street,
+		City:        req.City,
+		State:       req.State,
+		PostalCode:  req.PostalCode,
 	}
 }

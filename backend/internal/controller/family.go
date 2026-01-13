@@ -11,11 +11,12 @@ import (
 )
 
 type FamilyController struct {
-	svc service.FamilyService
+	svc      service.FamilyService
+	emailSvc service.EmailService
 }
 
-func NewFamilyController(svc service.FamilyService) FamilyController {
-	return FamilyController{svc: svc}
+func NewFamilyController(svc service.FamilyService, emailSvc service.EmailService) FamilyController {
+	return FamilyController{svc: svc, emailSvc: emailSvc}
 }
 
 func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
@@ -124,4 +125,23 @@ func (ctrl *FamilyController) DeleteFamily(c *gin.Context) {
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Family deleted successfully", nil)
+}
+
+func (ctrl *FamilyController) InviteMember(c *gin.Context) {
+	var req dto.InviteMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	// Generate invitation link (for now, just a placeholder)
+	inviteLink := "https://bahikhata.com/register?email=" + req.Email
+
+	// Send invitation email (currently logs it)
+	if err := ctrl.emailSvc.SendInvitationEmail(req.Email, req.FirstName, req.Role, inviteLink); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to send invitation")
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Invitation sent successfully", nil)
 }

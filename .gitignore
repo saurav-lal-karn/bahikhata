@@ -26,3 +26,4 @@ frontend/*.local
 # Backend
 backend/.env
 backend/tmp/main
+backend/uploads/

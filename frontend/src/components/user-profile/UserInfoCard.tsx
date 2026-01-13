@@ -1,26 +1,61 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { User, Mail, Phone, FileText, Edit3 } from "lucide-react";
+import { User, Mail, Phone, Edit3 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { userService } from "@/services/userService";
+import toast from "react-hot-toast";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const {user} = useAuth();
-  const handleSave = () => {
-    console.log("Saving changes...");
-    closeModal();
+  const { user, checkAuth } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+  });
+
+   useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        phone_number: user.phone_number || "",
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await userService.updateMe(formData);
+      await checkAuth();
+      toast.success("Identity updated successfully!");
+      closeModal();
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast.error("Failed to update identity.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const infoItems = [
     { label: "First Name", value: user?.first_name, icon: <User className="w-4 h-4" /> },
     { label: "Last Name", value: user?.last_name, icon: <User className="w-4 h-4" /> },
     { label: "Email Address", value: user?.email, icon: <Mail className="w-4 h-4" /> },
-    { label: "Role", value: user?.role, icon: <User className="w-4 h-4" /> }
+    { label: "Phone Number", value: user?.phone_number || "Not set", icon: <Phone className="w-4 h-4" /> }
   ];
 
   return (
@@ -63,32 +98,27 @@ export default function UserInfoCard() {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">First Name</Label>
-                <Input defaultValue="Saurav" className="h-12 rounded-2xl" />
+                <Input name="first_name" value={formData.first_name} onChange={handleChange} className="h-12 rounded-2xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Last Name</Label>
-                <Input defaultValue="Karn" className="h-12 rounded-2xl" />
+                <Input name="last_name" value={formData.last_name} onChange={handleChange} className="h-12 rounded-2xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Email</Label>
-                <Input defaultValue="saurav@example.com" className="h-12 rounded-2xl" />
+                <Input value={user?.email || ""} disabled className="h-12 rounded-2xl cursor-not-allowed opacity-60" />
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Phone</Label>
-                <Input defaultValue="+977 980 000000" className="h-12 rounded-2xl" />
-              </div>
-              <div className="col-span-1 md:col-span-2 space-y-2">
-                <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Bio</Label>
-                <textarea 
-                  className="w-full rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 text-sm focus:ring-2 focus:ring-blue-500/10 min-h-[100px] outline-none font-medium" 
-                  defaultValue="Passionate family wealth manager..."
-                ></textarea>
+                <Input name="phone_number" value={formData.phone_number} onChange={handleChange} className="h-12 rounded-2xl" />
               </div>
            </div>
 
            <div className="flex justify-end gap-4 pt-6 border-t border-gray-50 dark:border-gray-800">
              <Button variant="outline" onClick={closeModal} className="rounded-2xl px-8 h-12 font-bold">Cancel</Button>
-             <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl px-12 h-12 font-bold shadow-lg shadow-blue-500/20">Update Identity</Button>
+             <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl px-12 h-12 font-bold shadow-lg shadow-blue-500/20">
+                {isLoading ? "Updating..." : "Update Identity"}
+             </Button>
            </div>
         </form>
       </Modal>

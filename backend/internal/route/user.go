@@ -21,4 +21,5 @@ func RegisterUserRoutes(app *config.Application, rg *gin.RouterGroup) {
 	rg.PUT("/:id", userCtrl.UpdateUser)
 	rg.DELETE("/:id", userCtrl.DeleteUser)
 	rg.PUT("/me", userCtrl.UpdateMe)
+	rg.POST("/me/avatar", userCtrl.UploadAvatar)
 }

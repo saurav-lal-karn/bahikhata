@@ -50,5 +50,8 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	familyMemberRouter := protected.Group("/family-members")
 	RegisterFamilyMemberRoutes(app, familyMemberRouter)
 
+	// Serve static files
+	router.Static("/uploads", "./uploads")
+
 	return router
 }
