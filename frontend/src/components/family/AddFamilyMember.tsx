@@ -6,13 +6,15 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 import { familyService } from "@/services/familyService";
+import { Family } from "@/types";
 
 interface AddFamilyMemberProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  family?: Family
 }
 
-export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onCancel }) => {
+export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onCancel, family }) => {
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -33,6 +35,7 @@ export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onC
         lastName: formData.lastName,
         email: formData.email,
         role: formData.role,
+        familyId: family?.id,
       });
       console.log("Invitation sent successfully");
       if (onSuccess) onSuccess();

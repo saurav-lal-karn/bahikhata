@@ -1,16 +1,36 @@
 import apiClient from "@/lib/axios";
-
-export interface InviteMemberPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-}
+import type {
+  FamilySettings,
+  UpdateFamilySettingsPayload,
+  InviteMemberPayload,
+  FamilyMember,
+  FamilyStats,
+} from "@/types";
 
 export const familyService = {
+  getFamily: async (id: string): Promise<FamilySettings> => {
+    const response = await apiClient.get(`/families/${id}`);
+    return response.data.data;
+  },
+
+  updateFamilySettings: async (
+    id: string,
+    data: UpdateFamilySettingsPayload
+  ): Promise<FamilySettings> => {
+    const response = await apiClient.put(`/families/${id}`, data);
+    return response.data.data;
+  },
+
   inviteMember: async (data: InviteMemberPayload) => {
-    const response = await apiClient.post("/families/invite", data);
+    const response = await apiClient.post("/family-members/invite", data);
     return response.data;
   },
-  // Add other family-related methods here
+  getFamilyMembers: async (familyId: string): Promise<FamilyMember[]> => {
+    const response = await apiClient.get(`/family-members/${familyId}`);
+    return response.data.data;
+  },
+  getFamilyStats: async (familyId: string): Promise<FamilyStats> => {
+    const response = await apiClient.get(`/families/${familyId}/stats`);
+    return response.data.data;
+  }
 };

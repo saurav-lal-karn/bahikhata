@@ -12,7 +12,6 @@ type Family struct {
 	Name           		string         	`json:"name" gorm:"type:text"`
 	Currency       		string         	`json:"currency" gorm:"type:text"`
 	Locale         		string         	`json:"locale" gorm:"type:text"`
-	BudgetAlertLimit 	int            	`json:"budget_alert_limit" gorm:"type:integer"`
 	BudgetAlerts   		bool           	`json:"budget_alerts" gorm:"type:boolean"`
 	WeeklyReport   		bool           	`json:"weekly_report" gorm:"type:boolean"`
 	HidePortfolio  		bool           	`json:"hide_portfolio" gorm:"type:boolean"`
@@ -27,4 +26,14 @@ type Family struct {
 // TableName specifies the table name for Family
 func (Family) TableName() string {
 	return "family"
+}
+
+type FamilyStats struct {
+	TotalUsers         int     `json:"total_users"`
+	TotalMembers       int     `json:"total_members"`
+	TotalAdministrators int     `json:"total_administrators"`
+	TotalPendingInvites int     `json:"total_pending_invites"`
+	TotalLedgers       int     `json:"total_ledgers"`
+	TotalTransactions  int     `json:"total_transactions"`
+	TotalAmount        float64 `json:"total_amount"`
 }

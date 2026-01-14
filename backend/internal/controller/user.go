@@ -133,6 +133,15 @@ func (ctrl *UserController) GetMe(c *gin.Context) {
 		City:        user.City,
 		State:       user.State,
 		PostalCode:  user.PostalCode,
+		Family: dto.FamilyResponse{
+			ID: user.FamilyMembers[0].Family.ID.String(),
+			Name: user.FamilyMembers[0].Family.Name,
+			Currency: user.FamilyMembers[0].Family.Currency,
+			BudgetAlerts: user.FamilyMembers[0].Family.BudgetAlerts,
+			WeeklyReport: user.FamilyMembers[0].Family.WeeklyReport,
+			HidePortfolio: user.FamilyMembers[0].Family.HidePortfolio,
+			RestrictDeletion: user.FamilyMembers[0].Family.RestrictDeletion,
+		},
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Current user retrieved successfully", userResponse)

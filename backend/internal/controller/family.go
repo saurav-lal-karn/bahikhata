@@ -33,10 +33,7 @@ func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
 		return
 	}
 
-	familyResponse := dto.FamilyResponse{
-		ID:   family.ID.String(),
-		Name: family.Name,
-	}
+	familyResponse := dto.ToFamilyResponse(family)
 
 	helper.SuccessResponse(c, http.StatusCreated, "Family created successfully", familyResponse)
 }
@@ -50,10 +47,7 @@ func (ctrl *FamilyController) ListFamilies(c *gin.Context) {
 
 	familyResponses := make([]dto.FamilyResponse, len(families))
 	for i, family := range families {
-		familyResponses[i] = dto.FamilyResponse{
-			ID:   family.ID.String(),
-			Name: family.Name,
-		}
+		familyResponses[i] = dto.ToFamilyResponse(&family)
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Families listed successfully", familyResponses)
@@ -73,10 +67,7 @@ func (ctrl *FamilyController) GetFamily(c *gin.Context) {
 		return
 	}
 
-	familyResponse := dto.FamilyResponse{
-		ID:   family.ID.String(),
-		Name: family.Name,
-	}
+	familyResponse := dto.ToFamilyResponse(family)
 
 	helper.SuccessResponse(c, http.StatusOK, "Family fetched successfully", familyResponse)
 }
@@ -89,7 +80,7 @@ func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 		return
 	}
 
-	var req dto.CreateFamilyRequest
+	var req dto.UpdateFamilySettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
@@ -103,10 +94,7 @@ func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 		return
 	}
 
-	familyResponse := dto.FamilyResponse{
-		ID:   family.ID.String(),
-		Name: family.Name,
-	}
+	familyResponse := dto.ToFamilyResponse(family)
 
 	helper.SuccessResponse(c, http.StatusOK, "Family updated successfully", familyResponse)
 }
@@ -137,11 +125,31 @@ func (ctrl *FamilyController) InviteMember(c *gin.Context) {
 	// Generate invitation link (for now, just a placeholder)
 	inviteLink := "https://bahikhata.com/register?email=" + req.Email
 
-	// Send invitation email (currently logs it)
-	if err := ctrl.emailSvc.SendInvitationEmail(req.Email, req.FirstName, req.Role, inviteLink); err != nil {
+	// Note: This implementation doesn't generate a password like the family_member service does
+	// Consider using the family_member service instead for consistency
+	// Send invitation email (currently logs it) - using empty password as placeholder
+	if err := ctrl.emailSvc.SendInvitationEmail(req.Email, req.FirstName, req.Role, "", inviteLink); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to send invitation")
 		return
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Invitation sent successfully", nil)
 }
+
+func (ctrl *FamilyController) GetFamilyStats(c *gin.Context) {
+	id := c.Param("id")
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	stats, err := ctrl.svc.GetFamilyStats(c.Request.Context(), parsedId)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Family stats fetched successfully", stats)
+}
+

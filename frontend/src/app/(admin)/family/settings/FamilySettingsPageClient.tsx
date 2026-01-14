@@ -1,26 +1,38 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Building, 
   Bell, 
   ShieldAlert, 
   Save, 
   ArrowLeft,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { familyService } from "@/services/familyService";
+import toast from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function FamilySettingsPageClient() {
+    const {user} = useAuth();
+  const familyDetails = user?.family; // Replace with actual family ID from user context
+
   const [formData, setFormData] = useState({
-    familyName: "The Karn Family",
+    familyName: "",
     currency: "INR",
-    budgetAlerts: true,
-    weeklyReport: true
+    budgetAlerts: false,
+    weeklyReport: false,
+    hidePortfolio: false,
+    restrictDeletion: false
   });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const currencies = [
     { value: "INR", label: "Indian Rupee (₹)" },
@@ -28,6 +40,65 @@ export default function FamilySettingsPageClient() {
     { value: "EUR", label: "Euro (€)" },
     { value: "GBP", label: "British Pound (£)" }
   ];
+
+  // Fetch family settings on component mount
+  useEffect(() => {
+    const fetchFamilySettings = async () => {
+      try {
+        setLoading(true);
+        const data = await familyService.getFamily(familyDetails?.id || "");
+        setFormData({
+          familyName: data.name,
+          currency: data.currency,
+          budgetAlerts: data.budgetAlerts,
+          weeklyReport: data.weeklyReport,
+          hidePortfolio: data.hidePortfolio,
+          restrictDeletion: data.restrictDeletion
+        });
+      } catch (error: any) {
+        console.error("Failed to fetch family settings:", error);
+        toast.error(error.message || "Failed to load family settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (familyDetails?.id && familyDetails?.id !== "") {
+      fetchFamilySettings();
+    }
+
+    // Cleanup
+    return () => {
+      fetchFamilySettings();
+    };
+  }, [familyDetails]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await familyService.updateFamilySettings(familyDetails?.id || "", {
+        name: formData.familyName,
+        currency: formData.currency,
+        budgetAlerts: formData.budgetAlerts,
+        weeklyReport: formData.weeklyReport,
+        hidePortfolio: formData.hidePortfolio,
+        restrictDeletion: formData.restrictDeletion
+      });
+      toast.success("Family settings saved successfully!");
+    } catch (error: any) {
+      console.error("Failed to save family settings:", error);
+      toast.error(error.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -118,7 +189,7 @@ export default function FamilySettingsPageClient() {
                 <p className="text-sm font-bold text-gray-800 dark:text-white">Hide Investment Portfolio</p>
                 <p className="text-xs text-gray-500">Only family owner can see the detailed investment breakdown.</p>
               </div>
-              <input type="checkbox" className="w-12 h-6 rounded-full bg-gray-200 checked:bg-emerald-600 appearance-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all checked:after:left-7" />
+              <input type="checkbox" checked={formData.hidePortfolio} onChange={() => setFormData({...formData, hidePortfolio: !formData.hidePortfolio})} className="w-12 h-6 rounded-full bg-gray-200 checked:bg-emerald-600 appearance-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all checked:after:left-7" />
             </div>
             
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
@@ -126,7 +197,7 @@ export default function FamilySettingsPageClient() {
                 <p className="text-sm font-bold text-gray-800 dark:text-white">Restrict Transaction Deletion</p>
                 <p className="text-xs text-gray-500">Only Admin and Owner can delete existing records.</p>
               </div>
-              <input type="checkbox" defaultChecked className="w-12 h-6 rounded-full bg-gray-200 checked:bg-emerald-600 appearance-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all checked:after:left-7" />
+              <input type="checkbox" checked={formData.restrictDeletion} onChange={() => setFormData({...formData, restrictDeletion: !formData.restrictDeletion})} className="w-12 h-6 rounded-full bg-gray-200 checked:bg-emerald-600 appearance-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all checked:after:left-7" />
             </div>
           </div>
         </section>
@@ -159,8 +230,20 @@ export default function FamilySettingsPageClient() {
         </section>
 
         <div className="flex justify-end pt-4">
-          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-blue-500/20 gap-2">
-            <Save className="w-5 h-5" /> Save Changes
+          <Button 
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-blue-500/20 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" /> Save Changes
+              </>
+            )}
           </Button>
         </div>
       </div>

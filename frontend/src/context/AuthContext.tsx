@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { Family } from "@/types";
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface User {
   city: string;
   state: string;
   postal_code: string;
+  family: Family;
 }
 
 interface AuthContextType {

@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"log"
 	"os"
 	"strconv"
@@ -18,4 +20,21 @@ func GetEnvAsInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return value
+}
+
+// GenerateRandomPassword generates a cryptographically secure random password
+func GenerateRandomPassword(length int) (string, error) {
+	// Generate random bytes
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	
+	// Encode to base64 and trim to desired length
+	password := base64.URLEncoding.EncodeToString(bytes)
+	if len(password) > length {
+		password = password[:length]
+	}
+	
+	return password, nil
 }

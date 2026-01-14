@@ -18,6 +18,7 @@ type FamilyMember struct {
 	DeletedAt     gorm.DeletedAt `json:"deleted_at"`
 	User          User      `json:"user"`
 	CreatedByUser User      `json:"created_by_user"`
+	Family        Family    `json:"family" gorm:"foreignKey:FamilyID;references:ID"`
 }
 
 func (FamilyMember) TableName() string {

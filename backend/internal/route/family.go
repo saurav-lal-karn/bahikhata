@@ -16,8 +16,8 @@ func RegisterFamilyRoutes(app *config.Application, rg *gin.RouterGroup) {
 	familyController := controller.NewFamilyController(familyService, emailService)
 	rg.GET("", familyController.ListFamilies)
 	rg.POST("", familyController.CreateFamily)
-	rg.POST("/invite", familyController.InviteMember)
 	rg.GET("/:id", familyController.GetFamily)
 	rg.PUT("/:id", familyController.UpdateFamily)
 	rg.DELETE("/:id", familyController.DeleteFamily)
+	rg.GET("/:id/stats", familyController.GetFamilyStats)
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
@@ -53,8 +54,38 @@ func (ctrl *FamilyMemberController) ListFamilyMembers(c *gin.Context) {
 			FirstName: familyMember.FirstName,
 			LastName: familyMember.LastName,
 			Email: familyMember.Email,
+			Role: familyMember.Role,
+			AvatarUrl: familyMember.AvatarUrl,
+			CreatedAt: familyMember.CreatedAt,
 		}
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "Family members listed successfully", familyMemberResponses)
+}
+
+func (ctrl *FamilyMemberController) InviteMember(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	uid, err := uuid.Parse(userId.(string))
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		return
+	}
+
+	var req dto.InviteMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	if err := ctrl.svc.InviteMember(c.Request.Context(), req, uid); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Member invited successfully", nil)
 }

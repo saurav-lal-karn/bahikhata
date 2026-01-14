@@ -1,56 +1,53 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Search, 
-  MoreHorizontal, 
   Trash2, 
-  User, 
   ShieldCheck, 
   Mail,
   MoreVertical,
-  CheckCircle2,
-  Clock
 } from "lucide-react";
-import Image from "next/image";
+import { familyService } from "@/services/familyService";
+import type { FamilyMember } from "@/types";
+import { formatDateTime } from "@/lib/utils";
 
-const initialMembers = [
-  {
-    id: "1",
-    name: "Saurav Karn",
-    email: "saurav@example.com",
-    role: "Owner",
-    joined: "Aug 2025",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saurav"
-  },
-  {
-    id: "2",
-    name: "Aakash Lalkarn",
-    email: "aakash@example.com",
-    role: "Member",
-    joined: "Sep 2025",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aakash"
-  },
-  {
-    id: "3",
-    name: "Neha Sharma",
-    email: "neha@example.com",
-    role: "Member",
-    joined: "Oct 2025",
-    status: "Inactive",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha"
-  }
-];
-
-export const FamilyMembersList = () => {
+export const FamilyMembersList = ({familyId}: {familyId: string}) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [members] = useState(initialMembers);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const response = await familyService.getFamilyMembers(familyId);
+      setMembers(response);
+    };
+
+    if (familyId && familyId !== "") {
+      fetchMembers();
+    }
+
+    return () => {
+      fetchMembers();
+    };
+  }, [familyId]);
 
   const filteredMembers = members.filter(member => 
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getAvatarUrl = (url?: string) => {
+    if (!url) return "/images/user/owner.jpg";
+    if (url.startsWith("http")) return url;
+    // Construct full URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+       const urlObj = new URL(apiUrl);
+       return `${urlObj.origin}${url}`;
+    } catch {
+       return url;
+    }
+  };
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900/50 overflow-hidden shadow-sm">
@@ -88,8 +85,8 @@ export const FamilyMembersList = () => {
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <img 
-                        src={member.avatar} 
-                        alt={member.name}
+                        src={getAvatarUrl(member.avatar_url)} 
+                        alt={member.first_name + " " + member.last_name}
                         className="w-11 h-11 rounded-full bg-gray-100 border border-gray-100 dark:border-gray-800"
                         width={44}
                         height={44}
@@ -98,7 +95,7 @@ export const FamilyMembersList = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight">
-                        {member.name}
+                        {member.first_name + " " + member.last_name}
                       </h4>
                       <p className="text-xs text-gray-500 font-medium">{member.email}</p>
                     </div>
@@ -114,7 +111,7 @@ export const FamilyMembersList = () => {
                   </span>
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400 font-medium">
-                  {member.joined}
+                  {formatDateTime(member.created_at)}
                 </td>
                 <td className="py-4 px-6 text-center">
                   <div className="flex items-center justify-center gap-2">

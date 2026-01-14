@@ -22,3 +22,11 @@ func (req *CreateFamilyMemberRequest) ToFamilyMember() *model.FamilyMember {
 type CreateFamilyMemberResponse struct {
 	ID uuid.UUID `json:"id"`
 }
+
+type InviteMemberRequest struct {
+	FirstName string `json:"firstName" binding:"required"`
+	LastName  string `json:"lastName" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Role      string `json:"role" binding:"required"`
+	FamilyID  uuid.UUID `json:"familyId" binding:"required"`
+}

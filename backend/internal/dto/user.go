@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 )
@@ -22,6 +24,8 @@ type UserResponse struct {
 	City        string    `json:"city"`
 	State       string    `json:"state"`
 	PostalCode  string    `json:"postal_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	Family FamilyResponse `json:"family"`
 	// No Password field here!
 }
 

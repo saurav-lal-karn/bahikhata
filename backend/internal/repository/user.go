@@ -46,7 +46,7 @@ func (r *userRepository) ListUsers(ctx context.Context) ([]model.User, error) {
 
 func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("FamilyMembers.Family").First(&user).Error
 	return &user, err
 }
 

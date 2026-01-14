@@ -14,6 +14,7 @@ type FamilyService interface {
 	ListFamilies(ctx context.Context) ([]model.Family, error)
 	UpdateFamily(ctx context.Context, family *model.Family) error
 	DeleteFamily(ctx context.Context, id uuid.UUID) error
+	GetFamilyStats(ctx context.Context, id uuid.UUID) (*model.FamilyStats, error)
 }
 
 type familyService struct {
@@ -43,4 +44,16 @@ func (s *familyService) UpdateFamily(ctx context.Context, family *model.Family) 
 
 func (s *familyService) DeleteFamily(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteFamily(ctx, id)
+}
+
+func (s *familyService) GetFamilyStats(ctx context.Context, id uuid.UUID) (*model.FamilyStats, error) {
+	var stats model.FamilyStats
+	stats.TotalUsers = 0
+	stats.TotalMembers = 0
+	stats.TotalAdministrators = 0
+	stats.TotalPendingInvites = 0
+	stats.TotalLedgers = 0
+	stats.TotalTransactions = 0
+	stats.TotalAmount = 0
+	return &stats, nil
 }

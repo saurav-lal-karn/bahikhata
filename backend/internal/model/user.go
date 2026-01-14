@@ -34,6 +34,7 @@ type User struct {
 	CreatedAt       time.Time      `json:"created_at" gorm:"type:timestamp"`
 	UpdatedAt       time.Time      `json:"updated_at" gorm:"type:timestamp"`
 	DeletedAt       gorm.DeletedAt `json:"deleted_at"`
+	FamilyMembers   []FamilyMember `json:"family_members" gorm:"foreignKey:UserID;references:ID"`
 }
 
 func (u *User) ComparePassword(password string) error {

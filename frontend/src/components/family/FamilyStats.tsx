@@ -1,12 +1,38 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Users, UserPlus, Shield, Activity } from "lucide-react";
+import { familyService } from "@/services/familyService";
 
-export const FamilyStats = () => {
-  const stats = [
+export const FamilyStats = ({ familyId }: { familyId: string }) => {
+    const [stats, setStats] = useState({
+        total_members: 0,
+        total_administrators: 0,
+        total_active_now: 0,
+        total_pending_invites: 0,
+        total_amount: 0,
+        total_ledgers: 0,
+        total_users: 0,
+        total_transactions: 0,
+    });
+    
+    useEffect(() => {
+        const fetchStats = async () => {
+            const response = await familyService.getFamilyStats(familyId);
+            setStats(response);
+        };
+        if (familyId && familyId !== "") {
+            fetchStats();
+        }
+
+        return () => {
+            fetchStats();
+        }
+    }, [familyId]);
+
+  const statsList = [
     {
       title: "Total Members",
-      value: "4",
+      value: stats.total_members,
       subtitle: "Full household",
       icon: <Users className="w-6 h-6" />,
       color: "text-blue-600 dark:text-blue-400",
@@ -14,7 +40,7 @@ export const FamilyStats = () => {
     },
     {
       title: "Active Now",
-      value: "2",
+      value: stats.total_users - stats.total_pending_invites,
       subtitle: "Online today",
       icon: <Activity className="w-6 h-6" />,
       color: "text-green-600 dark:text-green-400",
@@ -22,7 +48,7 @@ export const FamilyStats = () => {
     },
     {
       title: "Administrators",
-      value: "1",
+      value: stats.total_administrators,
       subtitle: "Family owner",
       icon: <Shield className="w-6 h-6" />,
       color: "text-purple-600 dark:text-purple-400",
@@ -30,7 +56,7 @@ export const FamilyStats = () => {
     },
     {
       title: "Pending Invites",
-      value: "0",
+      value: stats.total_pending_invites,
       subtitle: "All clear",
       icon: <UserPlus className="w-6 h-6" />,
       color: "text-gray-600 dark:text-gray-400",
@@ -40,7 +66,7 @@ export const FamilyStats = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-      {stats.map((stat, i) => (
+      {statsList.map((stat, i) => (
         <div key={i} className="p-6 rounded-3xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900/50 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
