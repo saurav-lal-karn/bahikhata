@@ -11,7 +11,7 @@ type Expense struct {
 	ID              uuid.UUID      `json:"id" gorm:"type:uuid;primary_key"`
 	Amount          float64        `json:"amount" gorm:"type:decimal(20,2)"`
 	Description     string         `json:"description" gorm:"type:text"`
-	PaymentMethod   string         `json:"payment_method" gorm:"type:text"` // Stored as a string (e.g., "Cash", "UPI", "Credit Card")
+	PaymentMethodID uuid.UUID      `json:"payment_method_id" gorm:"type:uuid"`
 	CategoryID      uuid.UUID      `json:"category_id" gorm:"type:uuid"`
 	FamilyID        uuid.UUID      `json:"family_id" gorm:"type:uuid"`
 	CreatedByID     uuid.UUID      `json:"created_by_id" gorm:"type:uuid"`
@@ -24,6 +24,7 @@ type Expense struct {
 	Category ExpenseCategory `json:"category" gorm:"foreignKey:CategoryID"`
 	Family   Family          `json:"family" gorm:"foreignKey:FamilyID"`
 	Creator  User            `json:"creator" gorm:"foreignKey:CreatedByID"`
+	PaymentMethod PaymentMethod `json:"payment_method" gorm:"foreignKey:PaymentMethodID"`
 }
 
 func (Expense) TableName() string {

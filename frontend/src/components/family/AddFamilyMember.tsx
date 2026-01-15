@@ -7,6 +7,7 @@ import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 import { familyService } from "@/services/familyService";
 import { Family } from "@/types";
+import toast from "react-hot-toast";
 
 interface AddFamilyMemberProps {
   onSuccess?: () => void;
@@ -37,11 +38,10 @@ export const AddFamilyMember: React.FC<AddFamilyMemberProps> = ({ onSuccess, onC
         role: formData.role,
         familyId: family?.id,
       });
-      console.log("Invitation sent successfully");
+      toast.success("Invitation sent successfully");
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Failed to send invitation:", error);
-      // TODO: Show error toast/notification
+      toast.error("Failed to send invitation");
     }
   };
 

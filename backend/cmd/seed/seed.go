@@ -20,9 +20,9 @@ func SeedInit() *Seeder {
 
 func (s *Seeder) Seed() {
 	seed.SeedBaseData(s.app)
-	if s.app.Env.AppMode != "production" {
-		seed.SeedDevData(s.app)
-	}
+	// if s.app.Env.AppMode != "production" {
+	// 	seed.SeedDevData(s.app)
+	// }
 }
 
 func main() {

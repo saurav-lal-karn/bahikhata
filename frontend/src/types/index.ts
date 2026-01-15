@@ -58,3 +58,42 @@ export interface FamilyStats {
   total_users: number;
   total_transactions: number;
 }
+
+// Types for expenses
+export interface Expense {
+    id?: string;
+    name: string;
+    amount: number;
+    category: string;
+    payment_method: string;
+    date: string;
+    description: string;
+}
+
+export interface ExpenseStats {
+    total_expenses: number;
+    total_categories: number;
+    total_payment_methods: number;
+}
+
+// Types for categories
+export interface ExpenseCategory {
+    id: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+    tags: string[];
+    family_id: string;
+    created_by_id: string;
+}
+
+// Types for payment methods
+export interface PaymentMethod {
+    id: string;
+    name: string;
+    description: string;
+    icon_name: string;
+    is_system: boolean;
+    family_id: string;
+    created_by_id: string;
+}

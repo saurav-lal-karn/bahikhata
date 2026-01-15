@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { 
   FileSearch, 
@@ -8,13 +8,18 @@ import {
   Loader2, 
   CheckCircle2, 
   X,
-  Plus,
   RefreshCcw
 } from "lucide-react";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { useAuth } from "@/context/AuthContext";
+import { expenseService } from "@/services/expenseService";
+import toast from "react-hot-toast";
+import { ExpenseCategory, PaymentMethod } from "@/types";
+import { expenseCategoryService } from "@/services/expenseCategoryService";
+import { paymentMethodService } from "@/services/paymentMethodService";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
@@ -22,24 +27,30 @@ interface AddExpenseFormProps {
 }
 
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    category: "",
-    payment_method: "Cash",
-    date: new Date().toISOString().split('T')[0],
-    description: ""
-  });
+    const {user} = useAuth();
+    const familyDetails = user?.family;
+
+    const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        amount: 0,
+        category: "",
+        payment_method: "Cash",
+        date: new Date().toISOString().split('T')[0],
+        description: ""
+    });
   
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
-  const [customCategoryName, setCustomCategoryName] = useState("");
-  const [isCustomPaymentMethod, setIsCustomPaymentMethod] = useState(false);
-  const [customPaymentMethodName, setCustomPaymentMethodName] = useState("");
-  
-  // OCR & File States
-  const [scannedFile, setScannedFile] = useState<File | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanComplete, setScanComplete] = useState(false);
+    const [isCustomCategory, setIsCustomCategory] = useState(false);
+    const [customCategoryName, setCustomCategoryName] = useState("");
+    const [isCustomPaymentMethod, setIsCustomPaymentMethod] = useState(false);
+    const [customPaymentMethodName, setCustomPaymentMethodName] = useState("");
+    
+    // OCR & File States
+    const [scannedFile, setScannedFile] = useState<File | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanComplete, setScanComplete] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -58,6 +69,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
   });
 
   const handleMockOCR = (file: File) => {
+    console.log(file);
     setIsScanning(true);
     setScanComplete(false);
     
@@ -70,7 +82,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
       setFormData(prev => ({
         ...prev,
         name: "BigBasket Groceries (Scanned)",
-        amount: "1540.50",
+        amount: 1540.50,
         category: "food"
       }));
     }, 2000);
@@ -81,35 +93,68 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
     setScanComplete(false);
   };
 
-  const categories = [
-    { value: "food", label: "Food & Drinks" },
-    { value: "housing", label: "Housing" },
-    { value: "transport", label: "Transport" },
-    { value: "utilities", label: "Utilities" },
-    { value: "entertainment", label: "Entertainment" },
-    { value: "health", label: "Health" },
-    { value: "custom", label: "+ Add Custom Category" }
-  ];
+  // const categories = [
+  //   { value: "food", label: "Food & Drinks" },
+  //   { value: "housing", label: "Housing" },
+  //   { value: "transport", label: "Transport" },
+  //   { value: "utilities", label: "Utilities" },
+  //   { value: "entertainment", label: "Entertainment" },
+  //   { value: "health", label: "Health" },
+  //   { value: "custom", label: "+ Add Custom Category" }
+  // ];
 
-  const paymentMethods = [
-    { value: "Cash", label: "Cash" },
-    { value: "UPI", label: "UPI" },
-    { value: "Credit Card", label: "Credit Card" },
-    { value: "Debit Card", label: "Debit Card" },
-    { value: "Bank Transfer", label: "Bank Transfer" },
-    { value: "custom", label: "+ Add Custom Method" }
-  ];
+  // const paymentMethods = [
+  //   { value: "Cash", label: "Cash" },
+  //   { value: "UPI", label: "UPI" },
+  //   { value: "Credit Card", label: "Credit Card" },
+  //   { value: "Debit Card", label: "Debit Card" },
+  //   { value: "Bank Transfer", label: "Bank Transfer" },
+  //   { value: "custom", label: "+ Add Custom Method" }
+  // ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalData = {
-      ...formData,
-      category: isCustomCategory ? customCategoryName : formData.category,
-      payment_method: isCustomPaymentMethod ? customPaymentMethodName : formData.payment_method
-    };
-    console.log("Submitting expense:", finalData);
-    if (onSuccess) onSuccess();
+    try {
+        const finalData = {
+            ...formData,
+            category: isCustomCategory ? customCategoryName : formData.category,
+            payment_method: isCustomPaymentMethod ? customPaymentMethodName : formData.payment_method
+        };
+
+        await expenseService.createExpense(finalData);
+        toast.success("Expense added successfully");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        toast.error("Failed to add expense");
+        console.error(error);
+    }
   };
+
+
+  useEffect(() => {
+    const fetchCategories = async (familyId: string) => {
+      const response = await expenseCategoryService.getCategories(familyId);
+      setCategories(response);
+    };
+
+    const fetchPaymentMethods = async (familyId: string) => {
+      const response = await paymentMethodService.getPaymentMethods(familyId);
+      setPaymentMethods(response);
+    };
+
+    if (familyDetails && familyDetails.id && familyDetails.id !== "") {
+      fetchCategories(familyDetails.id);
+      fetchPaymentMethods(familyDetails.id);
+    }
+
+    return () => {
+      setCategories([]);
+      setPaymentMethods([]);
+      fetchCategories(familyDetails?.id || "");
+      fetchPaymentMethods(familyDetails?.id || "");
+    };
+  }, [familyDetails]);
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -198,7 +243,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
               step={0.01}
               placeholder="0.00"
               value={formData.amount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: Number(e.target.value)})}
               className="rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-purple-500 transition-all font-black text-lg h-14"
             />
           </div>
@@ -208,7 +253,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Category</Label>
             <Select 
-              options={categories}
+              options={categories.map(category => ({value: category.id, label: category.name}))}
               placeholder="Pick a category"
               onChange={(value: string) => {
                 if (value === "custom") {
@@ -224,7 +269,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Payment Method</Label>
             <Select 
-              options={paymentMethods}
+              options={paymentMethods.map(method => ({value: method.id, label: method.name}))}
               defaultValue="Cash"
               onChange={(value: string) => {
                 if (value === "custom") {
