@@ -132,14 +132,37 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
 
 
   useEffect(() => {
+    // Flag to track if component is still mounted
+    let isMounted = true;
+
     const fetchCategories = async (familyId: string) => {
-      const response = await expenseCategoryService.getCategories(familyId);
-      setCategories(response);
+      try {
+        const response = await expenseCategoryService.getCategories(familyId);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setCategories(response);
+        }
+      } catch (error) {
+        // Only log errors if component is still mounted
+        if (isMounted) {
+          console.error('Failed to fetch categories:', error);
+        }
+      }
     };
 
     const fetchPaymentMethods = async (familyId: string) => {
-      const response = await paymentMethodService.getPaymentMethods(familyId);
-      setPaymentMethods(response);
+      try {
+        const response = await paymentMethodService.getPaymentMethods(familyId);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setPaymentMethods(response);
+        }
+      } catch (error) {
+        // Only log errors if component is still mounted
+        if (isMounted) {
+          console.error('Failed to fetch payment methods:', error);
+        }
+      }
     };
 
     if (familyDetails && familyDetails.id && familyDetails.id !== "") {
@@ -147,11 +170,9 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
       fetchPaymentMethods(familyDetails.id);
     }
 
+    // Cleanup function: mark component as unmounted to prevent state updates
     return () => {
-      setCategories([]);
-      setPaymentMethods([]);
-      fetchCategories(familyDetails?.id || "");
-      fetchPaymentMethods(familyDetails?.id || "");
+      isMounted = false;
     };
   }, [familyDetails]);
 

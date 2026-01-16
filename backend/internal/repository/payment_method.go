@@ -25,7 +25,7 @@ func NewPaymentMethodRepository(db *gorm.DB) PaymentMethodRepository {
 
 func (r *paymentMethodRepository) GetPaymentMethods(ctx context.Context, familyId string) ([]model.PaymentMethod, error) {
 	var paymentMethods []model.PaymentMethod
-	if err := r.db.WithContext(ctx).Where("family_id = ?", familyId).Find(&paymentMethods).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("family_id = ? OR is_system = ?", familyId, true).Find(&paymentMethods).Error; err != nil {
 		return nil, err
 	}
 	return paymentMethods, nil

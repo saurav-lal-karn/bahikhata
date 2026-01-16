@@ -11,7 +11,7 @@ type ExpenseCategoryService interface {
 	GetCategories(ctx context.Context, familyId string) ([]model.ExpenseCategory, error)
 	CreateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	UpdateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
-	DeleteCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
+	DeleteCategory(ctx context.Context, id string) error
 	GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error)
 }
 
@@ -35,8 +35,8 @@ func (s *expenseCategoryService) UpdateCategory(ctx context.Context, category mo
 	return s.repo.UpdateCategory(ctx, category)
 }
 
-func (s *expenseCategoryService) DeleteCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error) {
-	return s.repo.DeleteCategory(ctx, category)
+func (s *expenseCategoryService) DeleteCategory(ctx context.Context, id string) error {
+	return s.repo.DeleteCategory(ctx, id)
 }
 
 func (s *expenseCategoryService) GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error) {

@@ -1,44 +1,31 @@
 package controller
 
 import (
-	"context"
+	"net/http"
 
-	"github.com/sauravkarn541/bahikhata/internal/model"
+	"github.com/gin-gonic/gin"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
-type PaymentMethodController interface {
-	GetPaymentMethods(ctx context.Context, familyId string) ([]model.PaymentMethod, error)
-	CreatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	UpdatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	DeletePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	GetPaymentMethodById(ctx context.Context, id string) (model.PaymentMethod, error)
-}
-
-type paymentMethodController struct {
+type PaymentMethodController struct {
 	service service.PaymentMethodService
 }
 
 func NewPaymentMethodController(service service.PaymentMethodService) PaymentMethodController {
-	return &paymentMethodController{service: service}
+	return PaymentMethodController{service: service}
 }
 
-func (c *paymentMethodController) GetPaymentMethods(ctx context.Context, familyId string) ([]model.PaymentMethod, error) {
-	return c.service.GetPaymentMethods(ctx, familyId)
-}
-
-func (c *paymentMethodController) CreatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
-	return c.service.CreatePaymentMethod(ctx, paymentMethod)
-}
-
-func (c *paymentMethodController) UpdatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
-	return c.service.UpdatePaymentMethod(ctx, paymentMethod)
-}
-
-func (c *paymentMethodController) DeletePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
-	return c.service.DeletePaymentMethod(ctx, paymentMethod)
-}
-
-func (c *paymentMethodController) GetPaymentMethodById(ctx context.Context, id string) (model.PaymentMethod, error) {
-	return c.service.GetPaymentMethodById(ctx, id)
+func (c *PaymentMethodController) GetPaymentMethods(ctx *gin.Context){
+	familyId := ctx.Param("family_id")
+	if familyId == "" {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
+		return
+	}
+	paymentMethods, err := c.service.GetPaymentMethods(ctx, familyId)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.SuccessResponse(ctx, http.StatusOK, "Payment methods fetched successfully", paymentMethods)
 }

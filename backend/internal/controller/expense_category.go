@@ -1,45 +1,72 @@
 package controller
 
 import (
-	"context"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sauravkarn541/bahikhata/internal/model"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
-type ExpenseCategoryController interface {
-	GetCategories(ctx *gin.Context) ([]model.ExpenseCategory, error)
-	CreateCategory(ctx *gin.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
-	UpdateCategory(ctx *gin.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
-	DeleteCategory(ctx *gin.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
-	GetCategoryById(ctx *gin.Context, id string) (model.ExpenseCategory, error)
-}
-
-type expenseCategoryController struct {
+type ExpenseCategoryController struct {
 	service service.ExpenseCategoryService
 }
 
 func NewExpenseCategoryController(service service.ExpenseCategoryService) ExpenseCategoryController {
-	return &expenseCategoryController{service: service}
+	return ExpenseCategoryController{service: service}
 }
 
-func (c *expenseCategoryController) GetCategories(ctx *gin.Context) ([]model.ExpenseCategory, error) {
-	return c.service.GetCategories(ctx, familyId)
+func (ctrl *ExpenseCategoryController) GetCategories(c *gin.Context) {
+	familyId := c.Param("family_id")
+	if familyId == "" {
+		helper.ErrorResponse(c, http.StatusBadRequest, "family_id is required")
+		return
+	}
+
+	categories, err := ctrl.service.GetCategories(c.Request.Context(), familyId)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Categories fetched successfully", categories)
 }
 
-func (c *expenseCategoryController) CreateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error) {
-	return c.service.CreateCategory(ctx, category)
+// func (c *expenseCategoryController) CreateCategory(ctx *gin.Context) (model.ExpenseCategory, error) {
+// 	return c.service.CreateCategory(ctx, category)
+// }
+
+// func (c *expenseCategoryController) UpdateCategory(ctx *gin.Context) (model.ExpenseCategory, error) {
+// 	return c.service.UpdateCategory(ctx, category)
+// }
+
+func (ctrl *ExpenseCategoryController) DeleteCategory(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		helper.ErrorResponse(c, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	if err := ctrl.service.DeleteCategory(c.Request.Context(), id); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Category deleted successfully", nil)
 }
 
-func (c *expenseCategoryController) UpdateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error) {
-	return c.service.UpdateCategory(ctx, category)
-}
+func (ctrl *ExpenseCategoryController) GetCategoryById(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		helper.ErrorResponse(c, http.StatusBadRequest, "id is required")
+		return
+	}
 
-func (c *expenseCategoryController) DeleteCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error) {
-	return c.service.DeleteCategory(ctx, category)
-}
+	category, err := ctrl.service.GetCategoryById(c.Request.Context(), id)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-func (c *expenseCategoryController) GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error) {
-	return c.service.GetCategoryById(ctx, id)
+	helper.SuccessResponse(c, http.StatusOK, "Category fetched successfully", category)
 }

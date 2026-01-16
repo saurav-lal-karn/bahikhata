@@ -11,7 +11,7 @@ type ExpenseCategoryRepository interface {
 	GetCategories(ctx context.Context, familyId string) ([]model.ExpenseCategory, error)
 	CreateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	UpdateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
-	DeleteCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
+	DeleteCategory(ctx context.Context, id string) error
 	GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error)
 }
 
@@ -25,7 +25,7 @@ func NewExpenseCategoryRepository(db *gorm.DB) ExpenseCategoryRepository {
 
 func (r *expenseCategoryRepository) GetCategories(ctx context.Context, familyId string) ([]model.ExpenseCategory, error) {
 	var categories []model.ExpenseCategory
-	if err := r.db.WithContext(ctx).Where("family_id = ?", familyId).Find(&categories).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("family_id = ? OR is_system = ?", familyId, true).Find(&categories).Error; err != nil {
 		return nil, err
 	}
 	return categories, nil
@@ -45,11 +45,11 @@ func (r *expenseCategoryRepository) UpdateCategory(ctx context.Context, category
 	return category, nil
 }
 
-func (r *expenseCategoryRepository) DeleteCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error) {
-	if err := r.db.WithContext(ctx).Delete(&category).Error; err != nil {
-		return model.ExpenseCategory{}, err
+func (r *expenseCategoryRepository) DeleteCategory(ctx context.Context, id string) error {
+	if err := r.db.WithContext(ctx).Delete(&model.ExpenseCategory{}, id).Error; err != nil {
+		return err
 	}
-	return category, nil
+	return nil
 }
 
 func (r *expenseCategoryRepository) GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error) {

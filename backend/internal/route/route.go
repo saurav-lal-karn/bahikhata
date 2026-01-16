@@ -50,6 +50,12 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	familyMemberRouter := protected.Group("/family-members")
 	RegisterFamilyMemberRoutes(app, familyMemberRouter)
 
+	expenseCategoryRouter := protected.Group("/expense-categories")
+	RegisterExpenseCategoryRoutes(app, expenseCategoryRouter)
+
+	paymentMethodRouter := protected.Group("/payment-methods")
+	RegisterPaymentMethodRoutes(app, paymentMethodRouter)
+
 	// Serve static files
 	router.Static("/uploads", "./uploads")
 
