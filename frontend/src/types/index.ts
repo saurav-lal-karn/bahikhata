@@ -136,3 +136,61 @@ export interface WalletType {
     family_id: string;
     created_by_id: string;
 }
+
+// Types for wallets
+export interface CreateWalletPayload {
+    name: string;
+    starting_balance: number;
+    currency: string;
+    wallet_id: string;
+    wallet_issuer_name: string;
+    wallet_type_id: string;
+    description: string;
+    is_custom_type: boolean;
+    custom_type_name: string;
+    custom_type_description: string;
+    family_id: string;
+}
+
+export interface WalletInfoType {
+    id: string;
+    name: string;
+    starting_balance: number;
+    balance: number;
+    currency: string;
+    description: string;
+    wallet_issuer_name: string;
+    wallet_id: string;
+    wallet_type_id: string;
+    user_id: string;
+    family_id: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    wallet_type: WalletType;
+}
+
+export interface CreateWalletTransferPayload {
+    from_wallet_id: string;
+    to_wallet_id: string;
+    amount: number;
+    date: string;
+    remarks: string;
+    family_id: string;
+}
+
+export interface WalletTransfer {
+    id: string;
+    from_wallet_id: string;
+    to_wallet_id: string;
+    amount: number;
+    date: string;
+    remarks: string;
+    user_id: string;
+    family_id: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    from_wallet: WalletInfoType;
+    to_wallet: WalletInfoType;
+}

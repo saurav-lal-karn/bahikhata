@@ -10,15 +10,15 @@ import (
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
-type WalletController struct {
-	svc service.WalletService
+type WalletTransferController struct {
+	svc service.WalletTransferService
 }
 
-func NewWalletController(svc service.WalletService) WalletController {
-	return WalletController{svc: svc}
+func NewWalletTransferController(svc service.WalletTransferService) WalletTransferController {
+	return WalletTransferController{svc: svc}
 }
 
-func (ctrl *WalletController) CreateWallet(c *gin.Context) {
+func (ctrl *WalletTransferController) CreateWalletTransfer(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -31,34 +31,27 @@ func (ctrl *WalletController) CreateWallet(c *gin.Context) {
 		return
 	}
 
-	var req dto.CreateWalletRequest
+	var req dto.CreateWalletTransferRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
 	}
 
-	if req.IsCustomType {
-		if req.CustomTypeName == "" {
-			helper.ErrorResponse(c, http.StatusBadRequest, "custom_type_name is required when is_custom_type is true")
-			return
-		}
-	} else {
-		if req.WalletTypeID == "" {
-			helper.ErrorResponse(c, http.StatusBadRequest, "wallet_type_id is required when is_custom_type is false")
-			return
-		}
-	}
-
-	wallet, err := ctrl.svc.CreateWallet(c, &req, uid)
+	walletTransfer, err := req.ToWalletTransfer()
 	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+	walletTransfer.UserID = uid
+
+	if err := ctrl.svc.CreateWalletTransfer(c, walletTransfer); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	helper.SuccessResponse(c, http.StatusCreated, "Wallet created successfully", wallet)
+	helper.SuccessResponse(c, http.StatusCreated, "Wallet transfer created successfully", walletTransfer)
 }
 
-func (ctrl *WalletController) GetWallets(c *gin.Context) {
+func (ctrl *WalletTransferController) ListWalletTransfers(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -71,24 +64,17 @@ func (ctrl *WalletController) GetWallets(c *gin.Context) {
 		return
 	}
 
-
-	familyID := c.Param("family_id")
-	if familyID == "" {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "Family ID not found in context")
-		return
-	}
-
-	fid, err := uuid.Parse(familyID)
+	familyId := c.Param("family_id")
+	fid, err := uuid.Parse(familyId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid family ID format in context")
 		return
 	}
 
-	wallets, err := ctrl.svc.GetWallets(c, fid, uid)
+	walletTransfers, err := ctrl.svc.ListWalletTransfers(c, fid, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	helper.SuccessResponse(c, http.StatusOK, "Wallets fetched successfully", wallets)
+	helper.SuccessResponse(c, http.StatusOK, "Wallet transfers retrieved successfully", walletTransfers)
 }

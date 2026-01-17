@@ -15,9 +15,10 @@ import { Modal } from "@/components/ui/modal";
 import { WalletCard } from "@/components/accounts/WalletCard";
 import { InternalTransferForm } from "@/components/accounts/InternalTransferForm";
 import { AddAccountForm } from "@/components/accounts/AddAccountForm";
-import { WalletType } from "@/types";
+import { WalletInfoType, WalletType, WalletTransfer } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import {walletTypeService} from "@/services/walletTypeService";
+import {walletService} from "@/services/walletService";
 
 export default function AccountsPageClient() {
     const {user} = useAuth();
@@ -26,31 +27,45 @@ export default function AccountsPageClient() {
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
 
     const [walletTypes, setWalletTypes] = useState<WalletType[]>([]);
+    const [wallets, setWallets] = useState<WalletInfoType[]>([]);
+    const [transfers, setTransfers] = useState<WalletTransfer[]>([]);
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchData = async () => {
+    const fetchData = async () => {
         if (!familyDetails?.id) return;
 
         try {
-            const response = await walletTypeService.getWalletTypes(familyDetails.id);
-            if (isMounted) {
-            setWalletTypes(response);
-            }
+            const [typesRes, walletsRes, transfersRes] = await Promise.all([
+                walletTypeService.getWalletTypes(familyDetails.id),
+                walletService.getWallets(familyDetails.id),
+                walletService.getWalletTransfers(familyDetails.id)
+            ]);
+
+            setWalletTypes(typesRes);
+            setWallets(walletsRes);
+            setTransfers(transfersRes);
+
         } catch (error) {
-            if (isMounted) {
-            console.error('Failed to fetch wallet types:', error);
-            }
+            console.error('Failed to fetch data:', error);
         }
-        };
+    };
 
+    useEffect(() => {
         fetchData();
-
-        return () => {
-        isMounted = false;
-        };
     }, [familyDetails]);
+
+    const handleTransferSuccess = () => {
+        setIsTransferModalOpen(false);
+        fetchData();
+    };
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    // Calculate total liquid value
+    const totalLiquidValue = wallets.reduce((acc, w) => acc + (w.balance + (w.starting_balance || 0)), 0);
+    const baseCurrency = wallets[0]?.currency || "₹";
 
   return (
     <div className="space-y-8">
@@ -84,43 +99,52 @@ export default function AccountsPageClient() {
         {/* Left: Wallets List (8/12) */}
         <div className="col-span-12 xl:col-span-8 space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <WalletCard 
-                name="Saurav - HDFC Savings"
-                type="Bank Account"
-                balance={425000}
-                accountNo="**** 9821"
-                bank="HDFC Bank"
-                icon={<Building2 className="w-6 h-6" />}
-                color="bg-blue-50 text-blue-600"
-                active
-              />
-              <WalletCard 
-                name="Family - SBI Joint"
-                type="Bank Account"
-                balance={1250000}
-                accountNo="**** 4432"
-                bank="SBI Bank"
-                icon={<Building2 className="w-6 h-6" />}
-                color="bg-emerald-50 text-emerald-600"
-              />
-              <WalletCard 
-                name="Personal Cash"
-                type="Physical Wallet"
-                balance={12500}
-                accountNo="Petty Cash"
-                bank="Liquid Assets"
-                icon={<Banknote className="w-6 h-6" />}
-                color="bg-amber-50 text-amber-600"
-              />
-              <WalletCard 
-                name="PhonePe / Digital"
-                type="Digital Wallet"
-                balance={5400}
-                accountNo="88XXXXXX11"
-                bank="Digital"
-                icon={<CreditCard className="w-6 h-6" />}
-                color="bg-purple-50 text-purple-600"
-              />
+              {wallets.length > 0 ? (
+                wallets.map((wallet, index) => {
+                  const getWalletIcon = (typeName: string) => {
+                    switch (typeName) {
+                      case "Bank Account": return <Building2 className="w-6 h-6" />;
+                      case "Physical Wallet": return <Banknote className="w-6 h-6" />;
+                      case "Digital Wallet": return <CreditCard className="w-6 h-6" />;
+                      default: return <Wallet className="w-6 h-6" />;
+                    }
+                  };
+
+                  const getWalletColor = (typeName: string) => {
+                    switch (typeName) {
+                      case "Bank Account": return "bg-blue-50 text-blue-600";
+                      case "Physical Wallet": return "bg-amber-50 text-amber-600";
+                      case "Digital Wallet": return "bg-purple-50 text-purple-600";
+                      default: return "bg-emerald-50 text-emerald-600";
+                    }
+                  };
+
+                  return (
+                    <WalletCard 
+                      key={wallet.id}
+                      name={wallet.name}
+                      type={wallet.wallet_type?.name || "Other"}
+                      balance={wallet.balance + (wallet.starting_balance || 0)}
+                      currency={wallet.currency}
+                      accountNo={wallet.wallet_id || "N/A"}
+                      bank={wallet.wallet_issuer_name || "N/A"}
+                      icon={getWalletIcon(wallet.wallet_type?.name || "")}
+                      color={getWalletColor(wallet.wallet_type?.name || "")}
+                      active={index === 0}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-gray-800/30 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-800">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+                    <Wallet className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">No accounts found</h3>
+                  <p className="text-sm text-gray-500 text-center max-w-xs mt-2">
+                    Start tracking your assets by linking your first bank account or wallet.
+                  </p>
+                </div>
+              )}
            </div>
         </div>
 
@@ -130,21 +154,27 @@ export default function AccountsPageClient() {
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center justify-between">
                  Recent Transfers <History className="w-3.5 h-3.5" />
               </h4>
-              <div className="space-y-4">
-                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-2xl transition-all cursor-pointer group">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/20 transition-all">
-                             <ArrowLeftRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-amber-600" />
-                          </div>
-                          <div>
-                             <p className="text-xs font-black text-gray-800 dark:text-white">To SBI Joint</p>
-                             <p className="text-[9px] font-medium text-gray-400">Jan 10 • Internal</p>
-                          </div>
-                       </div>
-                       <span className="text-xs font-black text-gray-900 dark:text-white">₹50,000</span>
-                    </div>
-                 ))}
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                 {transfers.length > 0 ? (
+                   transfers.map((transfer) => (
+                      <div key={transfer.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-2xl transition-all cursor-pointer group">
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/20 transition-all">
+                               <ArrowLeftRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-amber-600" />
+                            </div>
+                            <div>
+                               <p className="text-xs font-black text-gray-800 dark:text-white line-clamp-1">To {transfer.to_wallet?.name}</p>
+                               <p className="text-[9px] font-medium text-gray-400">{formatDate(transfer.date)} • Internal</p>
+                            </div>
+                         </div>
+                         <span className="text-xs font-black text-gray-900 dark:text-white">
+                           {transfer.to_wallet?.currency} {transfer.amount.toLocaleString()}
+                         </span>
+                      </div>
+                   ))
+                 ) : (
+                   <p className="text-xs text-center py-4 text-gray-400 italic">No recent transfers.</p>
+                 )}
               </div>
            </div>
 
@@ -153,9 +183,9 @@ export default function AccountsPageClient() {
                  <Building2 className="w-24 h-24" />
               </div>
               <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Total Liquid Value</p>
-              <h3 className="text-3xl font-black mb-4">₹16.92 Lakhs</h3>
+              <h3 className="text-3xl font-black mb-4">{baseCurrency} {(totalLiquidValue / 100000).toFixed(2)} Lakhs</h3>
               <div className="flex items-center gap-2 text-xs font-medium text-amber-100">
-                 <TrendingUp className="w-4 h-4" /> +2.4% from last month
+                 <TrendingUp className="w-4 h-4" /> Calculated dynamically
               </div>
            </div>
 
@@ -182,7 +212,12 @@ export default function AccountsPageClient() {
 
       <Modal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} className="max-w-2xl p-10">
          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-6">Internal Transfer</h3>
-         <InternalTransferForm onSuccess={() => setIsTransferModalOpen(false)} onCancel={() => setIsTransferModalOpen(false)} />
+         <InternalTransferForm 
+            onSuccess={handleTransferSuccess} 
+            onCancel={() => setIsTransferModalOpen(false)} 
+            wallets={wallets} 
+            familyId={familyDetails?.id || ""} 
+         />
       </Modal>
     </div>
   );

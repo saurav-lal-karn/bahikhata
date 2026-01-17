@@ -6,6 +6,7 @@ interface WalletCardProps {
   name: string;
   type: string;
   balance: number;
+  currency?: string;
   accountNo: string;
   bank: string;
   icon: React.ReactNode;
@@ -17,12 +18,23 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   name, 
   type, 
   balance, 
+  currency = "INR",
   accountNo, 
   bank, 
   icon, 
   color,
   active 
 }) => {
+  const getCurrencySymbol = (code: string) => {
+    switch (code) {
+      case "INR": return "₹";
+      case "USD": return "$";
+      case "EUR": return "€";
+      case "GBP": return "£";
+      default: return code;
+    }
+  };
+
   return (
     <div className={`bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${active ? 'ring-2 ring-amber-500/50' : ''}`}>
       <div className="flex items-center justify-between mb-8 relative z-10">
@@ -43,7 +55,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
       <div className="pt-6 border-t border-gray-50 dark:border-gray-800 flex items-end justify-between relative z-10">
          <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Available Balance</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{balance.toLocaleString()}</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{getCurrencySymbol(currency)}{balance.toLocaleString()}</h3>
          </div>
          <button className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-amber-500 hover:text-white transition-all">
             <ExternalLink className="w-4 h-4" />

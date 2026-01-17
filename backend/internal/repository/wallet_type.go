@@ -11,6 +11,8 @@ import (
 type WalletTypeRepository interface {
 	Create(ctx context.Context, walletType *model.WalletType) (*model.WalletType, error)
 	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletType, error)
+	GetWalletTypeById(ctx context.Context, id uuid.UUID) (*model.WalletType, error)
+	GetWalletTypeByName(ctx context.Context, name string, familyId uuid.UUID) (*model.WalletType, error)
 }
 
 type walletTypeRepository struct {
@@ -34,5 +36,21 @@ func (r *walletTypeRepository) List(ctx context.Context, familyId uuid.UUID, use
 		return nil, err
 	}
 	return walletTypes, nil
+}
+
+func (r *walletTypeRepository) GetWalletTypeById(ctx context.Context, id uuid.UUID) (*model.WalletType, error) {
+	var walletType model.WalletType
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&walletType).Error; err != nil {
+		return nil, err
+	}
+	return &walletType, nil
+}
+
+func (r *walletTypeRepository) GetWalletTypeByName(ctx context.Context, name string, familyId uuid.UUID) (*model.WalletType, error) {
+	var walletType model.WalletType
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyId).First(&walletType).Error; err != nil {
+		return nil, err
+	}
+	return &walletType, nil
 }
 

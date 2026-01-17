@@ -13,6 +13,9 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 import { WalletType } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
+import { walletService } from "@/services/walletService";
 
 interface AddAccountFormProps {
   onSuccess?: () => void;
@@ -22,23 +25,40 @@ interface AddAccountFormProps {
 }
 
 export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCancel, familyId, walletTypes }) => {
+  const { user } = useAuth();
+  const familyCurrency = user?.family?.currency || "USD";
+
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
-    balance: "",
-    accountNo: "",
-    bank: "",
+    wallet_type_id: "",
+    starting_balance: "",
+    currency: familyCurrency,
+    wallet_id: "",
+    wallet_issuer_name: "",
     description: "",
-    customTypeName: "",
-    customTypeDescription: "",
+    is_custom_type: false,
+    custom_type_name: "",
+    custom_type_description: "",
+    family_id: familyId,
   });
 
-  const isCustomType = formData.type === "custom";
+  const isCustomType = formData.wallet_type_id === "custom";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Adding account:", formData);
-    if (onSuccess) onSuccess();
+    try{
+         const accountData = {
+            ...formData,
+            starting_balance: Number(formData.starting_balance),
+            is_custom_type: isCustomType,
+        };
+
+        await walletService.createWallet(accountData);
+        toast.success("Account added successfully");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        toast.error("Failed to add account");
+    }
   };
 
   const accountTypeOptions = [
@@ -47,6 +67,13 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
       label: type.name,
     })),
     { value: "custom", label: "Other / Add Custom Type" }
+  ];
+
+  const currencies = [
+    { value: "INR", label: "Indian Rupee (₹)" },
+    { value: "USD", label: "US Dollar ($)" },
+    { value: "EUR", label: "Euro (€)" },
+    { value: "GBP", label: "British Pound (£)" }
   ];
 
   return (
@@ -73,7 +100,20 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
             <Select 
               options={accountTypeOptions}
               placeholder="Select Account Type"
-              onChange={(val: string) => setFormData({...formData, type: val})}
+              onChange={(val: string) => setFormData({...formData, wallet_type_id: val})}
+              className="rounded-2xl h-12"
+            />
+          </div>
+        </div>
+
+        {/* Currency Selector */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Currency</Label>
+          <div className="md:col-span-3">
+            <Select 
+              options={currencies}
+              defaultValue={formData.currency}
+              onChange={(val: string) => setFormData({...formData, currency: val})}
               className="rounded-2xl h-12"
             />
           </div>
@@ -88,8 +128,8 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
                 <Input 
                   required
                   placeholder="e.g. Crypto Hardware Wallet"
-                  value={formData.customTypeName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, customTypeName: e.target.value})}
+                  value={formData.custom_type_name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, custom_type_name: e.target.value})}
                   className="rounded-2xl h-12 border-amber-200 dark:border-amber-800 focus:border-amber-500"
                 />
               </div>
@@ -99,8 +139,8 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
               <div className="md:col-span-3">
                 <Input 
                   placeholder="e.g. Ledger Nano X"
-                  value={formData.customTypeDescription}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, customTypeDescription: e.target.value})}
+                  value={formData.custom_type_description}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, custom_type_description: e.target.value})}
                   className="rounded-2xl h-12 border-amber-200 dark:border-amber-800 focus:border-amber-500"
                 />
               </div>
@@ -110,14 +150,14 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
 
         {/* Initial Balance */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Initial Balance (₹)</Label>
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Initial Balance</Label>
           <div className="md:col-span-3">
             <Input 
               required
               type="number"
               placeholder="0.00"
-              value={formData.balance}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, balance: e.target.value})}
+              value={formData.starting_balance}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, starting_balance: e.target.value})}
               className="rounded-2xl h-12 font-bold"
             />
           </div>
@@ -129,8 +169,8 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
           <div className="md:col-span-3">
             <Input 
               placeholder="e.g. HDFC Bank"
-              value={formData.bank}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bank: e.target.value})}
+              value={formData.wallet_issuer_name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, wallet_issuer_name: e.target.value})}
               className="rounded-2xl h-12"
             />
           </div>
@@ -142,8 +182,8 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
           <div className="md:col-span-3">
             <Input 
               placeholder="**** 1234 or saurav@upi"
-              value={formData.accountNo}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, accountNo: e.target.value})}
+              value={formData.wallet_id}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, wallet_id: e.target.value})}
               className="rounded-2xl h-12 font-mono"
             />
           </div>
