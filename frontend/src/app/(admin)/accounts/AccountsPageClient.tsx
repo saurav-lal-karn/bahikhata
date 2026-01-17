@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Plus, 
   ArrowLeftRight, 
@@ -15,10 +15,42 @@ import { Modal } from "@/components/ui/modal";
 import { WalletCard } from "@/components/accounts/WalletCard";
 import { InternalTransferForm } from "@/components/accounts/InternalTransferForm";
 import { AddAccountForm } from "@/components/accounts/AddAccountForm";
+import { WalletType } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import {walletTypeService} from "@/services/walletTypeService";
 
 export default function AccountsPageClient() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+    const {user} = useAuth();
+    const familyDetails = user?.family;
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+
+    const [walletTypes, setWalletTypes] = useState<WalletType[]>([]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchData = async () => {
+        if (!familyDetails?.id) return;
+
+        try {
+            const response = await walletTypeService.getWalletTypes(familyDetails.id);
+            if (isMounted) {
+            setWalletTypes(response);
+            }
+        } catch (error) {
+            if (isMounted) {
+            console.error('Failed to fetch wallet types:', error);
+            }
+        }
+        };
+
+        fetchData();
+
+        return () => {
+        isMounted = false;
+        };
+    }, [familyDetails]);
 
   return (
     <div className="space-y-8">
@@ -145,7 +177,7 @@ export default function AccountsPageClient() {
             <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Link New Account</h3>
             <p className="text-sm text-gray-500 font-medium">Add a bank account or liquid asset to your dashboard.</p>
          </div>
-         <AddAccountForm onSuccess={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} />
+         <AddAccountForm onSuccess={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} familyId={familyDetails?.id || ""} walletTypes={walletTypes} />
       </Modal>
 
       <Modal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} className="max-w-2xl p-10">

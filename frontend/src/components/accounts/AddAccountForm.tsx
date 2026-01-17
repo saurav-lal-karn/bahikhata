@@ -12,27 +12,28 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { WalletType } from "@/types";
 
 interface AddAccountFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId: string;
+  walletTypes: WalletType[];
 }
 
-export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCancel }) => {
+export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCancel, familyId, walletTypes }) => {
   const [formData, setFormData] = useState({
     name: "",
-    type: "Bank Account",
+    type: "",
     balance: "",
     accountNo: "",
     bank: "",
+    description: "",
+    customTypeName: "",
+    customTypeDescription: "",
   });
 
-  const accountTypes = [
-    { value: "Bank Account", label: "Bank Account" },
-    { value: "Digital Wallet", label: "Digital Wallet (UPI/Apps)" },
-    { value: "Physical Wallet", label: "Physical Wallet / Cash" },
-    { value: "Credit Card", label: "Credit Card Account" }
-  ];
+  const isCustomType = formData.type === "custom";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,71 +41,129 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
     if (onSuccess) onSuccess();
   };
 
+  const accountTypeOptions = [
+    ...walletTypes.map((type) => ({
+      value: type.id,
+      label: type.name,
+    })),
+    { value: "custom", label: "Other / Add Custom Type" }
+  ];
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-         <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Account Friendly Name</Label>
-              <Input 
-                required
-                placeholder="e.g. HDFC Savings"
-                value={formData.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-                className="rounded-2xl h-12"
-              />
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
+        {/* Account Friendly Name */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Account Name</Label>
+          <div className="md:col-span-3">
+            <Input 
+              required
+              placeholder="e.g. HDFC Savings"
+              value={formData.name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
+              className="rounded-2xl h-12"
+            />
+          </div>
+        </div>
 
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Account Type</Label>
-              <Select 
-                options={accountTypes}
-                defaultValue={formData.type}
-                onChange={(val: string) => setFormData({...formData, type: val})}
-                className="rounded-2xl h-12"
-              />
-            </div>
-         </div>
+        {/* Account Type */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Account Type</Label>
+          <div className="md:col-span-3">
+            <Select 
+              options={accountTypeOptions}
+              placeholder="Select Account Type"
+              onChange={(val: string) => setFormData({...formData, type: val})}
+              className="rounded-2xl h-12"
+            />
+          </div>
+        </div>
 
-         <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Initial Balance (₹)</Label>
-              <Input 
-                required
-                type="number"
-                placeholder="0.00"
-                value={formData.balance}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, balance: e.target.value})}
-                className="rounded-2xl h-12 font-bold"
-              />
-            </div>
-
-            {formData.type === "Bank Account" || formData.type === "Credit Card" ? (
-              <div className="space-y-2 animate-in fade-in duration-300">
-                <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Bank/Issuer Name</Label>
+        {/* Custom Type Fields */}
+        {isCustomType && (
+          <div className="space-y-6 animate-in slide-in-from-top-4 duration-500 bg-amber-50/30 dark:bg-amber-900/5 p-6 rounded-3xl border border-amber-100/50 dark:border-amber-800/20">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+              <Label className="text-amber-700 dark:text-amber-400 font-bold text-[10px] uppercase tracking-widest md:text-right">Type Name</Label>
+              <div className="md:col-span-3">
                 <Input 
-                  placeholder="e.g. HDFC Bank"
-                  value={formData.bank}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bank: e.target.value})}
-                  className="rounded-2xl h-12"
+                  required
+                  placeholder="e.g. Crypto Hardware Wallet"
+                  value={formData.customTypeName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, customTypeName: e.target.value})}
+                  className="rounded-2xl h-12 border-amber-200 dark:border-amber-800 focus:border-amber-500"
                 />
               </div>
-            ) : null}
-         </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+              <Label className="text-amber-700 dark:text-amber-400 font-bold text-[10px] uppercase tracking-widest md:text-right">Type Description</Label>
+              <div className="md:col-span-3">
+                <Input 
+                  placeholder="e.g. Ledger Nano X"
+                  value={formData.customTypeDescription}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, customTypeDescription: e.target.value})}
+                  className="rounded-2xl h-12 border-amber-200 dark:border-amber-800 focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Initial Balance */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Initial Balance (₹)</Label>
+          <div className="md:col-span-3">
+            <Input 
+              required
+              type="number"
+              placeholder="0.00"
+              value={formData.balance}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, balance: e.target.value})}
+              className="rounded-2xl h-12 font-bold"
+            />
+          </div>
+        </div>
+
+        {/* Bank/Issuer Name */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center animate-in fade-in duration-300">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Bank / Issuer</Label>
+          <div className="md:col-span-3">
+            <Input 
+              placeholder="e.g. HDFC Bank"
+              value={formData.bank}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bank: e.target.value})}
+              className="rounded-2xl h-12"
+            />
+          </div>
+        </div>
+
+        {/* Account / ID / Phone */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center animate-in fade-in duration-300">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right">Account / ID</Label>
+          <div className="md:col-span-3">
+            <Input 
+              placeholder="**** 1234 or saurav@upi"
+              value={formData.accountNo}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, accountNo: e.target.value})}
+              className="rounded-2xl h-12 font-mono"
+            />
+          </div>
+        </div>
+
+        {/* Description / Notes */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start animate-in fade-in duration-300">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest md:text-right pt-4">Description</Label>
+          <div className="md:col-span-3">
+            <textarea 
+              placeholder="Add any specific details about this account..."
+              value={formData.description}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({...formData, description: e.target.value})}
+              className="w-full min-h-[100px] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all text-sm resize-none"
+            />
+          </div>
+        </div>
       </div>
 
-      {(formData.type === "Bank Account" || formData.type === "Digital Wallet") && (
-        <div className="space-y-2 animate-in fade-in duration-300">
-          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Account / ID / Phone (Optional)</Label>
-          <Input 
-            placeholder="**** 1234 or saurav@upi"
-            value={formData.accountNo}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, accountNo: e.target.value})}
-            className="rounded-2xl h-12 font-mono"
-          />
-        </div>
-      )}
-
+      {/* Security Check */}
       <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800/50 flex items-center gap-3">
          <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed italic">

@@ -379,3 +379,51 @@ func seedPaymentMethods(db *gorm.DB) {
 		db.Create(&newPaymentMethod)
 	}
 }
+
+var walletTypes = []models.WalletType{
+	{
+		ID:          uuid.New(),
+		Name:        "Bank Account",
+		Description: "Wallet type for bank account",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Digital Wallet",
+		Description: "Wallet type for digital wallet",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Physical Wallet / Cash",
+		Description: "Wallet type for physical wallet / cash",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Credit Card Account",
+		Description: "Wallet type for credit card account",
+		IsSystem:    true,
+	},
+}
+
+func seedWalletTypes(db *gorm.DB) {
+	// seed wallet types here
+	for _, walletType := range walletTypes {
+		// Check if the wallet type already exists in the database, Create only if no wallet type with same name is found
+		var existingWalletType models.WalletType
+		if err := db.Where("name = ?", walletType.Name).First(&existingWalletType).Error; err == nil {
+			continue
+		}
+
+		// Create the wallet type
+		var newWalletType models.WalletType
+		newWalletType.ID = walletType.ID
+		newWalletType.Name = walletType.Name
+		newWalletType.Description = walletType.Description
+		newWalletType.IsSystem = walletType.IsSystem
+		newWalletType.CreatedAt = time.Now()
+		newWalletType.UpdatedAt = time.Now()
+		db.Create(&newWalletType)
+	}
+}

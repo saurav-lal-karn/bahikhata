@@ -126,3 +126,13 @@ export interface PaymentMethod {
     family_id: string;
     created_by_id: string;
 }
+
+// Types for wallet types
+export interface WalletType {
+    id: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+    family_id: string;
+    created_by_id: string;
+}
