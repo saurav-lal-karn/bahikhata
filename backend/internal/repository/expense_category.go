@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"gorm.io/gorm"
 )
@@ -12,7 +13,8 @@ type ExpenseCategoryRepository interface {
 	CreateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	UpdateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	DeleteCategory(ctx context.Context, id string) error
-	GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error)
+	GetCategoryById(ctx context.Context, id uuid.UUID) (model.ExpenseCategory, error)
+	GetCategoryByName(ctx context.Context, name string, familyId uuid.UUID) (model.ExpenseCategory, error)
 }
 
 type expenseCategoryRepository struct {
@@ -52,9 +54,17 @@ func (r *expenseCategoryRepository) DeleteCategory(ctx context.Context, id strin
 	return nil
 }
 
-func (r *expenseCategoryRepository) GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error) {
+func (r *expenseCategoryRepository) GetCategoryById(ctx context.Context, id uuid.UUID) (model.ExpenseCategory, error) {
 	var category model.ExpenseCategory
-	if err := r.db.WithContext(ctx).First(&category, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {
+		return model.ExpenseCategory{}, err
+	}
+	return category, nil
+}
+
+func (r *expenseCategoryRepository) GetCategoryByName(ctx context.Context, name string, familyId uuid.UUID) (model.ExpenseCategory, error) {
+	var category model.ExpenseCategory
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyId).First(&category).Error; err != nil {
 		return model.ExpenseCategory{}, err
 	}
 	return category, nil

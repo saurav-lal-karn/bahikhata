@@ -1,31 +1,24 @@
 package route
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sauravkarn541/bahikhata/internal/config"
-	"github.com/sauravkarn541/bahikhata/internal/helper"
+	"github.com/sauravkarn541/bahikhata/internal/controller"
+	"github.com/sauravkarn541/bahikhata/internal/repository"
+	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
 func RegisterExpenseRoutes(app *config.Application, rg *gin.RouterGroup) {
-	rg.GET("/", func(c *gin.Context) {
-		helper.SuccessResponse(c, http.StatusOK, "List Expenses route called", nil)
-	})
+	expenseRepo := repository.NewExpenseRepository(app.DB)
+	paymentMethodRepo := repository.NewPaymentMethodRepository(app.DB)
+	categoryRepo := repository.NewExpenseCategoryRepository(app.DB)
+	familyRepo := repository.NewFamilyRepository(app.DB)
+	
+	expenseSvc := service.NewExpenseService(expenseRepo, paymentMethodRepo, categoryRepo, familyRepo)
+	expenseCtrl := controller.NewExpenseController(expenseSvc)
 
-	rg.POST("/", func(c *gin.Context) {
-		helper.SuccessResponse(c, http.StatusOK, "Create Expense route called", nil)
-	})
-
-	rg.GET("/:id", func(c *gin.Context) {
-		helper.SuccessResponse(c, http.StatusOK, "Get Expense route called", nil)
-	})
-
-	rg.PUT("/:id", func(c *gin.Context) {
-		helper.SuccessResponse(c, http.StatusOK, "Update Expense route called", nil)
-	})
-
-	rg.DELETE("/:id", func(c *gin.Context) {
-		helper.SuccessResponse(c, http.StatusOK, "Delete Expense route called", nil)
-	})
+	// Routes for expenses
+	rg.POST("", expenseCtrl.CreateExpense)
+	rg.GET("/:family_id", expenseCtrl.GetExpenses)
+	rg.GET("/stats/:family_id", expenseCtrl.GetExpenseStats)
 }

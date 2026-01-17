@@ -60,20 +60,49 @@ export interface FamilyStats {
 }
 
 // Types for expenses
+export interface CreateExpensePayload {
+    name: string;
+    amount: number;
+    category_id: string;
+    payment_method_id: string;
+    family_id: string;
+    transaction_date: string;
+    description: string;
+    is_custom_category: boolean;
+    is_custom_payment_method: boolean;
+    custom_category_name: string;
+    custom_payment_method_name: string;
+}
+
 export interface Expense {
     id?: string;
     name: string;
     amount: number;
     category: string;
     payment_method: string;
-    date: string;
+    isCustomCategory: boolean;
+    isCustomPaymentMethod: boolean;
+    transaction_date: string;
     description: string;
 }
 
 export interface ExpenseStats {
+    title: string;
+    value: string;
+    subtitle?: string;
+    icon: React.ReactNode;
+    bg: string;
+    color: string;
+    change?: string;
+    isPositive?: boolean;
+}
+
+export interface ExpenseStatsResponse {
     total_expenses: number;
-    total_categories: number;
-    total_payment_methods: number;
+    total_amount: number;
+    this_month: number;
+    last_month: number;
+    average_expense: number;
 }
 
 // Types for categories

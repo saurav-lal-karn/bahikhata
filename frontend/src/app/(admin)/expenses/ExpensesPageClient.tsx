@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ExpensesList } from "@/components/expenses/ExpensesList";
 import { ExpensesStats } from "@/components/expenses/ExpensesStats";
 import { Plus } from "lucide-react";
@@ -7,16 +7,61 @@ import { Modal } from "@/components/ui/modal";
 import { AddExpenseForm } from "@/components/expenses/AddExpenseForm";
 import { BulkImportExpenses } from "@/components/expenses/BulkImportExpenses";
 import { FileSpreadsheet } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { ExpenseCategory, PaymentMethod } from "@/types";
+import { expenseCategoryService } from "@/services/expenseCategoryService";
+import { paymentMethodService } from "@/services/paymentMethodService";
 
 export default function ExpensesPageClient() {
+  const { user } = useAuth();
+  const familyDetails = user?.family;
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
+
+  const handleExpenseAdded = () => {
+    setRefreshKey(prev => prev + 1);
+    closeModal();
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchData = async () => {
+      if (!familyDetails?.id) return;
+
+      try {
+        const [categoriesResponse, paymentMethodsResponse] = await Promise.all([
+          expenseCategoryService.getCategories(familyDetails.id),
+          paymentMethodService.getPaymentMethods(familyDetails.id)
+        ]);
+
+        if (isMounted) {
+          setCategories(categoriesResponse);
+          setPaymentMethods(paymentMethodsResponse);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Failed to fetch categories or payment methods:', error);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [familyDetails]);
 
   return (
     <div className="space-y-6">
@@ -47,10 +92,10 @@ export default function ExpensesPageClient() {
       </div>
 
       {/* Stats Summary Area */}
-      <ExpensesStats />
+      <ExpensesStats familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
 
       {/* Main Table / List Area */}
-      <ExpensesList />
+      <ExpensesList familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
 
       {/* Add Expense Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
@@ -58,7 +103,13 @@ export default function ExpensesPageClient() {
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">New Transaction</h3>
           <p className="text-sm text-gray-500 font-medium">Record a new expense or scan a receipt to auto-fill details.</p>
         </div>
-        <AddExpenseForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddExpenseForm 
+          onSuccess={handleExpenseAdded} 
+          onCancel={closeModal}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          familyId={familyDetails?.id || ""}
+        />
       </Modal>
 
       {/* Bulk Import Modal */}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { 
   FileSearch, 
@@ -14,32 +14,35 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
-import { useAuth } from "@/context/AuthContext";
+import DatePicker from "@/components/form/date-picker";
 import { expenseService } from "@/services/expenseService";
 import toast from "react-hot-toast";
 import { ExpenseCategory, PaymentMethod } from "@/types";
-import { expenseCategoryService } from "@/services/expenseCategoryService";
-import { paymentMethodService } from "@/services/paymentMethodService";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  categories?: ExpenseCategory[];
+  paymentMethods?: PaymentMethod[];
+  familyId: string;
 }
 
-export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCancel }) => {
-    const {user} = useAuth();
-    const familyDetails = user?.family;
-
-    const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ 
+  onSuccess, 
+  onCancel,
+  categories = [],
+  paymentMethods = [],
+  familyId
+}) => {
 
     const [formData, setFormData] = useState({
         name: "",
         amount: 0,
-        category: "",
-        payment_method: "Cash",
-        date: new Date().toISOString().split('T')[0],
-        description: ""
+        transaction_date: new Date().toISOString().split('T')[0],
+        description: "",
+        category_id: "",
+        payment_method_id: "",
+        family_id: familyId
     });
   
     const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -93,32 +96,17 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
     setScanComplete(false);
   };
 
-  // const categories = [
-  //   { value: "food", label: "Food & Drinks" },
-  //   { value: "housing", label: "Housing" },
-  //   { value: "transport", label: "Transport" },
-  //   { value: "utilities", label: "Utilities" },
-  //   { value: "entertainment", label: "Entertainment" },
-  //   { value: "health", label: "Health" },
-  //   { value: "custom", label: "+ Add Custom Category" }
-  // ];
-
-  // const paymentMethods = [
-  //   { value: "Cash", label: "Cash" },
-  //   { value: "UPI", label: "UPI" },
-  //   { value: "Credit Card", label: "Credit Card" },
-  //   { value: "Debit Card", label: "Debit Card" },
-  //   { value: "Bank Transfer", label: "Bank Transfer" },
-  //   { value: "custom", label: "+ Add Custom Method" }
-  // ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
         const finalData = {
             ...formData,
-            category: isCustomCategory ? customCategoryName : formData.category,
-            payment_method: isCustomPaymentMethod ? customPaymentMethodName : formData.payment_method
+            category_id: isCustomCategory ? "" : formData.category_id,
+            payment_method_id: isCustomPaymentMethod ? "" : formData.payment_method_id,
+            is_custom_category: isCustomCategory,
+            custom_category_name: isCustomCategory ? customCategoryName : "",
+            is_custom_payment_method: isCustomPaymentMethod,
+            custom_payment_method_name: isCustomPaymentMethod ? customPaymentMethodName : "",
         };
 
         await expenseService.createExpense(finalData);
@@ -131,50 +119,6 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
   };
 
 
-  useEffect(() => {
-    // Flag to track if component is still mounted
-    let isMounted = true;
-
-    const fetchCategories = async (familyId: string) => {
-      try {
-        const response = await expenseCategoryService.getCategories(familyId);
-        // Only update state if component is still mounted
-        if (isMounted) {
-          setCategories(response);
-        }
-      } catch (error) {
-        // Only log errors if component is still mounted
-        if (isMounted) {
-          console.error('Failed to fetch categories:', error);
-        }
-      }
-    };
-
-    const fetchPaymentMethods = async (familyId: string) => {
-      try {
-        const response = await paymentMethodService.getPaymentMethods(familyId);
-        // Only update state if component is still mounted
-        if (isMounted) {
-          setPaymentMethods(response);
-        }
-      } catch (error) {
-        // Only log errors if component is still mounted
-        if (isMounted) {
-          console.error('Failed to fetch payment methods:', error);
-        }
-      }
-    };
-
-    if (familyDetails && familyDetails.id && familyDetails.id !== "") {
-      fetchCategories(familyDetails.id);
-      fetchPaymentMethods(familyDetails.id);
-    }
-
-    // Cleanup function: mark component as unmounted to prevent state updates
-    return () => {
-      isMounted = false;
-    };
-  }, [familyDetails]);
 
 
   return (
@@ -274,14 +218,17 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Category</Label>
             <Select 
-              options={categories.map(category => ({value: category.id, label: category.name}))}
+              options={[
+                ...categories.map(category => ({value: category.id, label: category.name})),
+                { value: "custom", label: "+ Add Custom Category" }
+              ]}
               placeholder="Pick a category"
               onChange={(value: string) => {
                 if (value === "custom") {
                   setIsCustomCategory(true);
                 } else {
                   setIsCustomCategory(false);
-                  setFormData({...formData, category: value});
+                  setFormData({...formData, category_id: value});
                 }
               }}
               className="rounded-2xl h-14"
@@ -290,14 +237,17 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Payment Method</Label>
             <Select 
-              options={paymentMethods.map(method => ({value: method.id, label: method.name}))}
-              defaultValue="Cash"
+              options={[
+                ...paymentMethods.map(method => ({value: method.id, label: method.name})),
+                { value: "custom", label: "+ Add Custom Method" }
+              ]}
+              placeholder="Pick a payment method"
               onChange={(value: string) => {
                 if (value === "custom") {
                   setIsCustomPaymentMethod(true);
                 } else {
                   setIsCustomPaymentMethod(false);
-                  setFormData({...formData, payment_method: value});
+                  setFormData({...formData, payment_method_id: value});
                 }
               }}
               className="rounded-2xl h-14"
@@ -338,12 +288,19 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onSuccess, onCan
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-6">
           <div className="sm:col-span-5 space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Transaction date</Label>
-            <Input 
-              type="date"
-              value={formData.date}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, date: e.target.value})}
-              className="rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-purple-500 transition-all h-14 font-medium"
-            />
+            <div className="[&_input]:rounded-2xl [&_input]:border-gray-200 [&_input]:dark:border-gray-800 [&_input]:bg-gray-50 [&_input]:dark:bg-gray-900 [&_input]:focus:border-purple-500 [&_input]:transition-all [&_input]:h-14 [&_input]:font-medium [&_input]:text-sm [&_input]:px-5">
+              <DatePicker
+                id="transaction-date-picker"
+                mode="single"
+                defaultDate={formData.transaction_date}
+                placeholder="Select transaction date"
+                onChange={(selectedDates, dateStr) => {
+                  if (dateStr) {
+                    setFormData({...formData, transaction_date: dateStr});
+                  }
+                }}
+              />
+            </div>
           </div>
           <div className="sm:col-span-7 space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Description (Optional)</Label>

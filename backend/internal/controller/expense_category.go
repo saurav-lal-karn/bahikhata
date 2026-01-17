@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
@@ -62,7 +63,7 @@ func (ctrl *ExpenseCategoryController) GetCategoryById(c *gin.Context) {
 		return
 	}
 
-	category, err := ctrl.service.GetCategoryById(c.Request.Context(), id)
+	category, err := ctrl.service.GetCategoryById(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
 )
@@ -12,7 +13,7 @@ type PaymentMethodService interface {
 	CreatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
 	UpdatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
 	DeletePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	GetPaymentMethodById(ctx context.Context, id string) (model.PaymentMethod, error)
+	GetPaymentMethodById(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error)
 }
 
 type paymentMethodService struct {
@@ -39,6 +40,6 @@ func (s *paymentMethodService) DeletePaymentMethod(ctx context.Context, paymentM
 	return s.repo.DeletePaymentMethod(ctx, paymentMethod)
 }
 
-func (s *paymentMethodService) GetPaymentMethodById(ctx context.Context, id string) (model.PaymentMethod, error) {
+func (s *paymentMethodService) GetPaymentMethodById(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error) {
 	return s.repo.GetPaymentMethodById(ctx, id)
 }

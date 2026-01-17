@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
 )
@@ -12,7 +13,7 @@ type ExpenseCategoryService interface {
 	CreateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	UpdateCategory(ctx context.Context, category model.ExpenseCategory) (model.ExpenseCategory, error)
 	DeleteCategory(ctx context.Context, id string) error
-	GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error)
+	GetCategoryById(ctx context.Context, id uuid.UUID) (model.ExpenseCategory, error)
 }
 
 type expenseCategoryService struct {
@@ -39,6 +40,6 @@ func (s *expenseCategoryService) DeleteCategory(ctx context.Context, id string) 
 	return s.repo.DeleteCategory(ctx, id)
 }
 
-func (s *expenseCategoryService) GetCategoryById(ctx context.Context, id string) (model.ExpenseCategory, error) {
+func (s *expenseCategoryService) GetCategoryById(ctx context.Context, id uuid.UUID) (model.ExpenseCategory, error) {
 	return s.repo.GetCategoryById(ctx, id)
 }

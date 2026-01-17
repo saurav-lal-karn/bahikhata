@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Search, 
   Filter, 
@@ -7,68 +7,30 @@ import {
   MoreHorizontal, 
   Edit, 
   Trash2, 
-  ShoppingCart, 
-  Home, 
-  Car, 
-  Utensils, 
-  Zap 
+  ShoppingCart
 } from "lucide-react";
+import { expenseService } from "@/services/expenseService";
+import { Expense } from "@/types";
 
-const initialExpenses = [
-  {
-    id: "1",
-    name: "Groceries - BigBasket",
-    category: "Food & Drinks",
-    amount: 2450.00,
-    payment_method: "UPI",
-    date: "24 May 2026",
-    status: "Completed",
-    icon: <ShoppingCart className="w-5 h-5" />,
-    iconBg: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-  },
-  {
-    id: "2",
-    name: "House Rent",
-    category: "Housing",
-    amount: 25000.00,
-    payment_method: "Bank Transfer",
-    date: "22 May 2026",
-    status: "Completed",
-    icon: <Home className="w-5 h-5" />,
-    iconBg: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-  },
-  {
-    id: "3",
-    name: "Petrol - HP Fuel",
-    category: "Transport",
-    amount: 1200.00,
-    payment_method: "Credit Card",
-    date: "18 May 2026",
-    status: "Pending",
-    icon: <Car className="w-5 h-5" />,
-    iconBg: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
-  },
-  {
-    id: "4",
-    name: "Zomato - Dinner",
-    category: "Food & Drinks",
-    amount: 850.00,
-    payment_method: "Cash",
-    date: "17 May 2026",
-    status: "Completed",
-    icon: <Utensils className="w-5 h-5" />,
-    iconBg: "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
-  }
-];
-
-export const ExpensesList = () => {
+export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expenses] = useState(initialExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const filteredExpenses = expenses.filter(expense => 
     expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expense.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      const expenses = await expenseService.getExpenses(familyId);
+      setExpenses(expenses);
+    };
+    if (familyId && familyId !== "") {
+      fetchExpenses();
+    }
+    
+  }, [familyId, refreshKey]);
 
   return (
     <div className="rounded-3xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden shadow-sm">
@@ -116,19 +78,13 @@ export const ExpensesList = () => {
               <tr key={expense.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-4">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${expense.iconBg} shadow-sm transform group-hover:scale-110 transition-transform`}>
+                    {/* <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${expense.iconBg} shadow-sm transform group-hover:scale-110 transition-transform`}>
                       {expense.icon}
-                    </div>
+                    </div> */}
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
                         {expense.name}
                       </h4>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${expense.status === 'Pending' ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
-                        <p className={`text-[10px] font-medium uppercase tracking-wider ${expense.status === 'Pending' ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'}`}>
-                          {expense.status}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </td>
@@ -141,7 +97,7 @@ export const ExpensesList = () => {
                   {expense.payment_method}
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
-                  {expense.date}
+                  {expense.transaction_date}
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-gray-900 dark:text-white">
                   ₹{expense.amount.toLocaleString()}
