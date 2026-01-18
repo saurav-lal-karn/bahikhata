@@ -33,7 +33,7 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
     wallet_type_id: "",
     starting_balance: "",
     currency: familyCurrency,
-    wallet_id: "",
+    provider_wallet_id: "",
     wallet_issuer_name: "",
     description: "",
     is_custom_type: false,
@@ -182,8 +182,8 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
           <div className="md:col-span-3">
             <Input 
               placeholder="**** 1234 or saurav@upi"
-              value={formData.wallet_id}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, wallet_id: e.target.value})}
+              value={formData.provider_wallet_id}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, provider_wallet_id: e.target.value})}
               className="rounded-2xl h-12 font-mono"
             />
           </div>

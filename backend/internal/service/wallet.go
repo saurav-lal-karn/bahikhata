@@ -50,8 +50,8 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 				walletType, err = s.walletTypeRepo.Create(ctx, &model.WalletType{
 					ID: uuid.New(),
 					Name: wallet.CustomTypeName,
-					FamilyID: familyID,
-					CreatedByID: created_by_id,
+					FamilyID: &familyID,
+					CreatedByID: &created_by_id,
 					IsSystem: false,
 				})
 				if err != nil {
@@ -79,7 +79,7 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 		Currency: wallet.Currency,
 		Description: wallet.Description,
 		WalletIssuerName: wallet.WalletIssuerName,
-		WalletID: wallet.WalletID,
+		ProviderWalletID: wallet.ProviderWalletID,
 		WalletTypeID: walletTypeID,
 		FamilyID: familyID,
 		UserID: created_by_id,

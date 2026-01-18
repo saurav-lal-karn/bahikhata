@@ -8,14 +8,14 @@ import (
 )
 
 type Wallet struct {
-	ID uuid.UUID `json:"id"`
+	ID uuid.UUID `json:"id" gorm:"type:uuid;primaryKey"`
 	Name string `json:"name"`
 	StartingBalance float64 `json:"starting_balance"`
 	Balance float64 `json:"balance"`
 	Currency string `json:"currency"`
 	Description string `json:"description"`
 	WalletIssuerName string `json:"wallet_issuer_name"`
-	WalletID string `json:"wallet_id"`
+	ProviderWalletID string `json:"provider_wallet_id"`
 	WalletTypeID uuid.UUID `json:"wallet_type_id"`
 	UserID uuid.UUID `json:"user_id"`
 	FamilyID uuid.UUID `json:"family_id"`

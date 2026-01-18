@@ -142,7 +142,7 @@ export interface CreateWalletPayload {
     name: string;
     starting_balance: number;
     currency: string;
-    wallet_id: string;
+    provider_wallet_id: string;
     wallet_issuer_name: string;
     wallet_type_id: string;
     description: string;
@@ -160,7 +160,7 @@ export interface WalletInfoType {
     currency: string;
     description: string;
     wallet_issuer_name: string;
-    wallet_id: string;
+    provider_wallet_id: string;
     wallet_type_id: string;
     user_id: string;
     family_id: string;
@@ -193,4 +193,48 @@ export interface WalletTransfer {
     deleted_at: string | null;
     from_wallet: WalletInfoType;
     to_wallet: WalletInfoType;
+}
+
+// Types for income types
+export interface IncomeType {
+    id: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+    family_id: string;
+    created_by_id: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
+export interface Income {
+    id: string;
+    name: string;
+    amount: number;
+    source_id: string;
+    wallet_id: string;
+    date: string;
+    description: string;
+    is_custom_source: boolean;
+    custom_source_name: string;
+    family_id: string;
+    created_by_id: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    source?: IncomeType;
+    wallet?: WalletInfoType;
+}
+
+export interface CreateIncomePayload {
+    name: string;
+    amount: number;
+    source_id: string;
+    wallet_id: string;
+    date: string;
+    description: string;
+    is_custom_source: boolean;
+    custom_source_name: string;
+    family_id: string;
 }

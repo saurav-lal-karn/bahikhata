@@ -14,53 +14,53 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { IncomeType, WalletInfoType } from "@/types";
+import toast from "react-hot-toast";
+import { incomeService } from "@/services/incomeService";
+import DatePicker from "../form/date-picker";
 
 interface AddIncomeFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  wallets: WalletInfoType[];
+  incomeTypes: IncomeType[];
+  familyId: string;
 }
 
-export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCancel }) => {
-  const [formData, setFormData] = useState({
+export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId }) => {
+  console.log("Wallets: ", wallets);
+  console.log("Income Types: ", incomeTypes);
+
+    const [formData, setFormData] = useState({
     name: "",
-    amount: "",
-    source: "",
-    account: "Primary Bank",
+    amount: 0,
+    source_id: "",
+    wallet_id: "",
     date: new Date().toISOString().split('T')[0],
-    description: ""
+    description: "",
+    is_custom_source: false,
+    custom_source_name: "",
+    family_id: familyId,
   });
   
   const [isCustomSource, setIsCustomSource] = useState(false);
   const [customSourceName, setCustomSourceName] = useState("");
-  const [isCustomAccount, setIsCustomAccount] = useState(false);
-  const [customAccountName, setCustomAccountName] = useState("");
 
-  const sources = [
-    { value: "salary", label: "Salary" },
-    { value: "freelance", label: "Freelancing" },
-    { value: "investments", label: "Investments" },
-    { value: "rent", label: "Rental Income" },
-    { value: "gift", label: "Gifts / Awards" },
-    { value: "custom", label: "+ Add Custom Source" }
-  ];
-
-  const accounts = [
-    { value: "Primary Bank", label: "Primary Bank" },
-    { value: "Savings", label: "Savings Account" },
-    { value: "Digital Wallet", label: "Digital Wallet" },
-    { value: "Cash", label: "Cash in Hand" },
-    { value: "custom", label: "+ Add Custom Account" }
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalData = {
-      ...formData,
-      source: isCustomSource ? customSourceName : formData.source,
-      account: isCustomAccount ? customAccountName : formData.account
-    };
-    console.log("Submitting income:", finalData);
-    if (onSuccess) onSuccess();
+    try {
+        const finalData = {
+            ...formData,
+            source_id: isCustomSource ? "" : formData.source_id,
+            custom_source_name: isCustomSource ? customSourceName : "",
+            is_custom_source: isCustomSource,
+        };
+        const response = await incomeService.createIncome(finalData);
+        toast.success("Income added successfully");
+        if (onSuccess) onSuccess();
+    } catch(error) {
+        toast.error("Failed to add income. Please try again");
+    }
   };
 
   return (
@@ -117,7 +117,7 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
               step={0.01}
               placeholder="0.00"
               value={formData.amount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: Number(e.target.value)})}
               className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-green-500 transition-all font-black text-lg h-14"
             />
           </div>
@@ -127,14 +127,17 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Income Source</Label>
             <Select 
-              options={sources}
+              options={[
+                ...incomeTypes.map((type) => ({ value: type.id, label: type.name })),
+                { value: "custom", label: "+ Add Custom Source" }
+              ]}
               placeholder="Pick a source"
               onChange={(value: string) => {
                 if (value === "custom") {
                   setIsCustomSource(true);
                 } else {
                   setIsCustomSource(false);
-                  setFormData({...formData, source: value});
+                  setFormData({...formData, source_id: value});
                 }
               }}
               className="rounded-2xl h-14"
@@ -142,24 +145,31 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
           </div>
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Deposit To</Label>
-            <Select 
-              options={accounts}
-              defaultValue="Primary Bank"
-              onChange={(value: string) => {
-                if (value === "custom") {
-                  setIsCustomAccount(true);
-                } else {
-                  setIsCustomAccount(false);
-                  setFormData({...formData, account: value});
-                }
-              }}
-              className="rounded-2xl h-14"
-            />
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <Select 
+                  options={wallets.map((wallet) => ({ value: wallet.id, label: wallet.name }))}
+                  onChange={(value: string) => {
+                    setFormData({...formData, wallet_id: value});
+                  }}
+                  className="rounded-2xl h-14"
+                  placeholder="Select a wallet"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => window.open('/accounts', '_blank')}
+                className="w-14 h-14 flex items-center justify-center bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl text-gray-400 hover:text-green-500 hover:border-green-500 transition-all shadow-sm"
+                title="Add new wallet"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Conditional Custom Fields */}
-        {(isCustomSource || isCustomAccount) && (
+        {(isCustomSource) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-400">
             {isCustomSource && (
               <div className="space-y-2">
@@ -173,30 +183,25 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
                 />
               </div>
             )}
-            {isCustomAccount && (
-              <div className="space-y-2">
-                <Label className="text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest">New Account Name</Label>
-                <Input 
-                  required
-                  placeholder="e.g. Crypto Wallet"
-                  value={customAccountName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomAccountName(e.target.value)}
-                  className="rounded-2xl border-blue-100 dark:border-blue-900/30 bg-blue-50/20 dark:bg-blue-900/10 focus:border-blue-500 transition-all h-14"
-                />
-              </div>
-            )}
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-6">
           <div className="sm:col-span-5 space-y-2">
-            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Date Received</Label>
-            <Input 
-              type="date"
-              value={formData.date}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, date: e.target.value})}
-              className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-green-500 transition-all h-14 font-medium"
-            />
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Transaction date</Label>
+            <div className="[&_input]:rounded-2xl [&_input]:border-gray-200 [&_input]:dark:border-gray-800 [&_input]:bg-gray-50 [&_input]:dark:bg-gray-900 [&_input]:focus:border-purple-500 [&_input]:transition-all [&_input]:h-14 [&_input]:font-medium [&_input]:text-sm [&_input]:px-5">
+              <DatePicker
+                id="transaction-date-picker"
+                mode="single"
+                defaultDate={formData.date}
+                placeholder="Select transaction date"
+                onChange={(selectedDates, dateStr) => {
+                  if (dateStr) {
+                    setFormData({...formData, date: dateStr});
+                  }
+                }}
+              />
+            </div>
           </div>
           <div className="sm:col-span-7 space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Remarks (Optional)</Label>

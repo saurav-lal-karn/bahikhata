@@ -424,6 +424,64 @@ func seedWalletTypes(db *gorm.DB) {
 		newWalletType.IsSystem = walletType.IsSystem
 		newWalletType.CreatedAt = time.Now()
 		newWalletType.UpdatedAt = time.Now()
+		newWalletType.FamilyID = nil
+		newWalletType.CreatedByID = nil
 		db.Create(&newWalletType)
+	}
+}
+
+var incomeTypes = []models.IncomeType{
+	{
+		ID:          uuid.New(),
+		Name:        "Salary",
+		Description: "Income type for salary",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Freelancing",
+		Description: "Income type for freelancing",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Investments",
+		Description: "Income type for investments",
+		IsSystem:    true,
+	},
+	{
+		ID:          uuid.New(),
+		Name:        "Rental Income",
+		Description: "Income type for rental income",
+		IsSystem:    true,
+	},
+	{
+		ID: uuid.New(),
+		Name: "Gifts",
+		Description: "Income type for gifts",
+		IsSystem: true,
+	},
+}
+
+func seedIncomeTypes(db *gorm.DB) {
+	// seed income types here
+	for _, incomeType := range incomeTypes {
+		// Check if the income type already exists in the database, Create only if no income type with same name is found
+		var existingIncomeType models.IncomeType
+		if err := db.Where("name = ?", incomeType.Name).First(&existingIncomeType).Error; err == nil {
+			continue
+		}
+
+		// Create the income type
+		var newIncomeType models.IncomeType
+		newIncomeType.ID = incomeType.ID
+		newIncomeType.Name = incomeType.Name
+		newIncomeType.Description = incomeType.Description
+		newIncomeType.IsSystem = incomeType.IsSystem
+		newIncomeType.CreatedAt = time.Now()
+		newIncomeType.UpdatedAt = time.Now()
+		newIncomeType.FamilyID = nil
+		newIncomeType.CreatedByID = nil
+		db.Create(&newIncomeType)
 	}
 }

@@ -1,6 +1,9 @@
 "use client";
 import React from "react";
-import { MoreVertical, ExternalLink } from "lucide-react";
+import { MoreVertical, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 interface WalletCardProps {
   name: string;
@@ -12,6 +15,8 @@ interface WalletCardProps {
   icon: React.ReactNode;
   color: string;
   active?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const WalletCard: React.FC<WalletCardProps> = ({ 
@@ -23,8 +28,11 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   bank, 
   icon, 
   color,
-  active 
+  active,
+  onEdit,
+  onDelete
 }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const getCurrencySymbol = (code: string) => {
     switch (code) {
       case "INR": return "₹";
@@ -41,9 +49,32 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         <div className={`p-4 rounded-2xl ${color} transition-transform group-hover:scale-110 shadow-sm`}>
           {icon}
         </div>
-        <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-           <MoreVertical className="w-5 h-5" />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors dropdown-toggle"
+          >
+             <MoreVertical className="w-5 h-5" />
+          </button>
+          
+          <Dropdown isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} className="w-36">
+            <DropdownItem onClick={() => { onEdit?.(); setIsMenuOpen(false); }}>
+              <div className="flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-gray-500" />
+                <span>Edit Wallet</span>
+              </div>
+            </DropdownItem>
+            <DropdownItem 
+              onClick={() => { onDelete?.(); setIsMenuOpen(false); }}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </div>
+            </DropdownItem>
+          </Dropdown>
+        </div>
       </div>
 
       <div className="relative z-10 mb-8">

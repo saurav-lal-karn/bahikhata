@@ -65,6 +65,12 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	walletTransferRouter := protected.Group("/wallet-transfers")
 	RegisterWalletTransferRoutes(app, walletTransferRouter)
 
+	incomeTypeRouter := protected.Group("/income-types")
+	RegisterIncomeTypeRoutes(app, incomeTypeRouter)
+
+	incomeRouter := protected.Group("/incomes")
+	RegisterIncomeRoutes(app, incomeRouter)
+
 	// Serve static files
 	router.Static("/uploads", "./uploads")
 

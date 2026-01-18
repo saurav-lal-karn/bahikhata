@@ -13,62 +13,47 @@ import {
   CreditCard,
   Building
 } from "lucide-react";
+import { Income } from "@/types";
 
-const initialIncome = [
-  {
-    id: "1",
-    name: "Monthly Salary - TechCorp",
-    source: "Salary",
-    amount: 75000.00,
-    type: "Regular",
-    date: "01 May 2026",
-    status: "Received",
-    icon: <Briefcase className="w-5 h-5" />,
-    iconBg: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-  },
-  {
-    id: "2",
-    name: "Freelance Project - Web Design",
-    source: "Freelancing",
-    amount: 15000.00,
-    type: "One-time",
-    date: "12 May 2026",
-    status: "Received",
-    icon: <Wallet className="w-5 h-5" />,
-    iconBg: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-  },
-  {
-    id: "3",
-    name: "Stock Dividends",
-    source: "Investments",
-    amount: 2400.00,
-    type: "Investment",
-    date: "15 May 2026",
-    status: "Received",
-    icon: <TrendingUp className="w-5 h-5" />,
-    iconBg: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-  },
-  {
-    id: "4",
-    name: "Rental Income",
-    source: "Property",
-    amount: 12000.00,
-    type: "Regular",
-    date: "05 May 2026",
-    status: "Expected",
-    icon: <Building className="w-5 h-5" />,
-    iconBg: "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
-  }
-];
+interface IncomeListProps {
+  incomes: Income[];
+  isLoading: boolean;
+}
 
-export const IncomeList = () => {
+export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [income] = useState(initialIncome);
 
-  const filteredIncome = income.filter(item => 
+  const filteredIncome = incomes.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.source.toLowerCase().includes(searchTerm.toLowerCase())
+    item.source?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getIconForSource = (sourceName: string) => {
+    const name = sourceName.toLowerCase();
+    if (name.includes('salary')) return <Briefcase className="w-5 h-5" />;
+    if (name.includes('freelance')) return <Wallet className="w-5 h-5" />;
+    if (name.includes('invest')) return <TrendingUp className="w-5 h-5" />;
+    if (name.includes('rent')) return <Building className="w-5 h-5" />;
+    return <CreditCard className="w-5 h-5" />;
+  };
+
+  const getIconBgForSource = (sourceName: string) => {
+    const name = sourceName.toLowerCase();
+    if (name.includes('salary')) return "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400";
+    if (name.includes('freelance')) return "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400";
+    if (name.includes('invest')) return "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400";
+    if (name.includes('rent')) return "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400";
+    return "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-3xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900/50 overflow-hidden shadow-sm p-20 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+        <p className="text-gray-500 font-medium">Loading your earnings...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900/50 overflow-hidden shadow-sm">
@@ -105,7 +90,7 @@ export const IncomeList = () => {
             <tr className="bg-gray-50/50 dark:bg-gray-800/30 border-b border-gray-50 dark:border-gray-800">
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Source info</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Source</th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Format</th>
+              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Wallet</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Date</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Amount</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Actions</th>
@@ -116,17 +101,17 @@ export const IncomeList = () => {
               <tr key={item.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-4">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${item.iconBg} shadow-sm group-hover:rotate-12 transition-transform`}>
-                      {item.icon}
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${getIconBgForSource(item.source?.name || '')} shadow-sm group-hover:rotate-12 transition-transform`}>
+                      {getIconForSource(item.source?.name || '')}
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
                         {item.name}
                       </h4>
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'Expected' ? 'bg-orange-500' : 'bg-green-500'}`}></span>
-                        <p className={`text-[10px] font-medium uppercase tracking-wider ${item.status === 'Expected' ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
-                          {item.status}
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-green-600 dark:text-green-400">
+                          Received
                         </p>
                       </div>
                     </div>
@@ -134,14 +119,14 @@ export const IncomeList = () => {
                 </td>
                 <td className="py-4 px-6">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30">
-                    {item.source}
+                    {item.source?.name}
                   </span>
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400 italic">
-                  {item.type}
+                  {item.wallet?.name}
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
-                  {item.date}
+                  {new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(item.date))}
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-green-600 dark:text-green-400">
                   + ₹{item.amount.toLocaleString()}
@@ -177,7 +162,7 @@ export const IncomeList = () => {
       {/* Pagination Placeholder */}
       <div className="p-6 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
         <p className="text-sm text-gray-500 font-medium">
-          Showing <span className="font-bold text-gray-800 dark:text-white/90">1</span> to <span className="font-bold text-gray-800 dark:text-white/90">{filteredIncome.length}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{income.length}</span> entries
+          Showing <span className="font-bold text-gray-800 dark:text-white/90">{filteredIncome.length > 0 ? 1 : 0}</span> to <span className="font-bold text-gray-800 dark:text-white/90">{filteredIncome.length}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{incomes.length}</span> entries
         </p>
         <div className="flex gap-2">
           <button className="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-500 disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800" disabled>Previous</button>

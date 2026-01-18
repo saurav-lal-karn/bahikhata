@@ -7,6 +7,7 @@ func SeedBaseData(app config.Application) {
 	seedExpenseCategories(app.DB)
 	seedPaymentMethods(app.DB)
 	seedWalletTypes(app.DB)
+	seedIncomeTypes(app.DB)
 }
 
 func SeedDevData(app config.Application) {

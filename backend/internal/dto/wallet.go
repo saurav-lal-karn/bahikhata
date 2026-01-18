@@ -6,7 +6,7 @@ type CreateWalletRequest struct {
 	Currency string `json:"currency" binding:"required"`
 	Description string `json:"description" binding:"required"`
 	WalletIssuerName string `json:"wallet_issuer_name" binding:"required"`
-	WalletID string `json:"wallet_id" binding:"required"`
+	ProviderWalletID string `json:"provider_wallet_id" binding:"required"`
 	WalletTypeID string `json:"wallet_type_id"`
 	IsCustomType bool `json:"is_custom_type"`
 	CustomTypeName string `json:"custom_type_name"`

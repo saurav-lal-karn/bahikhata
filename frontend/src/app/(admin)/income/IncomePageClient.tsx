@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IncomeList } from "@/components/income/IncomeList";
 import { IncomeStats } from "@/components/income/IncomeStats";
 import { Plus, TrendingUp } from "lucide-react";
@@ -7,8 +7,22 @@ import { Modal } from "@/components/ui/modal";
 import { AddIncomeForm } from "@/components/income/AddIncomeForm";
 import { BulkImportIncome } from "@/components/income/BulkImportIncome";
 import { FileSpreadsheet } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { incomeService } from "@/services/incomeService";
+import { incomeTypeService } from "@/services/incomeTypeService";
+import { walletService } from "@/services/walletService";
+import { Income, IncomeType, WalletInfoType } from "@/types";
+import toast from "react-hot-toast";
 
 export default function IncomePageClient() {
+    const {user} = useAuth();
+    const familyDetails = user?.family;
+
+    const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
+    const [wallets, setWallets] = useState<WalletInfoType[]>([]);
+    const [incomes, setIncomes] = useState<Income[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
@@ -17,6 +31,42 @@ export default function IncomePageClient() {
   
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
+
+  useEffect(() => {
+      let isMounted = true;
+  
+      const fetchData = async () => {
+        if (!familyDetails?.id) return;
+  
+        setIsLoading(true);
+        try {
+          const [walletResponse, incomeTypeResponse, incomeResponse] = await Promise.all([
+            walletService.getWallets(familyDetails.id),
+            incomeTypeService.getIncomeTypes(familyDetails.id),
+            incomeService.getIncomes(familyDetails.id)
+          ]);
+  
+          if (isMounted) {
+            setWallets(walletResponse);
+            setIncomeTypes(incomeTypeResponse);
+            setIncomes(incomeResponse);
+          }
+        } catch (error) {
+          if (isMounted) {
+            console.error('Failed to fetch wallets, income types or incomes:', error);
+            toast.error("Failed to load data");
+          }
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      };
+  
+      fetchData();
+  
+      return () => {
+        isMounted = false;
+      };
+    }, [familyDetails]);
 
   return (
     <div className="space-y-6">
@@ -46,11 +96,10 @@ export default function IncomePageClient() {
         </div>
       </div>
 
-      {/* Stats Summary Area */}
       <IncomeStats />
 
       {/* Main Table / List Area */}
-      <IncomeList />
+      <IncomeList incomes={incomes} isLoading={isLoading} />
 
       {/* Add Income Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
@@ -60,7 +109,25 @@ export default function IncomePageClient() {
           </h3>
           <p className="text-sm text-gray-500 font-medium">Add a new income source or payment to your records.</p>
         </div>
-        <AddIncomeForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddIncomeForm 
+          onSuccess={() => {
+            closeModal();
+            const fetchData = async () => {
+              if (!familyDetails?.id) return;
+              try {
+                const incomeResponse = await incomeService.getIncomes(familyDetails.id);
+                setIncomes(incomeResponse);
+              } catch (error) {
+                console.error('Failed to refresh incomes:', error);
+              }
+            };
+            fetchData();
+          }} 
+          onCancel={closeModal} 
+          wallets={wallets} 
+          incomeTypes={incomeTypes} 
+          familyId={familyDetails?.id || ""} 
+        />
       </Modal>
 
       {/* Bulk Import Modal */}
