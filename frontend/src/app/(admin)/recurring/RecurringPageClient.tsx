@@ -13,12 +13,40 @@ import { Modal } from "@/components/ui/modal";
 import { SubscriptionManager } from "@/components/recurring/SubscriptionManager";
 import { UpcomingBillReminders } from "@/components/recurring/UpcomingBillReminders";
 import { AddRecurringForm } from "@/components/recurring/AddRecurringForm";
+import { useAuth } from "@/context/AuthContext";
+import { recurringService } from "@/services/recurringService";
+import { RecurringTransaction } from "@/types";
 
 export default function RecurringPageClient() {
+  const { user } = useAuth();
+  const familyDetails = user?.family;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [transactions, setTransactions] = useState<RecurringTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTransactions = async () => {
+    if (familyDetails?.id) {
+        try {
+            setIsLoading(true);
+            const data = await recurringService.getAll(familyDetails.id);
+            setTransactions(data || []);
+        } catch(e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+  };
+
+  React.useEffect(() => {
+    fetchTransactions();
+  }, [familyDetails?.id]);
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+      setIsModalOpen(false);
+      fetchTransactions();
+  };
 
   return (
     <div className="space-y-8">
@@ -50,7 +78,7 @@ export default function RecurringPageClient() {
                </div>
                <div>
                   <h3 className="text-xl font-black text-gray-800 dark:text-white">Active Subscriptions</h3>
-                  <p className="text-xs text-gray-500 font-medium">Tracking 12 digital services</p>
+                  <p className="text-xs text-gray-500 font-medium">Tracking {transactions.length} digital services</p>
                </div>
              </div>
              <div className="flex items-center gap-2">
@@ -68,12 +96,12 @@ export default function RecurringPageClient() {
              </div>
            </div>
 
-           <SubscriptionManager />
+           <SubscriptionManager transactions={transactions} isLoading={isLoading} />
         </div>
 
         {/* Right: Alerts & Calendar (4/12) */}
         <div className="col-span-12 xl:col-span-4 space-y-8">
-           <UpcomingBillReminders />
+           <UpcomingBillReminders transactions={transactions} isLoading={isLoading} />
            
            <div className="bg-gradient-to-br from-blue-800 to-indigo-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
@@ -114,7 +142,7 @@ export default function RecurringPageClient() {
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Automate Recurring Bill</h3>
           <p className="text-sm text-gray-500 font-medium">Set up a tracking cycle for subscriptions, rent, or utilities.</p>
         </div>
-        <AddRecurringForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddRecurringForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
       </Modal>
     </div>
   );

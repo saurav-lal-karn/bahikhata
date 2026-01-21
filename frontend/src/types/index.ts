@@ -291,3 +291,108 @@ export interface Budget {
     // I will check if backend sends 'spent'. If not, I will just put the interface as is.
     // The previous mockup had 'spent'.
 }
+
+export interface Debt {
+    id: string;
+    family_id: string;
+    user_id: string;
+    lender: string;
+    total_amount: number;
+    remaining_amount: number;
+    interest_rate: number;
+    due_date: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateDebtPayload {
+    family_id?: string;
+    lender: string;
+    total_amount: number;
+    remaining_amount: number;
+    interest_rate: number;
+    due_date: string;
+}
+
+export interface Investment {
+    id: string;
+    family_id: string;
+    user_id: string;
+    name: string;
+    type: string;
+    quantity: number;
+    avg_buy_price: number;
+    current_price: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateInvestmentPayload {
+    family_id?: string;
+    name: string;
+    type: string;
+    quantity: number;
+    avg_buy_price: number;
+    current_price: number;
+}
+
+export interface RecurringTransaction {
+    id: string;
+    family_id: string;
+    user_id: string;
+    name: string;
+    amount: number;
+    frequency: string;
+    next_due_date: string;
+    type: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateRecurringTransactionPayload {
+    family_id?: string;
+    name: string;
+    amount: number;
+    frequency: string;
+    next_due_date: string;
+    type: string;
+}
+
+export interface TaxDocument {
+    id: string;
+    family_id: string;
+    name: string;
+    category: string;
+    year: string;
+    file_url?: string;
+    remarks?: string;
+    created_at: string;
+}
+
+export interface CreateTaxDocumentPayload {
+    family_id?: string;
+    name: string;
+    category: string;
+    year: string;
+    file_url?: string;
+    remarks?: string;
+}
+
+export interface TaxDeduction {
+    id: string;
+    family_id: string;
+    name: string;
+    amount: number;
+    max_limit: number;
+    category: string;
+    year: string;
+}
+
+export interface CreateTaxDeductionPayload {
+    family_id?: string;
+    name: string;
+    amount: number;
+    max_limit: number;
+    category: string;
+    year: string;
+}

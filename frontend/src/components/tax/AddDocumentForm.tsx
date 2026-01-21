@@ -12,12 +12,16 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 
+import { taxService } from "@/services/taxService";
+import toast from "react-hot-toast";
+
 interface AddDocumentFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId?: string;
 }
 
-export const AddDocumentForm: React.FC<AddDocumentFormProps> = ({ onSuccess, onCancel }) => {
+export const AddDocumentForm: React.FC<AddDocumentFormProps> = ({ onSuccess, onCancel, familyId }) => {
   const [formData, setFormData] = useState({
     name: "",
     category: "Receipt",
@@ -33,10 +37,28 @@ export const AddDocumentForm: React.FC<AddDocumentFormProps> = ({ onSuccess, onC
     { value: "Other", label: "Other Financial Record" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Uploading document:", formData);
-    if (onSuccess) onSuccess();
+    if (!familyId) {
+        toast.error("Family ID missing");
+        return;
+    }
+    
+    try {
+        await taxService.createDocument({
+            family_id: familyId,
+            name: formData.name,
+            category: formData.category,
+            year: formData.year,
+            remarks: formData.remarks,
+            file_url: "" // Placeholder
+        });
+        toast.success("Document record created");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Failed to upload document record", error);
+        toast.error("Failed to upload document");
+    }
   };
 
   return (

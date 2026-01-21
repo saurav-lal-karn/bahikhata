@@ -13,20 +13,22 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 
+import { debtService } from "@/services/debtService";
+import toast from "react-hot-toast";
+
 interface AddLiabilityFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId?: string;
 }
 
-export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, onCancel }) => {
+export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, onCancel, familyId }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "Loan",
+    lender: "",
     totalAmount: "",
+    remainingAmount: "",
     interestRate: "",
-    monthlyEMI: "",
-    dueDate: 5,
-    bank: ""
+    dueDateDay: "5",
   });
 
   const liabilityTypes = [
@@ -36,46 +38,55 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
     { value: "Personal Debt", label: "Personal Debt (Informal)" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Recording liability:", formData);
-    if (onSuccess) onSuccess();
+    if (!familyId) {
+       toast.error("Family ID missing");
+       return;
+    }
+
+    try {
+        // Construct a due date for the current/next month based on the day
+        const now = new Date();
+        const due = new Date(now.getFullYear(), now.getMonth(), parseInt(formData.dueDateDay));
+        if (due < now) {
+            due.setMonth(due.getMonth() + 1);
+        }
+
+        await debtService.create({
+            family_id: familyId,
+            lender: formData.lender,
+            total_amount: Number(formData.totalAmount),
+            remaining_amount: Number(formData.remainingAmount || formData.totalAmount), // Default to total if not set
+            interest_rate: Number(formData.interestRate),
+            due_date: due.toISOString()
+        });
+        toast.success("Liability recorded");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Failed to add liability", error);
+        toast.error("Failed to add liability");
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Liability Name</Label>
-              <Input 
-                required
-                placeholder="e.g. HDFC Home Loan"
-                value={formData.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-                className="rounded-2xl h-12"
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Liability Type</Label>
-              <Select 
-                options={liabilityTypes}
-                defaultValue={formData.type}
-                onChange={(val: string) => setFormData({...formData, type: val})}
-                className="rounded-2xl h-12"
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Lender / Bank</Label>
-              <Input 
-                placeholder="e.g. HDFC Bank Ltd"
-                value={formData.bank}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bank: e.target.value})}
-                className="rounded-2xl h-12"
-              />
-            </div>
+             <div className="space-y-2">
+               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Lender Name</Label>
+               <Input 
+                 required
+                 placeholder="e.g. HDFC Bank, Chase"
+                 value={formData.lender}
+                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, lender: e.target.value})}
+                 className="rounded-2xl h-12"
+               />
+             </div>
+
+
          </div>
 
          <div className="space-y-6">
@@ -112,8 +123,8 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
                   <Input 
                     type="number"
                     placeholder="5"
-                    value={formData.dueDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, dueDate: parseInt(e.target.value) || 0})}
+                    value={formData.dueDateDay}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, dueDateDay: e.target.value})}
                     className="rounded-2xl h-12 pr-10"
                   />
                   <Calendar className="w-3.5 h-3.5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2" />
@@ -122,15 +133,14 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Monthly EMI / Min Pay</Label>
-              <Input 
-                required
-                type="number"
-                placeholder="Calculate Automatically?"
-                value={formData.monthlyEMI}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, monthlyEMI: e.target.value})}
-                className="rounded-2xl h-12"
-              />
+               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Remaining Amount (Optional)</Label>
+               <Input 
+                 type="number"
+                 placeholder="Same as total if new"
+                 value={formData.remainingAmount}
+                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, remainingAmount: e.target.value})}
+                 className="rounded-2xl h-12"
+               />
             </div>
          </div>
       </div>

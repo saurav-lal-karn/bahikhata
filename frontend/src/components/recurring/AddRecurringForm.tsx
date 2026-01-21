@@ -14,12 +14,16 @@ import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 
+import { recurringService } from "@/services/recurringService";
+import toast from "react-hot-toast";
+
 interface AddRecurringFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId?: string;
 }
 
-export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, onCancel }) => {
+export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, onCancel, familyId }) => {
   const [formData, setFormData] = useState({
     name: "",
     amount: "",
@@ -44,10 +48,28 @@ export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, o
     { value: "SIP", label: "Investment (SIP/Mutual Funds)" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Setting up automation:", formData);
-    if (onSuccess) onSuccess();
+    if (!familyId) {
+        toast.error("Family ID missing");
+        return;
+    }
+
+    try {
+        await recurringService.create({
+            family_id: familyId,
+            name: formData.name,
+            amount: Number(formData.amount),
+            frequency: formData.frequency,
+            next_due_date: new Date(formData.nextDate).toISOString(),
+            type: formData.category // Mapping category to Type
+        });
+        toast.success("Recurring transaction set up");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Failed to set up recurring transaction", error);
+        toast.error("Failed to set up recurring transaction");
+    }
   };
 
   return (

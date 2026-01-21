@@ -77,6 +77,18 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	budgetRouter := protected.Group("/budgets")
 	RegisterBudgetRoutes(app, budgetRouter)
 
+	debtRouter := protected.Group("/debts")
+	RegisterDebtRoutes(app, debtRouter)
+
+	investmentRouter := protected.Group("/investments")
+	RegisterInvestmentRoutes(app, investmentRouter)
+
+	recurringRouter := protected.Group("/recurring")
+	RegisterRecurringTransactionRoutes(app, recurringRouter)
+
+	taxRouter := protected.Group("/tax")
+	RegisterTaxRoutes(app, taxRouter)
+
 	// Serve static files
 	router.Static("/uploads", "./uploads")
 

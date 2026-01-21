@@ -12,13 +12,42 @@ import { LoanTracker } from "@/components/debts/LoanTracker";
 import { CreditCardOverview } from "@/components/debts/CreditCardOverview";
 import { PayoffCalculator } from "@/components/debts/PayoffCalculator";
 import { AddLiabilityForm } from "@/components/debts/AddLiabilityForm";
+import { useAuth } from "@/context/AuthContext";
+import { debtService } from "@/services/debtService";
+import { Debt } from "@/types";
+import { LiabilityList } from "@/components/debts/LiabilityList";
 
 export default function DebtsPageClient() {
+  const { user } = useAuth();
+  const familyDetails = user?.family;
   const [activeTab, setActiveTab] = useState<"overview" | "strategy">("overview");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchDebts = async () => {
+     if(familyDetails?.id) {
+         try {
+             setIsLoading(true);
+             const data = await debtService.getAll(familyDetails.id);
+             setDebts(data || []); // Ensure array
+         } catch(e) {
+             console.error(e);
+         } finally {
+             setIsLoading(false);
+         }
+     }
+  };
+
+  React.useEffect(() => {
+      fetchDebts();
+  }, [familyDetails?.id]);
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+      setIsModalOpen(false);
+      fetchDebts(); // Refresh
+  };
 
   return (
     <div className="space-y-8">
@@ -69,8 +98,10 @@ export default function DebtsPageClient() {
         <div className="col-span-12 xl:col-span-8 space-y-8">
           {activeTab === "overview" ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <LoanTracker />
-               <CreditCardOverview />
+               <LiabilityList debts={debts} isLoading={isLoading} />
+               {/* Keeping older components if needed, or removing them? User asked to integrate APIs. I'll comment out old hardcoded ones for now or put them below if beneficial. For now replacing seems correct for "Integration" */}
+               {/* <LoanTracker /> */}
+               {/* <CreditCardOverview /> */}
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -132,7 +163,7 @@ export default function DebtsPageClient() {
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Record a Liability</h3>
           <p className="text-sm text-gray-500 font-medium">Link a loan or credit card to track your repayment journey.</p>
         </div>
-        <AddLiabilityForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddLiabilityForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
       </Modal>
     </div>
   );

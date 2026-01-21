@@ -13,9 +13,57 @@ import { Modal } from "@/components/ui/modal";
 import { TaxSavingTracker } from "@/components/tax/TaxSavingTracker";
 import { DocumentVault } from "@/components/tax/DocumentVault";
 import { AddDocumentForm } from "@/components/tax/AddDocumentForm";
+import { useAuth } from "@/context/AuthContext";
+import { taxService } from "@/services/taxService";
+import { TaxDocument, TaxDeduction } from "@/types";
+import toast from "react-hot-toast";
 
 export default function TaxPageClient() {
+  const { user } = useAuth();
+  const familyDetails = user?.family;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [documents, setDocuments] = useState<TaxDocument[]>([]);
+  const [deductions, setDeductions] = useState<TaxDeduction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentYear, setCurrentYear] = useState("2025-26"); // Should be dynamic ideally
+
+  const fetchData = async () => {
+    if (familyDetails?.id) {
+        try {
+            setIsLoading(true);
+            const [docs, deds] = await Promise.all([
+                taxService.getDocuments(familyDetails.id),
+                taxService.getDeductions(familyDetails.id)
+            ]);
+            setDocuments(docs || []);
+            setDeductions(deds || []);
+        } catch(e) {
+            console.error(e);
+            toast.error("Failed to fetch tax data");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+  };
+
+  React.useEffect(() => {
+    fetchData();
+  }, [familyDetails?.id]);
+
+  const handleDeleteDocument = async (id: string) => {
+      try {
+          await taxService.deleteDocument(id);
+          toast.success("Document deleted");
+          fetchData();
+      } catch(e) {
+          toast.error("Failed to delete document");
+      }
+  };
+
+  const closeModal = () => {
+      setIsModalOpen(false);
+      fetchData();
+  };
 
   return (
     <div className="space-y-8">
@@ -47,8 +95,8 @@ export default function TaxPageClient() {
       <div className="grid grid-cols-12 gap-8">
         {/* Left: Tax Saving Tracking (8/12) */}
         <div className="col-span-12 xl:col-span-8 space-y-8">
-           <TaxSavingTracker />
-           <DocumentVault />
+           <TaxSavingTracker deductions={deductions} isLoading={isLoading} />
+           <DocumentVault documents={documents} isLoading={isLoading} onDelete={handleDeleteDocument} />
         </div>
 
         {/* Right: Regional Insights (4/12) */}
@@ -117,7 +165,7 @@ export default function TaxPageClient() {
             <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Vault Secure Upload</h3>
             <p className="text-sm text-gray-500 font-medium">Add financial records to your encrypted storage.</p>
          </div>
-         <AddDocumentForm onSuccess={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} />
+         <AddDocumentForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
       </Modal>
     </div>
   );

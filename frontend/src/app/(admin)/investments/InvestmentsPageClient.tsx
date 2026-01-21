@@ -17,68 +17,54 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { AddInvestmentForm } from "@/components/investments/AddInvestmentForm";
 import { BulkImportInvestments } from "@/components/investments/BulkImportInvestments";
-
-const initialInvestments = [
-  {
-    id: "1",
-    name: "HDFC Top 100 Mutual Fund",
-    type: "Mutual Fund",
-    amount: 150000,
-    currentValue: 185000,
-    gain: 23.3,
-    icon: <PieChart className="w-5 h-5" />,
-    color: "bg-blue-50 text-blue-600"
-  },
-  {
-    id: "2",
-    name: "Reliance Industries (RELIANCE)",
-    type: "Stock",
-    amount: 250000,
-    currentValue: 310000,
-    gain: 24.0,
-    icon: <TrendingUp className="w-5 h-5" />,
-    color: "bg-green-50 text-green-600"
-  },
-  {
-    id: "3",
-    name: "Sovereign Gold Bond 2024",
-    type: "Gold",
-    amount: 100000,
-    currentValue: 105000,
-    gain: 5.0,
-    icon: <Gem className="w-5 h-5" />,
-    color: "bg-orange-50 text-orange-600"
-  },
-  {
-    id: "4",
-    name: "Fixed Deposit - ICICI Bank",
-    type: "Fixed Deposit",
-    amount: 500000,
-    currentValue: 525000,
-    gain: 5.0,
-    icon: <Landmark className="w-5 h-5" />,
-    color: "bg-indigo-50 text-indigo-600"
-  }
-];
+import { useAuth } from "@/context/AuthContext";
+import { investmentService } from "@/services/investmentService";
+import { Investment } from "@/types";
 
 export default function InvestmentsPageClient() {
+  const { user } = useAuth();
+  const familyDetails = user?.family;
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchInvestments = async () => {
+    if (familyDetails?.id) {
+        try {
+            setIsLoading(true);
+            const data = await investmentService.getAll(familyDetails.id);
+            setInvestments(data || []);
+        } catch(e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+  };
+
+  React.useEffect(() => {
+    fetchInvestments();
+  }, [familyDetails?.id]);
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+      setIsModalOpen(false);
+      fetchInvestments();
+  };
   
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
 
-  const filteredInvestments = initialInvestments.filter(inv =>
+  const filteredInvestments = investments.filter(inv =>
     inv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inv.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalInvested = initialInvestments.reduce((acc, inv) => acc + inv.amount, 0);
-  const totalCurrent = initialInvestments.reduce((acc, inv) => acc + inv.currentValue, 0);
+  const totalInvested = investments.reduce((acc, inv) => acc + (inv.quantity * inv.avg_buy_price), 0);
+  const totalCurrent = investments.reduce((acc, inv) => acc + (inv.quantity * inv.current_price), 0);
   const totalGain = totalInvested > 0 ? ((totalCurrent - totalInvested) / totalInvested) * 100 : 0;
 
   return (
@@ -186,35 +172,45 @@ export default function InvestmentsPageClient() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-              {filteredInvestments.map((inv) => (
-                <tr key={inv.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-all">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-2xl ${inv.color} group-hover:rotate-6 transition-transform`}>
-                        {inv.icon}
-                      </div>
-                      <span className="text-sm font-black text-gray-800 dark:text-white">{inv.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      {inv.type}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">₹{inv.amount.toLocaleString()}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="text-sm font-black text-gray-900 dark:text-white">₹{inv.currentValue.toLocaleString()}</span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className={`inline-flex items-center gap-1 text-sm font-black ${inv.gain >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {inv.gain >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                      {Math.abs(inv.gain)}%
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                  <tr><td colSpan={5} className="text-center py-10">Loading...</td></tr>
+              ) : filteredInvestments.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center py-10 text-gray-500">No investments found.</td></tr>
+              ) : filteredInvestments.map((inv) => {
+                  const investedAmount = inv.quantity * inv.avg_buy_price;
+                  const currentVal = inv.quantity * inv.current_price;
+                  const gain = investedAmount > 0 ? ((currentVal - investedAmount) / investedAmount) * 100 : 0;
+                  
+                  return (
+                    <tr key={inv.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-all">
+                    <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:rotate-6 transition-transform`}>
+                            <PieChart className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-black text-gray-800 dark:text-white">{inv.name}</span>
+                        </div>
+                    </td>
+                    <td className="px-8 py-6">
+                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        {inv.type}
+                        </span>
+                    </td>
+                    <td className="px-8 py-6">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">₹{investedAmount.toLocaleString()}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                        <span className="text-sm font-black text-gray-900 dark:text-white">₹{currentVal.toLocaleString()}</span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                        <div className={`inline-flex items-center gap-1 text-sm font-black ${gain >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {gain >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {Math.abs(gain).toFixed(1)}%
+                        </div>
+                    </td>
+                    </tr>
+                  );
+              })}
             </tbody>
           </table>
         </div>
@@ -228,7 +224,7 @@ export default function InvestmentsPageClient() {
           </h3>
           <p className="text-sm text-gray-500 font-medium">Add a new asset, stock, or fund to your portfolio.</p>
         </div>
-        <AddInvestmentForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddInvestmentForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
       </Modal>
 
       {/* Bulk Import Modal */}
