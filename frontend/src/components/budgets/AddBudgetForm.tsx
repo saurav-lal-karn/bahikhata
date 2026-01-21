@@ -10,32 +10,46 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
+import { ExpenseCategory } from "@/types";
+import { budgetService } from "@/services/budgetService";
+import toast from "react-hot-toast";
 
 interface AddBudgetFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  categories?: ExpenseCategory[];
+  family_id?: string;
 }
 
-export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCancel }) => {
+export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCancel, categories = [], family_id }) => {
   const [formData, setFormData] = useState({
     category: "",
     amount: "",
+    period: "monthly",
+    alertThreshold: "80",
     rollover: false
   });
 
-  const categories = [
-    { value: "Food & Drinks", label: "Food & Drinks" },
-    { value: "Transport", label: "Transport" },
-    { value: "Entertainment", label: "Entertainment" },
-    { value: "Shopping", label: "Shopping" },
-    { value: "Utilities", label: "Utilities" },
-    { value: "Health", label: "Health & Fitness" }
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving budget config:", formData);
-    if (onSuccess) onSuccess();
+    if (!family_id) {
+        toast.error("Family ID is missing");
+        return;
+    }
+    try {
+        await budgetService.createBudget({
+            category_id: formData.category,
+            amount_limit: Number(formData.amount),
+            family_id: family_id,
+            period: formData.period,
+            alert_threshold: Number(formData.alertThreshold)
+        });
+        toast.success("Budget set successfully");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Failed to set budget:", error);
+        toast.error("Failed to set budget");
+    }
   };
 
   return (
@@ -45,7 +59,7 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Expense Category</Label>
             <Select 
-              options={categories}
+              options={categories.map((category) => ({ value: category.id, label: category.name }))}
               placeholder="Pick a category"
               onChange={(value: string) => setFormData({...formData, category: value})}
               className="rounded-2xl h-14"
@@ -53,7 +67,7 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Monthly Limit (₹)</Label>
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Limit (₹)</Label>
             <Input 
               required
               type="number"
@@ -62,6 +76,32 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: e.target.value})}
               className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-purple-500 transition-all font-black text-xl h-14"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Period</Label>
+                <Select 
+                    options={[
+                        { value: "Weekly", label: "Weekly" },
+                        { value: "Monthly", label: "Monthly" },
+                        { value: "Yearly", label: "Yearly" }
+                    ]}
+                    defaultValue="monthly"
+                    onChange={(value: string) => setFormData({...formData, period: value})}
+                    className="rounded-2xl h-14"
+                />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Alert at (%)</Label>
+                <Input 
+                  type="number"
+                  placeholder="80"
+                  value={formData.alertThreshold}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, alertThreshold: e.target.value})}
+                  className="rounded-2xl h-14 font-bold"
+                />
+             </div>
           </div>
         </div>
 

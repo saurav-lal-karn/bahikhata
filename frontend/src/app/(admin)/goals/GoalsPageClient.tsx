@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Target, 
   Plus, 
@@ -15,12 +15,66 @@ import { GoalCard } from "@/components/goals/GoalCard";
 import { AddGoalForm } from "@/components/goals/AddGoalForm";
 import { EmergencyFundCalculator } from "@/components/goals/EmergencyFundCalculator";
 import { DiversityAnalysis } from "@/components/goals/DiversityAnalysis";
+import { useAuth } from "@/context/AuthContext";
+import { goalService } from "@/services/goalService";
+import { Goal } from "@/types";
+import { GoalSkeleton } from "@/components/goals/GoalSkeleton";
+import { Home, Plane, ShoppingBag, ShieldCheck as Shield, Target as TargetIcon, Landmark as LandmarkIcon } from "lucide-react";
+
+const getGoalIcon = (iconName: string) => {
+  const className = "w-5 h-5";
+  switch (iconName) {
+    case 'home': return <LandmarkIcon className={className} />;
+    case 'travel': return <Plane className={className} />;
+    case 'shopping': return <ShoppingBag className={className} />;
+    case 'security': return <Shield className={className} />;
+    case 'wealth': return <TargetIcon className={className} />;
+    case 'asset': return <Home className={className} />;
+    default: return <TargetIcon className={className} />;
+  }
+};
+
+const getGoalColors = (iconName: string) => {
+  switch (iconName) {
+    case 'home': return { color: "bg-blue-50 text-blue-600", barColor: "bg-blue-500" };
+    case 'travel': return { color: "bg-purple-50 text-purple-600", barColor: "bg-purple-500" };
+    case 'shopping': return { color: "bg-pink-50 text-pink-600", barColor: "bg-pink-500" };
+    case 'security': return { color: "bg-emerald-50 text-emerald-600", barColor: "bg-emerald-500" };
+    case 'wealth': return { color: "bg-amber-50 text-amber-600", barColor: "bg-amber-500" };
+    case 'asset': return { color: "bg-indigo-50 text-indigo-600", barColor: "bg-indigo-500" };
+    default: return { color: "bg-gray-50 text-gray-600", barColor: "bg-gray-500" };
+  }
+};
 
 export default function GoalsPageClient() {
+  const { user } = useAuth();
+  const familyId = user?.family?.id || "";
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  const fetchGoals = async () => {
+    if (!familyId) return;
+    try {
+      setIsLoading(true);
+      const data = await goalService.getGoals(familyId);
+      setGoals(data);
+    } catch (error) {
+      console.error("Failed to fetch goals:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, [familyId]);
+  
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    fetchGoals(); // Refresh list after adding
+  };
 
   return (
     <div className="space-y-8">
@@ -50,47 +104,43 @@ export default function GoalsPageClient() {
               <Target className="text-emerald-500 w-6 h-6" /> Active Target Goals
             </h3>
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-              4 Goals in Progress
+              {goals.length} Goals in Progress
             </span>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <GoalCard 
-              title="Car Fund (SUV 2026)" 
-              target={1500000} 
-              current={450000} 
-              deadline="Dec 2026"
-              icon={<TrendingUp className="w-5 h-5" />}
-              color="bg-blue-50 text-blue-600"
-              barColor="bg-blue-500"
-            />
-            <GoalCard 
-              title="European Vacation" 
-              target={500000} 
-              current={380000} 
-              deadline="May 2026"
-              icon={<Plus className="w-5 h-5 text-purple-600 transition-transform group-hover:rotate-45" />}
-              color="bg-purple-50 text-purple-600"
-              barColor="bg-purple-500"
-            />
-            <GoalCard 
-              title="Home Renovation" 
-              target={800000} 
-              current={120000} 
-              deadline="Sep 2027"
-              icon={<Landmark className="w-5 h-5" />}
-              color="bg-amber-50 text-amber-600"
-              barColor="bg-amber-500"
-            />
-             <GoalCard 
-              title="Retirement Corpus" 
-              target={5000000} 
-              current={1250000} 
-              deadline="2045"
-              icon={<ShieldCheck className="w-5 h-5 text-emerald-600" />}
-              color="bg-emerald-50 text-emerald-600"
-              barColor="bg-emerald-500"
-            />
+            {isLoading ? (
+               // Skeletons
+               Array(4).fill(0).map((_, i) => <GoalSkeleton key={i} />)
+            ) : goals.length > 0 ? (
+               goals.map((goal) => {
+                 const { color, barColor } = getGoalColors(goal.icon_name);
+                 return (
+                  <GoalCard 
+                    key={goal.id}
+                    title={goal.name} 
+                    target={goal.target_amount} 
+                    current={goal.current_amount} 
+                    deadline={new Date(goal.deadline).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    icon={getGoalIcon(goal.icon_name)}
+                    color={color}
+                    barColor={barColor}
+                  />
+                 );
+               })
+            ) : (
+                <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center p-12 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 text-center">
+                    <Target className="w-12 h-12 text-gray-300 mb-4" />
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Goals Yet</h3>
+                    <p className="text-gray-500 mb-6">Start saving for your dreams today.</p>
+                    <button 
+                        onClick={openModal}
+                        className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-500 transition-colors"
+                    >
+                        Create Your First Goal
+                    </button>
+                </div>
+            )}
           </div>
         </div>
 
@@ -120,7 +170,7 @@ export default function GoalsPageClient() {
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Create Savings Goal</h3>
           <p className="text-sm text-gray-500 font-medium">Set a target for your next big milestone and track progress monthly.</p>
         </div>
-        <AddGoalForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddGoalForm onSuccess={closeModal} onCancel={closeModal} familyId={familyId} />
       </Modal>
     </div>
   );

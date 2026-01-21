@@ -12,10 +12,14 @@ import {
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Button from "@/components/ui/button/Button";
+import { goalService } from "@/services/goalService";
+import toast from "react-hot-toast";
+import DatePicker from "../form/date-picker";
 
 interface AddGoalFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId: string;
 }
 
 const icons = [
@@ -27,19 +31,36 @@ const icons = [
   { id: 'asset', icon: <Landmark className="w-5 h-5" />, label: 'Asset' },
 ];
 
-export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel }) => {
+export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, familyId }) => {
   const [formData, setFormData] = useState({
     name: "",
     target: "",
     current: "",
     deadline: "",
+    description: "",
     icon: "wealth"
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving goal:", formData);
-    if (onSuccess) onSuccess();
+    try {
+      const payload = {
+        name: formData.name,
+        target_amount: Number(formData.target),
+        current_amount: Number(formData.current) || 0,
+        description: formData.description,
+        icon_name: formData.icon,
+        deadline: new Date(formData.deadline).toISOString(), // Format to RFC3339
+        family_id: familyId
+      };
+
+      await goalService.createGoal(payload);
+      toast.success("Goal created successfully");
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Failed to create goal:", error);
+      toast.error("Failed to create goal");
+    }
   };
 
   return (
@@ -55,6 +76,17 @@ export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel })
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
                 className="rounded-2xl h-14"
               />
+            </div>
+
+            <div className="space-y-2">
+               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Description (Optional)</Label>
+               <textarea 
+                 rows={2}
+                 placeholder="Why is this goal important?"
+                 value={formData.description}
+                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({...formData, description: e.target.value})}
+                 className="w-full rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none"
+               />
             </div>
 
             <div className="space-y-2">
@@ -105,13 +137,17 @@ export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel })
 
             <div className="space-y-2">
               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Target Date</Label>
-              <Input 
-                type="date"
-                required
-                value={formData.deadline}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, deadline: e.target.value})}
-                className="rounded-2xl h-14"
-              />
+               <DatePicker
+                    id="transaction-date-picker"
+                    mode="single"
+                    defaultDate={formData.deadline}
+                    placeholder="Select transaction date"
+                    onChange={(selectedDates, dateStr) => {
+                    if (dateStr) {
+                        setFormData({...formData, deadline: dateStr});
+                    }
+                    }}
+                />
             </div>
          </div>
       </div>

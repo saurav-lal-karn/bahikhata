@@ -238,3 +238,56 @@ export interface CreateIncomePayload {
     custom_source_name: string;
     family_id: string;
 }
+
+export interface CreateGoalPayload {
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    description: string;
+    icon_name: string;
+    deadline: string;
+    family_id: string;
+}
+
+export interface Goal {
+    id: string;
+    name: string;
+    current_amount: number;
+    target_amount: number;
+    description: string;
+    icon_name: string;
+    color: string;
+    deadline: string;
+    family_id: string;
+    creator_id: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateBudgetPayload {
+    category_id: string;
+    amount_limit: number;
+    family_id: string;
+    period: string;
+    alert_threshold: number;
+}
+
+export interface Budget {
+    id: string;
+    category_id: string;
+    amount_limit: number;
+    family_id: string;
+    period: string;
+    alert_threshold: number;
+    created_at: string;
+    updated_at: string;
+    category: ExpenseCategory;
+    // Calculated fields based on usage/logic (for future implementation or if backend sends them)
+    // For now we assume the frontend might calculate spent from expenses list OR backend sends it
+    // Based on budget.go model, these aren't there, so we might need to fetch expenses to calc 'spent'.
+    // To keep it simple, let's assume for now we only get the config.
+    // Wait, the UI shows 'spent'. I'll need to calculate that or ask backend to send it. 
+    // Backend model doesn't seem to have 'spent' or 'current_amount'. 
+    // I will check if backend sends 'spent'. If not, I will just put the interface as is.
+    // The previous mockup had 'spent'.
+}

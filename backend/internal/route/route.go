@@ -71,6 +71,12 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	incomeRouter := protected.Group("/incomes")
 	RegisterIncomeRoutes(app, incomeRouter)
 
+	goalRouter := protected.Group("/goals")
+	RegisterGoalRoutes(app, goalRouter)
+
+	budgetRouter := protected.Group("/budgets")
+	RegisterBudgetRoutes(app, budgetRouter)
+
 	// Serve static files
 	router.Static("/uploads", "./uploads")
 

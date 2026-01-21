@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Target, 
   TrendingUp, 
@@ -15,14 +15,63 @@ import { Modal } from "@/components/ui/modal";
 import { BudgetList } from "@/components/budgets/BudgetList";
 import { AddBudgetForm } from "@/components/budgets/AddBudgetForm";
 import { PredictiveBudgetPanel } from "@/components/budgets/PredictiveBudgetPanel";
+import { useAuth } from "@/context/AuthContext";
+import { expenseCategoryService } from "@/services/expenseCategoryService";
+import { budgetService } from "@/services/budgetService";
+import { ExpenseCategory, Budget } from "@/types";
 
 export default function BudgetsPageClient() {
+    const { user } = useAuth();
+    const familyDetails = user?.family;
+    
   const [activeTab, setActiveTab] = useState<"active" | "suggestions" | "archives">("active");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState("May 2026");
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    // Refresh budgets
+    if (familyDetails?.id) {
+        budgetService.getBudgets(familyDetails.id).then(setBudgets);
+    }
+  };
+
+  useEffect(() => {
+      let isMounted = true;
+  
+      const fetchData = async () => {
+        if (!familyDetails?.id) return;
+  
+        try {
+          setIsLoading(true);
+          const [categoriesResponse, budgetsResponse] = await Promise.all([
+            expenseCategoryService.getCategories(familyDetails.id),
+            budgetService.getBudgets(familyDetails.id)
+          ]);
+  
+          if (isMounted) {
+            setCategories(categoriesResponse);
+            setBudgets(budgetsResponse);
+          }
+        } catch (error) {
+          if (isMounted) {
+            console.error('Failed to fetch data:', error);
+          }
+        } finally {
+            if (isMounted) setIsLoading(false);
+        }
+      };
+  
+      fetchData();
+  
+      return () => {
+        isMounted = false;
+      };
+    }, [familyDetails]);
 
   return (
     <div className="space-y-6">
@@ -84,7 +133,7 @@ export default function BudgetsPageClient() {
         <div className="col-span-12 lg:col-span-8 space-y-6">
           {activeTab === "active" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <BudgetList />
+               <BudgetList budgets={budgets} isLoading={isLoading} />
             </div>
           )}
           {activeTab === "suggestions" && (
@@ -144,7 +193,7 @@ export default function BudgetsPageClient() {
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Configure Category Budget</h3>
           <p className="text-sm text-gray-500 font-medium">Set monthly limits and enable rollover for specific needs.</p>
         </div>
-        <AddBudgetForm onSuccess={closeModal} onCancel={closeModal} />
+        <AddBudgetForm onSuccess={closeModal} onCancel={closeModal} categories={categories} family_id={familyDetails?.id || ""} />
       </Modal>
     </div>
   );

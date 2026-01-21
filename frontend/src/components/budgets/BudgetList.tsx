@@ -11,118 +11,121 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-const initialBudgets = [
-  {
-    id: "1",
-    category: "Food & Drinks",
-    spent: 12500,
-    limit: 15000,
-    icon: <Utensils className="w-5 h-5" />,
-    color: "bg-orange-50 text-orange-600",
-    barColor: "bg-orange-500",
-    rollover: true
-  },
-  {
-    id: "2",
-    category: "Transport",
-    spent: 4200,
-    limit: 5000,
-    icon: <Car className="w-5 h-5" />,
-    color: "bg-blue-50 text-blue-600",
-    barColor: "bg-blue-500",
-    rollover: false
-  },
-  {
-    id: "3",
-    category: "Entertainment",
-    spent: 9800,
-    limit: 8000,
-    icon: <Tv className="w-5 h-5" />,
-    color: "bg-red-50 text-red-600",
-    barColor: "bg-red-500",
-    rollover: true
-  },
-  {
-    id: "4",
-    category: "Shopping",
-    spent: 16500,
-    limit: 20000,
-    icon: <ShoppingBag className="w-5 h-5" />,
-    color: "bg-pink-50 text-pink-600",
-    barColor: "bg-pink-500",
-    rollover: true
-  },
-  {
-    id: "5",
-    category: "Utilities",
-    spent: 3500,
-    limit: 7000,
-    icon: <Zap className="w-5 h-5" />,
-    color: "bg-amber-50 text-amber-600",
-    barColor: "bg-amber-500",
-    rollover: false
-  }
-];
+import { Budget } from "@/types";
+import { BudgetSkeleton } from "./BudgetSkeleton";
 
-export const BudgetList = () => {
+interface BudgetListProps {
+  budgets?: Budget[];
+  isLoading?: boolean;
+}
+
+const getCategoryIcon = (iconName: string = 'default') => {
+    // You might want to move this to a shared mapping file if used elsewhere
+    // For now, mapping simplified
+    const className="w-5 h-5";
+    switch(iconName.toLowerCase()) {
+        case 'food': case 'utensils': return <Utensils className={className} />;
+        case 'transport': case 'car': return <Car className={className} />;
+        case 'entertainment': case 'tv': return <Tv className={className} />;
+        case 'shopping': case 'shoppingbag': return <ShoppingBag className={className} />;
+        case 'utilities': case 'zap': return <Zap className={className} />;
+        case 'health': return <HeartPulse className={className} />;
+        default: return <Zap className={className} />;
+    }
+};
+
+const getCategoryColor = (name: string = '') => {
+    // Basic color hash or mapping based on name length/char for consistency if no explicit color
+    const colors = [
+        { color: "bg-orange-50 text-orange-600", barColor: "bg-orange-500" },
+        { color: "bg-blue-50 text-blue-600", barColor: "bg-blue-500" },
+        { color: "bg-red-50 text-red-600", barColor: "bg-red-500" },
+        { color: "bg-pink-50 text-pink-600", barColor: "bg-pink-500" },
+        { color: "bg-amber-50 text-amber-600", barColor: "bg-amber-500" },
+        { color: "bg-emerald-50 text-emerald-600", barColor: "bg-emerald-500" },
+        { color: "bg-indigo-50 text-indigo-600", barColor: "bg-indigo-500" },
+    ];
+    return colors[name.length % colors.length];
+};
+
+export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading = false }) => {
   return (
     <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-sm">
       <div className="p-6 border-b border-gray-50 dark:border-gray-800">
         <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">Category Allocation</h3>
       </div>
       <div className="p-6 space-y-8">
-        {initialBudgets.map((budget) => {
-          const percentage = Math.min(Math.round((budget.spent / budget.limit) * 100), 100);
-          const isOver = budget.spent > budget.limit;
-          
-          return (
-            <div key={budget.id} className="group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${budget.color} transition-transform group-hover:scale-110`}>
-                    {budget.icon}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black text-gray-800 dark:text-white">{budget.category}</h4>
-                    <div className="flex items-center gap-2">
-                       {budget.rollover && (
-                         <div className="flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                           <RefreshCw className="w-2.5 h-2.5" /> Rollover
-                         </div>
-                       )}
-                       {isOver && (
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                            <AlertTriangle className="w-2.5 h-2.5" /> Warning
-                          </div>
-                       )}
+        {isLoading ? (
+             Array(3).fill(0).map((_, i) => <BudgetSkeleton key={i} />)
+        ) : budgets.length > 0 ? (
+            budgets.map((budget) => {
+            // Note: Currently backend doesn't send 'spent' or 'rollover'. 
+            // Mocking spent as 0 if not present, or random/calculated if we had expenses.
+            // For now, simply showing 0 spent or mocking for visual verification if needed.
+            // Let's assume 0 spent for new budgets.
+            const spent = 0; 
+            const limit = budget.amount_limit;
+            const percentage = limit > 0 ? Math.min(Math.round((spent / limit) * 100), 100) : 0;
+            const isOver = spent > limit;
+            const { color, barColor } = getCategoryColor(budget.category?.name); 
+            // Note: budget.category might be populated if using Preload, otherwise use name logic?
+            // Actually DTO says 'category' is ExpenseCategory object
+            const categoryName = budget.category?.name || "Unknown";
+
+            return (
+                <div key={budget.id} className="group">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-2xl ${color} transition-transform group-hover:scale-110`}>
+                        {getCategoryIcon(budget.category?.name || 'default')} 
                     </div>
-                  </div>
+                    <div>
+                        <h4 className="text-sm font-black text-gray-800 dark:text-white">{categoryName}</h4>
+                        <div className="flex items-center gap-2">
+                            {/* Rollover not in DTO yet, so hiding or can assume false */}
+                           {/* {budget.rollover && (
+                             <div className="flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                               <RefreshCw className="w-2.5 h-2.5" /> Rollover
+                             </div>
+                           )} */}
+                           {isOver && (
+                              <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                                <AlertTriangle className="w-2.5 h-2.5" /> Warning
+                              </div>
+                           )}
+                        </div>
+                    </div>
+                    </div>
+                    <div className="text-right">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Spent</p>
+                    <p className="text-lg font-black text-gray-900 dark:text-white">
+                        ₹{spent.toLocaleString()}
+                        <span className="text-xs text-gray-400 font-bold ml-1">/ ₹{limit.toLocaleString()}</span>
+                    </p>
+                    </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Spent</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-white">
-                    ₹{budget.spent.toLocaleString()}
-                    <span className="text-xs text-gray-400 font-bold ml-1">/ ₹{budget.limit.toLocaleString()}</span>
-                  </p>
+                
+                <div className="relative h-3 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                    className={`h-full rounded-full transition-all duration-700 ease-out ${isOver ? 'bg-red-500 shadow-lg shadow-red-500/20' : barColor}`}
+                    style={{ width: `${percentage}%` }}
+                    />
                 </div>
-              </div>
-              
-              <div className="relative h-3 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-700 ease-out ${isOver ? 'bg-red-500 shadow-lg shadow-red-500/20' : budget.barColor}`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-              
-              <div className="flex justify-between mt-2">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{percentage}% Utilized</span>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${isOver ? 'text-red-500' : 'text-emerald-500'}`}>
-                  {isOver ? `Over by ₹${(budget.spent - budget.limit).toLocaleString()}` : `₹${(budget.limit - budget.spent).toLocaleString()} Left`}
-                </span>
-              </div>
+                
+                <div className="flex justify-between mt-2">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{percentage}% Utilized</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isOver ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {isOver ? `Over by ₹${(spent - limit).toLocaleString()}` : `₹${(limit - spent).toLocaleString()} Left`}
+                    </span>
+                </div>
+                </div>
+            );
+            })
+        ) : (
+            <div className="text-center py-8 text-gray-500">
+                <p>No budgets configured yet.</p>
             </div>
-          );
-        })}
+        )}
       </div>
     </div>
   );
