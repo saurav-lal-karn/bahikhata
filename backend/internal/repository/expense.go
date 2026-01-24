@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,10 +11,10 @@ import (
 )
 
 type ExpenseRepository interface {
-    Create(ctx context.Context, expense *model.Expense) error
+    Create(ctx context.Context, expense *model.Expense) (*model.Expense, error)
     GetByID(ctx context.Context, id uuid.UUID) (*model.Expense, error)
     List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Expense, error)
-    Update(ctx context.Context, expense *model.Expense) error
+    Update(ctx context.Context, id uuid.UUID, expense *model.Expense) (*model.Expense, error)
     Delete(ctx context.Context, id uuid.UUID) error
     GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (int, float64, float64, float64, error)
 }
@@ -26,14 +27,17 @@ func NewExpenseRepository(db *gorm.DB) ExpenseRepository {
     return &expenseRepository{db: db}
 }
 
-func (r *expenseRepository) Create(ctx context.Context, expense *model.Expense) error {
-    return r.db.Create(expense).Error
+func (r *expenseRepository) Create(ctx context.Context, expense *model.Expense) (*model.Expense, error) {
+    if err := r.db.WithContext(ctx).Create(expense).Error; err != nil {
+        return nil, fmt.Errorf("expense repository: failed to create expense %s: %w", expense.ID, err)
+    }
+    return expense, nil
 }
 
 func (r *expenseRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Expense, error) {
     var expense model.Expense
-    if err := r.db.First(&expense, id).Error; err != nil {
-        return nil, err
+    if err := r.db.WithContext(ctx).Preload("Category").Preload("PaymentMethod").First(&expense, id).Error; err != nil {
+        return nil, fmt.Errorf("expense repository: failed to get expense %s: %w", id, err)
     }
     return &expense, nil
 }
@@ -45,18 +49,34 @@ func (r *expenseRepository) List(ctx context.Context, familyID uuid.UUID, userId
         Preload("Category").
         Preload("PaymentMethod").
         Find(&expenses).Error; err != nil {
-        return nil, err
+        return nil, fmt.Errorf("expense repository: failed to list expenses: %w", err)
     }
     
     return expenses, nil
 }
 
-func (r *expenseRepository) Update(ctx context.Context, expense *model.Expense) error {
-    return r.db.Save(expense).Error
+func (r *expenseRepository) Update(ctx context.Context,id uuid.UUID, expense *model.Expense) (*model.Expense, error) {
+	result := r.db.WithContext(ctx).Model(&model.Expense{}).Where("id = ?", id).Updates(expense)
+	if result.Error != nil {
+		return nil, fmt.Errorf("expense repository: failed to update expense %s: %w", id, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	
+	// Fetch and return the updated expense
+	return r.GetByID(ctx, id)
 }
 
 func (r *expenseRepository) Delete(ctx context.Context, id uuid.UUID) error {
-    return r.db.Delete(&model.Expense{}, id).Error
+	result := r.db.WithContext(ctx).Delete(&model.Expense{}, id)
+	if result.Error != nil {
+		return fmt.Errorf("expense repository: failed to delete expense %s: %w", id, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *expenseRepository) GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (int, float64, float64, float64, error) {

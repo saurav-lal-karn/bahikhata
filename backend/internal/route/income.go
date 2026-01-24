@@ -18,7 +18,7 @@ func RegisterIncomeRoutes(app *config.Application, router *gin.RouterGroup) {
 
 	router.POST("", incomeController.Create)
 	router.GET("details/:id", incomeController.GetByID)
-	router.GET("/:familyId", incomeController.List)
+	router.GET("/:family_id", incomeController.List)
 	router.PUT("/:id", incomeController.Update)
 	router.DELETE("/:id", incomeController.Delete)
 	router.GET("/stats", incomeController.GetStats)

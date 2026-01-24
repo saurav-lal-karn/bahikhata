@@ -4,9 +4,9 @@ import { IncomeList } from "@/components/income/IncomeList";
 import { IncomeStats } from "@/components/income/IncomeStats";
 import { Plus, TrendingUp } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
-import { AddIncomeForm } from "@/components/income/AddIncomeForm";
+import { IncomeForm } from "@/components/income/IncomeForm";
 import { BulkImportIncome } from "@/components/income/BulkImportIncome";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { incomeService } from "@/services/incomeService";
 import { incomeTypeService } from "@/services/incomeTypeService";
@@ -25,12 +25,53 @@ export default function IncomePageClient() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = () => {
+    setSelectedIncome(null);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedIncome(null);
+  };
   
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
+
+  const handleEdit = (income: Income) => {
+    setSelectedIncome(income);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setIncomeToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!incomeToDelete) return;
+    try {
+      await incomeService.deleteIncome(incomeToDelete);
+      toast.success("Income record deleted");
+      setIncomes(incomes.filter(i => i.id !== incomeToDelete));
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to delete record");
+    }
+  };
+
+  const refreshIncomes = async () => {
+    if (!familyDetails?.id) return;
+    try {
+      const incomeResponse = await incomeService.getIncomes(familyDetails.id);
+      setIncomes(incomeResponse);
+    } catch (error) {
+      console.error('Failed to refresh incomes:', error);
+    }
+  };
 
   useEffect(() => {
       let isMounted = true;
@@ -99,35 +140,61 @@ export default function IncomePageClient() {
       <IncomeStats />
 
       {/* Main Table / List Area */}
-      <IncomeList incomes={incomes} isLoading={isLoading} />
+      <IncomeList 
+        incomes={incomes} 
+        isLoading={isLoading} 
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-      {/* Add Income Modal */}
+      {/* Add/Edit Income Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
         <div className="mb-10">
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-            <TrendingUp className="text-green-500 w-8 h-8" /> New Transaction
+            <TrendingUp className="text-green-500 w-8 h-8" /> {selectedIncome ? 'Update Transaction' : 'New Transaction'}
           </h3>
-          <p className="text-sm text-gray-500 font-medium">Add a new income source or payment to your records.</p>
+          <p className="text-sm text-gray-500 font-medium">
+            {selectedIncome ? 'Modify the details of this income record.' : 'Add a new income source or payment to your records.'}
+          </p>
         </div>
-        <AddIncomeForm 
+        <IncomeForm 
           onSuccess={() => {
             closeModal();
-            const fetchData = async () => {
-              if (!familyDetails?.id) return;
-              try {
-                const incomeResponse = await incomeService.getIncomes(familyDetails.id);
-                setIncomes(incomeResponse);
-              } catch (error) {
-                console.error('Failed to refresh incomes:', error);
-              }
-            };
-            fetchData();
+            refreshIncomes();
           }} 
           onCancel={closeModal} 
           wallets={wallets} 
           incomeTypes={incomeTypes} 
           familyId={familyDetails?.id || ""} 
+          income={selectedIncome || undefined}
         />
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="max-w-md p-8">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-black text-gray-900 dark:text-white">Delete Record?</h3>
+          <p className="text-gray-500 font-medium leading-relaxed">
+            Are you sure you want to delete this income record? This action cannot be undone and will affect your balance.
+          </p>
+          <div className="flex gap-3 pt-4">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleDelete}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Bulk Import Modal */}

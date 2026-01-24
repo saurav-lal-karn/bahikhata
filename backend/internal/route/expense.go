@@ -19,6 +19,9 @@ func RegisterExpenseRoutes(app *config.Application, rg *gin.RouterGroup) {
 
 	// Routes for expenses
 	rg.POST("", expenseCtrl.Create)
-	rg.GET("/:family_id", expenseCtrl.List)
-	rg.GET("/stats/:family_id", expenseCtrl.GetStats)
+	rg.GET(":family_id", expenseCtrl.List)
+	rg.GET("stats/:family_id", expenseCtrl.GetStats)
+	// rg.GET("/details/:id", expenseCtrl.GetByID)
+	// rg.PUT("/:id", expenseCtrl.Update)
+	// rg.DELETE("/:id", expenseCtrl.Delete)
 }

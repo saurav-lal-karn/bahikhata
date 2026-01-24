@@ -6,10 +6,12 @@ import (
 )
 
 type CreateWalletRequest struct {
-	Name string `json:"name" binding:"required"`
+	// constants.MaxWalletNameLength = 100
+	Name string `json:"name" binding:"required,max=100"`
 	StartingBalance float64 `json:"starting_balance" binding:"required"`
 	Currency string `json:"currency" binding:"required"`
-	Description string `json:"description" binding:"required"`
+	// constants.MaxWalletDescriptionLength = 500
+	Description string `json:"description" binding:"max=500"`
 	WalletIssuerName string `json:"wallet_issuer_name" binding:"required"`
 	ProviderWalletID string `json:"provider_wallet_id" binding:"required"`
 	WalletTypeID string `json:"wallet_type_id"`

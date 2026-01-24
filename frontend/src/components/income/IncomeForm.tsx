@@ -14,37 +14,37 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
-import { IncomeType, WalletInfoType } from "@/types";
+import { Income, IncomeType, WalletInfoType } from "@/types";
 import toast from "react-hot-toast";
 import { incomeService } from "@/services/incomeService";
 import DatePicker from "../form/date-picker";
 
-interface AddIncomeFormProps {
+interface IncomeFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   wallets: WalletInfoType[];
   incomeTypes: IncomeType[];
   familyId: string;
+  income?: Income; // Added for editing
 }
 
-export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId }) => {
-  console.log("Wallets: ", wallets);
-  console.log("Income Types: ", incomeTypes);
+export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income }) => {
+  const isEditing = !!income;
 
     const [formData, setFormData] = useState({
-    name: "",
-    amount: 0,
-    source_id: "",
-    wallet_id: "",
-    date: new Date().toISOString().split('T')[0],
-    description: "",
-    is_custom_source: false,
-    custom_source_name: "",
+    name: income?.name || "",
+    amount: income?.amount || 0,
+    source_id: income?.source_id || "",
+    wallet_id: income?.wallet_id || "",
+    date: income?.date ? new Date(income.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    description: income?.description || "",
+    is_custom_source: income?.is_custom_source || false,
+    custom_source_name: income?.custom_source_name || "",
     family_id: familyId,
   });
   
-  const [isCustomSource, setIsCustomSource] = useState(false);
-  const [customSourceName, setCustomSourceName] = useState("");
+  const [isCustomSource, setIsCustomSource] = useState(income?.is_custom_source || false);
+  const [customSourceName, setCustomSourceName] = useState(income?.custom_source_name || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +55,18 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
             custom_source_name: isCustomSource ? customSourceName : "",
             is_custom_source: isCustomSource,
         };
-        const response = await incomeService.createIncome(finalData);
-        toast.success("Income added successfully");
+        
+        if (isEditing && income?.id) {
+          await incomeService.updateIncome(income.id, finalData);
+          toast.success("Income updated successfully");
+        } else {
+          await incomeService.createIncome(finalData);
+          toast.success("Income added successfully");
+        }
+        
         if (onSuccess) onSuccess();
     } catch(error) {
-        toast.error("Failed to add income. Please try again");
+        toast.error(`Failed to ${isEditing ? 'update' : 'add'} income. Please try again`);
     }
   };
 
@@ -73,9 +80,12 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
               <ArrowUpCircle className="w-10 h-10" />
             </div>
             <div>
-              <h4 className="text-xl font-black text-gray-800 dark:text-white mb-2">Record Earning</h4>
+              <h4 className="text-xl font-black text-gray-800 dark:text-white mb-2">{isEditing ? 'Edit Transaction' : 'Record Earning'}</h4>
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-[220px] mx-auto">
-                Track your various income streams and watch your wealth grow.
+                {isEditing 
+                  ? 'Update the details of your recorded income stream.' 
+                  : 'Track your various income streams and watch your wealth grow.'
+                }
               </p>
             </div>
             
@@ -127,6 +137,7 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Income Source</Label>
             <Select 
+              value={isCustomSource ? "custom" : formData.source_id}
               options={[
                 ...incomeTypes.map((type) => ({ value: type.id, label: type.name })),
                 { value: "custom", label: "+ Add Custom Source" }
@@ -148,6 +159,7 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <Select 
+                  value={formData.wallet_id}
                   options={wallets.map((wallet) => ({ value: wallet.id, label: wallet.name }))}
                   onChange={(value: string) => {
                     setFormData({...formData, wallet_id: value});
@@ -230,7 +242,7 @@ export const AddIncomeForm: React.FC<AddIncomeFormProps> = ({ onSuccess, onCance
             type="submit" 
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-green-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            Add to Balance
+            {isEditing ? 'Save Changes' : 'Add to Balance'}
           </Button>
         </div>
       </form>

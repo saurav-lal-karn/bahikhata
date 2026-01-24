@@ -30,18 +30,6 @@ func (ctrl *WalletController) Create(c *gin.Context) {
 		return
 	}
 
-	if req.IsCustomType {
-		if req.CustomTypeName == "" {
-			helper.ErrorResponse(c, http.StatusBadRequest, "custom_type_name is required when is_custom_type is true")
-			return
-		}
-	} else {
-		if req.WalletTypeID == "" {
-			helper.ErrorResponse(c, http.StatusBadRequest, "wallet_type_id is required when is_custom_type is false")
-			return
-		}
-	}
-
 	wallet, err := ctrl.svc.Create(c, &req, uid)
 	if err != nil {
 		handleServiceError(c, err)
@@ -74,13 +62,19 @@ func (ctrl *WalletController) List(c *gin.Context) {
 }
 
 func (ctrl *WalletController) GetByID(c *gin.Context) {
+	uid, err := getUserIDFromContext(c)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	walletID, err := parseUUIDParam(c, "wallet_id")
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	wallet, err := ctrl.svc.GetByID(c, walletID)
+	wallet, err := ctrl.svc.GetByID(c, walletID, uid)
 	if err != nil {
 		handleServiceError(c, err)
 		return

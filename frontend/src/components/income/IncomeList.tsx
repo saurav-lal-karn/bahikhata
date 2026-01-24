@@ -26,9 +26,11 @@ import { Income } from "@/types";
 interface IncomeListProps {
   incomes: Income[];
   isLoading: boolean;
+  onEdit: (income: Income) => void;
+  onDelete: (id: string) => void;
 }
 
-export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
+export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -232,14 +234,20 @@ export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
                       onClose={() => setActiveMenu(null)} 
                       className="w-32"
                     >
-                      <DropdownItem onClick={() => setActiveMenu(null)}>
+                      <DropdownItem onClick={() => {
+                        onEdit(item);
+                        setActiveMenu(null);
+                      }}>
                         <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                           <Pencil className="w-4 h-4" />
                           <span>Edit</span>
                         </div>
                       </DropdownItem>
                       <DropdownItem 
-                        onClick={() => setActiveMenu(null)}
+                        onClick={() => {
+                          onDelete(item.id);
+                          setActiveMenu(null);
+                        }}
                         className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
                       >
                         <div className="flex items-center gap-2">
