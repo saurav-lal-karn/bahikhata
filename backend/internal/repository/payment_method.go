@@ -9,12 +9,12 @@ import (
 )
 
 type PaymentMethodRepository interface {
-	GetPaymentMethods(ctx context.Context, familyId string) ([]model.PaymentMethod, error)
-	CreatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	UpdatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	DeletePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
-	GetPaymentMethodById(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error)
-	GetPaymentMethodByName(ctx context.Context, name string, familyId uuid.UUID) (model.PaymentMethod, error)
+	List(ctx context.Context, familyId string) ([]model.PaymentMethod, error)
+	Create(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
+	Update(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
+	Delete(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error)
+	GetByID(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error)
+	GetByName(ctx context.Context, name string, familyId uuid.UUID) (model.PaymentMethod, error)
 }
 
 type paymentMethodRepository struct {
@@ -25,7 +25,7 @@ func NewPaymentMethodRepository(db *gorm.DB) PaymentMethodRepository {
 	return &paymentMethodRepository{db: db}
 }
 
-func (r *paymentMethodRepository) GetPaymentMethods(ctx context.Context, familyId string) ([]model.PaymentMethod, error) {
+func (r *paymentMethodRepository) List(ctx context.Context, familyId string) ([]model.PaymentMethod, error) {
 	var paymentMethods []model.PaymentMethod
 	if err := r.db.WithContext(ctx).Where("family_id = ? OR is_system = ?", familyId, true).Find(&paymentMethods).Error; err != nil {
 		return nil, err
@@ -33,28 +33,28 @@ func (r *paymentMethodRepository) GetPaymentMethods(ctx context.Context, familyI
 	return paymentMethods, nil
 }
 
-func (r *paymentMethodRepository) CreatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
+func (r *paymentMethodRepository) Create(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
 	if err := r.db.WithContext(ctx).Create(&paymentMethod).Error; err != nil {
 		return model.PaymentMethod{}, err
 	}
 	return paymentMethod, nil
 }
 
-func (r *paymentMethodRepository) UpdatePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
+func (r *paymentMethodRepository) Update(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
 	if err := r.db.WithContext(ctx).Save(&paymentMethod).Error; err != nil {
 		return model.PaymentMethod{}, err
 	}
 	return paymentMethod, nil
 }
 
-func (r *paymentMethodRepository) DeletePaymentMethod(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
+func (r *paymentMethodRepository) Delete(ctx context.Context, paymentMethod model.PaymentMethod) (model.PaymentMethod, error) {
 	if err := r.db.WithContext(ctx).Delete(&paymentMethod).Error; err != nil {
 		return model.PaymentMethod{}, err
 	}
 	return paymentMethod, nil
 }
 
-func (r *paymentMethodRepository) GetPaymentMethodById(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error) {
+func (r *paymentMethodRepository) GetByID(ctx context.Context, id uuid.UUID) (model.PaymentMethod, error) {
 	var paymentMethod model.PaymentMethod
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&paymentMethod).Error; err != nil {
 		return model.PaymentMethod{}, err
@@ -62,7 +62,7 @@ func (r *paymentMethodRepository) GetPaymentMethodById(ctx context.Context, id u
 	return paymentMethod, nil
 }
 
-func (r *paymentMethodRepository) GetPaymentMethodByName(ctx context.Context, name string, familyId uuid.UUID) (model.PaymentMethod, error) {
+func (r *paymentMethodRepository) GetByName(ctx context.Context, name string, familyId uuid.UUID) (model.PaymentMethod, error) {
 	var paymentMethod model.PaymentMethod
 	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyId).First(&paymentMethod).Error; err != nil {
 		return model.PaymentMethod{}, err

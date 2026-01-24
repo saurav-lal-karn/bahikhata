@@ -18,7 +18,7 @@ func NewExpenseController(service service.ExpenseService) *ExpenseController {
     return &ExpenseController{service: service}
 }
 
-func (c *ExpenseController) CreateExpense(ctx *gin.Context) {
+func (c *ExpenseController) Create(ctx *gin.Context) {
     userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -62,7 +62,7 @@ func (c *ExpenseController) CreateExpense(ctx *gin.Context) {
         }
     }
 
-    err = c.service.CreateExpense(ctx.Request.Context(), &req, uid)
+    err = c.service.Create(ctx.Request.Context(), &req, uid)
     if err != nil {
         helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
         return
@@ -71,7 +71,7 @@ func (c *ExpenseController) CreateExpense(ctx *gin.Context) {
     helper.SuccessResponse(ctx, http.StatusCreated, "Expense created successfully", req)
 }
 
-func (c *ExpenseController) GetExpenses(ctx *gin.Context) {
+func (c *ExpenseController) List(ctx *gin.Context) {
     familyId := ctx.Param("family_id")
     if familyId == "" {
         helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
@@ -90,7 +90,7 @@ func (c *ExpenseController) GetExpenses(ctx *gin.Context) {
         return
     }
 
-    expenses, err := c.service.ListExpenses(ctx.Request.Context(), familyID, uid)
+    expenses, err := c.service.List(ctx.Request.Context(), familyID, uid)
     if err != nil {
         helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
         return
@@ -98,7 +98,7 @@ func (c *ExpenseController) GetExpenses(ctx *gin.Context) {
     helper.SuccessResponse(ctx, http.StatusOK, "Expenses fetched successfully", expenses)
 }
 
-func (c *ExpenseController) GetExpenseStats(ctx *gin.Context) {
+func (c *ExpenseController) GetStats(ctx *gin.Context) {
     familyId := ctx.Param("family_id")
     if familyId == "" {
         helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
@@ -117,7 +117,7 @@ func (c *ExpenseController) GetExpenseStats(ctx *gin.Context) {
         return
     }
 
-    stats, err := c.service.GetExpenseStats(ctx.Request.Context(), familyID, uid)
+    stats, err := c.service.GetStats(ctx.Request.Context(), familyID, uid)
     if err != nil {
         helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
         return

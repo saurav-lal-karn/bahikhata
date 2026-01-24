@@ -13,8 +13,11 @@ import {
   CreditCard,
   Building,
   Pencil,
-  MoreVertical
+  MoreVertical,
+  X,
+  ChevronDown
 } from "lucide-react";
+
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
@@ -28,12 +31,29 @@ interface IncomeListProps {
 export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
+  // Extract unique filter options
+  const sources = Array.from(new Set(incomes.map(i => i.source?.name).filter(Boolean))) as string[];
+  const wallets = Array.from(new Set(incomes.map(i => i.wallet?.name).filter(Boolean))) as string[];
 
-  const filteredIncome = incomes.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.source?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredIncome = incomes.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.source?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSource = !selectedSource || item.source?.name === selectedSource;
+    const matchesWallet = !selectedWallet || item.wallet?.name === selectedWallet;
+    
+    return matchesSearch && matchesSource && matchesWallet;
+  });
+
+  const clearFilters = () => {
+    setSelectedSource(null);
+    setSelectedWallet(null);
+    setSearchTerm("");
+  };
+
 
   const getIconForSource = (sourceName: string) => {
     const name = sourceName.toLowerCase();
@@ -81,14 +101,71 @@ export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
               className="pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all w-full sm:w-64"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
-            <Filter className="w-4 h-4" /> Filters
+          <button 
+            onClick={() => setIsFilterVisible(!isFilterVisible)}
+            className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all ${isFilterVisible ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-700 hover:bg-gray-50'}`}
+          >
+            <Filter className={`w-4 h-4 ${isFilterVisible ? 'fill-green-600' : ''}`} /> Filters
+            {(selectedSource || selectedWallet) && (
+              <span className="flex h-2 w-2 rounded-full bg-green-500" />
+            )}
           </button>
           <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>
       </div>
+
+      {/* Filter Bar */}
+      {isFilterVisible && (
+        <div className="p-6 bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Source Category</label>
+              <div className="relative">
+                <select 
+                  value={selectedSource || ""}
+                  onChange={(e) => setSelectedSource(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-green-500/20 transition-all font-bold"
+                >
+                  <option value="">All Sources</option>
+                  {sources.map(source => (
+                    <option key={source} value={source}>{source}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Received In</label>
+              <div className="relative">
+                <select 
+                  value={selectedWallet || ""}
+                  onChange={(e) => setSelectedWallet(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-green-500/20 transition-all font-bold"
+                >
+                  <option value="">All Wallets</option>
+                  {wallets.map(wallet => (
+                    <option key={wallet} value={wallet}>{wallet}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pb-0.5">
+              <button 
+                onClick={clearFilters}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Table Content */}
       <div className="overflow-x-auto">

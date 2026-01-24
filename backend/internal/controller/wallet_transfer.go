@@ -18,7 +18,7 @@ func NewWalletTransferController(svc service.WalletTransferService) WalletTransf
 	return WalletTransferController{svc: svc}
 }
 
-func (ctrl *WalletTransferController) CreateWalletTransfer(c *gin.Context) {
+func (ctrl *WalletTransferController) Create(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -44,14 +44,14 @@ func (ctrl *WalletTransferController) CreateWalletTransfer(c *gin.Context) {
 	}
 	walletTransfer.UserID = uid
 
-	if err := ctrl.svc.CreateWalletTransfer(c, walletTransfer); err != nil {
+	if err := ctrl.svc.Create(c, walletTransfer); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	helper.SuccessResponse(c, http.StatusCreated, "Wallet transfer created successfully", walletTransfer)
 }
 
-func (ctrl *WalletTransferController) ListWalletTransfers(c *gin.Context) {
+func (ctrl *WalletTransferController) List(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -71,7 +71,7 @@ func (ctrl *WalletTransferController) ListWalletTransfers(c *gin.Context) {
 		return
 	}
 
-	walletTransfers, err := ctrl.svc.ListWalletTransfers(c, fid, uid)
+	walletTransfers, err := ctrl.svc.List(c, fid, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

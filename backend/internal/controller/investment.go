@@ -47,7 +47,7 @@ func (c *InvestmentController) Create(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Investment created successfully", investment)
 }
 
-func (c *InvestmentController) GetAll(ctx *gin.Context) {
+func (c *InvestmentController) List(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -67,7 +67,7 @@ func (c *InvestmentController) GetAll(ctx *gin.Context) {
 		}
 	}
 
-	investments, err := c.service.GetAll(ctx, familyID, &uid)
+	investments, err := c.service.List(ctx, familyID, &uid)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch investments")
 		return

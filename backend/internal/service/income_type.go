@@ -9,8 +9,8 @@ import (
 )
 
 type IncomeTypeService interface {
-	CreateIncomeType(ctx context.Context, incomeType *model.IncomeType) (*model.IncomeType, error)
-	GetIncomeTypes(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.IncomeType, error)
+	Create(ctx context.Context, incomeType *model.IncomeType) (*model.IncomeType, error)
+	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.IncomeType, error)
 }
 
 type incomeTypeService struct {
@@ -21,12 +21,12 @@ func NewIncomeTypeService(repo repository.IncomeTypeRepository) IncomeTypeServic
 	return &incomeTypeService{repo: repo}
 }
 
-func (s *incomeTypeService) CreateIncomeType(ctx context.Context, incomeType *model.IncomeType) (*model.IncomeType, error) {
+func (s *incomeTypeService) Create(ctx context.Context, incomeType *model.IncomeType) (*model.IncomeType, error) {
 	_, err := s.repo.Create(ctx, incomeType)
 	return incomeType, err
 }
 
-func (s *incomeTypeService) GetIncomeTypes(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.IncomeType, error) {
+func (s *incomeTypeService) List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.IncomeType, error) {
 	incomeTypes, err := s.repo.List(ctx, familyId, userId)
 	if err != nil {
 		return nil, err

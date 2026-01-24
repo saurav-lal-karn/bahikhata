@@ -10,8 +10,14 @@ import {
   History,
   Info,
   Wallet,
-  Trash2
+  Trash2,
+  Filter,
+  ChevronDown,
+  X,
+  Search
 } from "lucide-react";
+
+
 import toast from "react-hot-toast";
 
 import { Modal } from "@/components/ui/modal";
@@ -34,6 +40,11 @@ export default function AccountsPageClient() {
     const [transfers, setTransfers] = useState<WalletTransfer[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [walletToDelete, setWalletToDelete] = useState<WalletInfoType | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedType, setSelectedType] = useState<string | null>(null);
+    const [selectedBank, setSelectedBank] = useState<string | null>(null);
+    const [isFilterVisible, setIsFilterVisible] = useState(false);
+
 
 
     const fetchData = async () => {
@@ -88,9 +99,27 @@ export default function AccountsPageClient() {
     const totalLiquidValue = wallets.reduce((acc, w) => acc + (w.balance + (w.starting_balance || 0)), 0);
     const baseCurrency = wallets[0]?.currency || "₹";
 
+    const filteredWallets = wallets.filter(wallet => {
+        const matchesSearch = wallet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             wallet.wallet_issuer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = !selectedType || wallet.wallet_type?.name === selectedType;
+        const matchesBank = !selectedBank || wallet.wallet_issuer_name === selectedBank;
+        
+        return matchesSearch && matchesType && matchesBank;
+    });
+
+    const uniqueTypes = Array.from(new Set(wallets.map(w => w.wallet_type?.name).filter(Boolean))) as string[];
+    const uniqueBanks = Array.from(new Set(wallets.map(w => w.wallet_issuer_name).filter(Boolean))) as string[];
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setSelectedType(null);
+        setSelectedBank(null);
+    };
+
+
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
@@ -101,6 +130,13 @@ export default function AccountsPageClient() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+           <button 
+             onClick={() => setIsFilterVisible(!isFilterVisible)}
+             className={`flex items-center justify-center gap-2 px-6 py-3 border rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-sm ${isFilterVisible ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-800 dark:text-white'}`}
+           >
+             <Filter className={`w-5 h-5 ${isFilterVisible ? 'fill-amber-600' : ''}`} /> Filters
+             {(selectedType || selectedBank || searchTerm) && <span className="w-2 h-2 rounded-full bg-amber-500" />}
+           </button>
            <button 
              onClick={() => setIsTransferModalOpen(true)}
              className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-sm"
@@ -116,12 +152,77 @@ export default function AccountsPageClient() {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      {isFilterVisible && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Search Accounts</label>
+                <div className="relative">
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                   <input 
+                     type="text"
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     placeholder="e.g. HDFC Bank, My Wallet..."
+                     className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all"
+                   />
+                </div>
+             </div>
+
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Account Type</label>
+                <div className="relative">
+                   <select 
+                     value={selectedType || ""}
+                     onChange={(e) => setSelectedType(e.target.value || null)}
+                     className="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                   >
+                      <option value="">All Types</option>
+                      {uniqueTypes.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                   </select>
+                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+             </div>
+
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Bank / Issuer</label>
+                <div className="relative">
+                   <select 
+                     value={selectedBank || ""}
+                     onChange={(e) => setSelectedBank(e.target.value || null)}
+                     className="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                   >
+                      <option value="">All Issuers</option>
+                      {uniqueBanks.map(bank => (
+                        <option key={bank} value={bank}>{bank}</option>
+                      ))}
+                   </select>
+                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+             </div>
+
+             <div className="flex items-end h-full">
+                <button 
+                  onClick={clearFilters}
+                  className="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  Clear Filters
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+
       <div className="grid grid-cols-12 gap-8">
         {/* Left: Wallets List (8/12) */}
         <div className="col-span-12 xl:col-span-8 space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {wallets.length > 0 ? (
-                wallets.map((wallet, index) => {
+              {filteredWallets.length > 0 ? (
+                filteredWallets.map((wallet, index) => {
                   const getWalletIcon = (typeName: string) => {
                     switch (typeName) {
                       case "Bank Account": return <Building2 className="w-6 h-6" />;

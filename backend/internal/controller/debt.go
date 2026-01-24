@@ -51,7 +51,7 @@ func (c *DebtController) Create(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Debt created successfully", debt)
 }
 
-func (c *DebtController) GetAll(ctx *gin.Context) {
+func (c *DebtController) List(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -71,7 +71,7 @@ func (c *DebtController) GetAll(ctx *gin.Context) {
 		}
 	}
 
-	debts, err := c.service.GetAll(ctx, familyID, &uid)
+	debts, err := c.service.List(ctx, familyID, &uid)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch debts")
 		return

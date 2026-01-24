@@ -10,7 +10,7 @@ import (
 
 type RecurringTransactionRepository interface {
 	Create(ctx context.Context, rt *model.RecurringTransaction) error
-	GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.RecurringTransaction, error)
+	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.RecurringTransaction, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,7 +26,7 @@ func (r *recurringTransactionRepository) Create(ctx context.Context, rt *model.R
 	return r.db.WithContext(ctx).Create(rt).Error
 }
 
-func (r *recurringTransactionRepository) GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.RecurringTransaction, error) {
+func (r *recurringTransactionRepository) List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.RecurringTransaction, error) {
 	var rts []model.RecurringTransaction
 	query := r.db.WithContext(ctx)
 

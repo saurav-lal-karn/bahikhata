@@ -19,7 +19,7 @@ func NewFamilyController(svc service.FamilyService, emailSvc service.EmailServic
 	return FamilyController{svc: svc, emailSvc: emailSvc}
 }
 
-func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
+func (ctrl *FamilyController) Create(c *gin.Context) {
 	var req dto.CreateFamilyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
@@ -28,7 +28,7 @@ func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
 
 	family := req.ToFamily()
 
-	if err := ctrl.svc.CreateFamily(c.Request.Context(), family); err != nil {
+	if err := ctrl.svc.Create(c.Request.Context(), family); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -38,8 +38,8 @@ func (ctrl *FamilyController) CreateFamily(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "Family created successfully", familyResponse)
 }
 
-func (ctrl *FamilyController) ListFamilies(c *gin.Context) {
-	families, err := ctrl.svc.ListFamilies(c.Request.Context())
+func (ctrl *FamilyController) List(c *gin.Context) {
+	families, err := ctrl.svc.List(c.Request.Context())
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -53,7 +53,7 @@ func (ctrl *FamilyController) ListFamilies(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Families listed successfully", familyResponses)
 }
 
-func (ctrl *FamilyController) GetFamily(c *gin.Context) {
+func (ctrl *FamilyController) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
@@ -61,7 +61,7 @@ func (ctrl *FamilyController) GetFamily(c *gin.Context) {
 		return
 	}
 
-	family, err := ctrl.svc.GetFamilyById(c.Request.Context(), parsedId)
+	family, err := ctrl.svc.GetByID(c.Request.Context(), parsedId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -72,7 +72,7 @@ func (ctrl *FamilyController) GetFamily(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Family fetched successfully", familyResponse)
 }
 
-func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
+func (ctrl *FamilyController) Update(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
@@ -89,7 +89,7 @@ func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 	family := req.ToFamily()
 	family.ID = parsedId
 
-	if err := ctrl.svc.UpdateFamily(c.Request.Context(), family); err != nil {
+	if err := ctrl.svc.Update(c.Request.Context(), family); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -99,7 +99,7 @@ func (ctrl *FamilyController) UpdateFamily(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Family updated successfully", familyResponse)
 }
 
-func (ctrl *FamilyController) DeleteFamily(c *gin.Context) {
+func (ctrl *FamilyController) Delete(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
@@ -107,7 +107,7 @@ func (ctrl *FamilyController) DeleteFamily(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.svc.DeleteFamily(c.Request.Context(), parsedId); err != nil {
+	if err := ctrl.svc.Delete(c.Request.Context(), parsedId); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -115,7 +115,7 @@ func (ctrl *FamilyController) DeleteFamily(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Family deleted successfully", nil)
 }
 
-func (ctrl *FamilyController) InviteMember(c *gin.Context) {
+func (ctrl *FamilyController) Invite(c *gin.Context) {
 	var req dto.InviteMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
@@ -136,7 +136,7 @@ func (ctrl *FamilyController) InviteMember(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Invitation sent successfully", nil)
 }
 
-func (ctrl *FamilyController) GetFamilyStats(c *gin.Context) {
+func (ctrl *FamilyController) GetStats(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
@@ -144,7 +144,7 @@ func (ctrl *FamilyController) GetFamilyStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := ctrl.svc.GetFamilyStats(c.Request.Context(), parsedId)
+	stats, err := ctrl.svc.GetStats(c.Request.Context(), parsedId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

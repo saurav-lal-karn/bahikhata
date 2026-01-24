@@ -23,7 +23,7 @@ func NewUserController(svc service.UserService) *UserController {
 	return &UserController{svc: svc}
 }
 
-func (ctrl *UserController) CreateUser(c *gin.Context) {
+func (ctrl *UserController) Create(c *gin.Context) {
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
@@ -32,7 +32,7 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 
 	user := req.ToUser()
 
-	if err := ctrl.svc.CreateUser(c.Request.Context(), user); err != nil {
+	if err := ctrl.svc.Create(c.Request.Context(), user); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -47,8 +47,8 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "User created successfully", userResponse)
 }
 
-func (ctrl *UserController) ListUsers(c *gin.Context) {
-	users, err := ctrl.svc.ListUsers(c.Request.Context())
+func (ctrl *UserController) List(c *gin.Context) {
+	users, err := ctrl.svc.List(c.Request.Context())
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -67,7 +67,7 @@ func (ctrl *UserController) ListUsers(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "List Users route called", userResponses)
 }
 
-func (ctrl *UserController) GetUser(c *gin.Context) {
+func (ctrl *UserController) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	parsedId, err := uuid.Parse(id)
 	if err != nil {
@@ -75,7 +75,7 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.svc.GetUserById(c.Request.Context(), parsedId)
+	user, err := ctrl.svc.GetByID(c.Request.Context(), parsedId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -91,11 +91,11 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Get User route called", userResponse)
 }
 
-func (ctrl *UserController) UpdateUser(c *gin.Context) {
+func (ctrl *UserController) Update(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Update User route called", nil)
 }
 
-func (ctrl *UserController) DeleteUser(c *gin.Context) {
+func (ctrl *UserController) Delete(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Delete User route called", nil)
 }
 func (ctrl *UserController) GetMe(c *gin.Context) {
@@ -111,7 +111,7 @@ func (ctrl *UserController) GetMe(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.svc.GetUserById(c.Request.Context(), uid)
+	user, err := ctrl.svc.GetByID(c.Request.Context(), uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -168,7 +168,7 @@ func(ctrl *UserController) UpdateMe(c *gin.Context) {
 
 	user := req.ToUser()
 
-	if err := ctrl.svc.UpdateUser(c.Request.Context(), uid, user); err != nil {
+	if err := ctrl.svc.Update(c.Request.Context(), uid, user); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -236,14 +236,14 @@ func (ctrl *UserController) UploadAvatar(c *gin.Context) {
 	avatarUrl := fmt.Sprintf("/uploads/avatars/%s", filename)
 
 	// Update user record
-	user, err := ctrl.svc.GetUserById(c.Request.Context(), uid)
+	user, err := ctrl.svc.GetByID(c.Request.Context(), uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "User not found")
 		return
 	}
 
 	user.AvatarUrl = avatarUrl
-	if err := ctrl.svc.UpdateUser(c.Request.Context(), uid, user); err != nil {
+	if err := ctrl.svc.Update(c.Request.Context(), uid, user); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user profile")
 		return
 	}

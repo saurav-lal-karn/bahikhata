@@ -48,7 +48,7 @@ func (c *TaxController) CreateDocument(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Tax document created successfully", doc)
 }
 
-func (c *TaxController) GetDocuments(ctx *gin.Context) {
+func (c *TaxController) ListDocuments(ctx *gin.Context) {
 	_, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -69,7 +69,7 @@ func (c *TaxController) GetDocuments(ctx *gin.Context) {
 
 	year := ctx.Query("year")
 
-	docs, err := c.service.GetDocuments(ctx, familyID, year)
+	docs, err := c.service.ListDocuments(ctx, familyID, year)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch tax documents")
 		return
@@ -124,7 +124,7 @@ func (c *TaxController) CreateDeduction(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Tax deduction created successfully", ded)
 }
 
-func (c *TaxController) GetDeductions(ctx *gin.Context) {
+func (c *TaxController) ListDeductions(ctx *gin.Context) {
 	var familyID *uuid.UUID
 	familyIdParam := ctx.Query("family_id")
 	if familyIdParam != "" {
@@ -135,7 +135,7 @@ func (c *TaxController) GetDeductions(ctx *gin.Context) {
 
 	year := ctx.Query("year")
 
-	deds, err := c.service.GetDeductions(ctx, familyID, year)
+	deds, err := c.service.ListDeductions(ctx, familyID, year)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch tax deductions")
 		return

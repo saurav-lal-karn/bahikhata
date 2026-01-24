@@ -17,14 +17,14 @@ func NewExpenseCategoryController(service service.ExpenseCategoryService) Expens
 	return ExpenseCategoryController{service: service}
 }
 
-func (ctrl *ExpenseCategoryController) GetCategories(c *gin.Context) {
+func (ctrl *ExpenseCategoryController) List(c *gin.Context) {
 	familyId := c.Param("family_id")
 	if familyId == "" {
 		helper.ErrorResponse(c, http.StatusBadRequest, "family_id is required")
 		return
 	}
 
-	categories, err := ctrl.service.GetCategories(c.Request.Context(), familyId)
+	categories, err := ctrl.service.List(c.Request.Context(), familyId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -41,14 +41,14 @@ func (ctrl *ExpenseCategoryController) GetCategories(c *gin.Context) {
 // 	return c.service.UpdateCategory(ctx, category)
 // }
 
-func (ctrl *ExpenseCategoryController) DeleteCategory(c *gin.Context) {
+func (ctrl *ExpenseCategoryController) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
 		helper.ErrorResponse(c, http.StatusBadRequest, "id is required")
 		return
 	}
 
-	if err := ctrl.service.DeleteCategory(c.Request.Context(), id); err != nil {
+	if err := ctrl.service.Delete(c.Request.Context(), id); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -56,14 +56,14 @@ func (ctrl *ExpenseCategoryController) DeleteCategory(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Category deleted successfully", nil)
 }
 
-func (ctrl *ExpenseCategoryController) GetCategoryById(c *gin.Context) {
+func (ctrl *ExpenseCategoryController) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
 		helper.ErrorResponse(c, http.StatusBadRequest, "id is required")
 		return
 	}
 
-	category, err := ctrl.service.GetCategoryById(c.Request.Context(), uuid.MustParse(id))
+	category, err := ctrl.service.GetByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

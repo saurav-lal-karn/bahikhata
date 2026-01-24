@@ -14,12 +14,12 @@ import (
 )
 
 type ExpenseService interface {
-	CreateExpense(ctx context.Context, req *dto.CreateExpenseRequest, userId uuid.UUID) error
-	GetExpenseById(ctx context.Context, id uuid.UUID) (*model.Expense, error)
-	ListExpenses(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]dto.Expense, error)
-	UpdateExpense(ctx context.Context, expense *model.Expense) error
-	DeleteExpense(ctx context.Context, id uuid.UUID) error
-	GetExpenseStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (*dto.ExpenseStatsResponse, error)
+	Create(ctx context.Context, req *dto.CreateExpenseRequest, userId uuid.UUID) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Expense, error)
+	List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]dto.Expense, error)
+	Update(ctx context.Context, expense *model.Expense) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (*dto.ExpenseStatsResponse, error)
 }
 
 type expenseService struct {
@@ -33,10 +33,10 @@ func NewExpenseService(expenseRepo repository.ExpenseRepository, paymentMethodRe
 	return &expenseService{expenseRepo: expenseRepo, paymentMethodRepo: paymentMethodRepo, categoryRepo: categoryRepo, familyRepo: familyRepo}
 }
 
-func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpenseRequest, userId uuid.UUID) error {
+func (s *expenseService) Create(ctx context.Context, req *dto.CreateExpenseRequest, userId uuid.UUID) error {
 	// Verify the family exists
 	familyID := uuid.MustParse(req.FamilyID)
-	_, err := s.familyRepo.GetFamilyById(ctx, familyID)
+	_, err := s.familyRepo.GetByID(ctx, familyID)
 	if err != nil {
 		return fmt.Errorf("Family not found: %w", err)
 	}
@@ -47,11 +47,11 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpen
 
 	if req.IsCustomPaymentMethod && req.CustomPaymentMethodName != "" {
 		// Check if the payment method exists, if not, create a new one
-		paymentMethod, err := s.paymentMethodRepo.GetPaymentMethodByName(ctx, req.CustomPaymentMethodName, familyID)
+		paymentMethod, err := s.paymentMethodRepo.GetByName(ctx, req.CustomPaymentMethodName, familyID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Payment method not found, create a new one
-				paymentMethod, err = s.paymentMethodRepo.CreatePaymentMethod(ctx, model.PaymentMethod{
+				paymentMethod, err = s.paymentMethodRepo.Create(ctx, model.PaymentMethod{
 					ID: uuid.New(),
 					Name: req.CustomPaymentMethodName,
 					FamilyID: &familyID,
@@ -70,7 +70,7 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpen
 	} else {
 		// Verify the payment method exists
 		paymentMethodID = uuid.MustParse(req.PaymentMethodID)
-		_, err := s.paymentMethodRepo.GetPaymentMethodById(ctx, paymentMethodID)
+		_, err := s.paymentMethodRepo.GetByID(ctx, paymentMethodID)
 		if err != nil {
 			return fmt.Errorf("Payment method not found: %w", err)
 		}
@@ -78,11 +78,11 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpen
 
 	if req.IsCustomCategory && req.CustomCategoryName != "" {
 		// Check if the category exists, if not, create a new one
-		category, err := s.categoryRepo.GetCategoryByName(ctx, req.CustomCategoryName, familyID)
+		category, err := s.categoryRepo.GetByName(ctx, req.CustomCategoryName, familyID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Category not found, create a new one
-				category, err = s.categoryRepo.CreateCategory(ctx, model.ExpenseCategory{
+				category, err = s.categoryRepo.Create(ctx, model.ExpenseCategory{
 					ID:          uuid.New(),
 					Name:        req.CustomCategoryName,
 					FamilyID:    &familyID,
@@ -101,7 +101,7 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpen
 	} else {
 		// Verify the category exists
 		categoryID = uuid.MustParse(req.CategoryID)
-		_, err := s.categoryRepo.GetCategoryById(ctx, categoryID)
+		_, err := s.categoryRepo.GetByID(ctx, categoryID)
 		if err != nil {
 			return fmt.Errorf("Category not found: %w", err)
 		}
@@ -124,15 +124,15 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *dto.CreateExpen
 		CreatedByID: userId,
 		TransactionDate: transactionDate,
 	}
-	return s.expenseRepo.CreateExpense(ctx, expense)
+	return s.expenseRepo.Create(ctx, expense)
 }
 
-func (s *expenseService) GetExpenseById(ctx context.Context, id uuid.UUID) (*model.Expense, error) {
-	return s.expenseRepo.GetExpenseById(ctx, id)
+func (s *expenseService) GetByID(ctx context.Context, id uuid.UUID) (*model.Expense, error) {
+	return s.expenseRepo.GetByID(ctx, id)
 }
 
-func (s *expenseService) ListExpenses(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]dto.Expense, error) {
-	expenses, err := s.expenseRepo.ListExpenses(ctx, familyID, userId)
+func (s *expenseService) List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]dto.Expense, error) {
+	expenses, err := s.expenseRepo.List(ctx, familyID, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -151,16 +151,16 @@ func (s *expenseService) ListExpenses(ctx context.Context, familyID uuid.UUID, u
 	return expenseDtos, nil
 }
 
-func (s *expenseService) UpdateExpense(ctx context.Context, expense *model.Expense) error {
-	return s.expenseRepo.UpdateExpense(ctx, expense)
+func (s *expenseService) Update(ctx context.Context, expense *model.Expense) error {
+	return s.expenseRepo.Update(ctx, expense)
 }
 
-func (s *expenseService) DeleteExpense(ctx context.Context, id uuid.UUID) error {
-	return s.expenseRepo.DeleteExpense(ctx, id)
+func (s *expenseService) Delete(ctx context.Context, id uuid.UUID) error {
+	return s.expenseRepo.Delete(ctx, id)
 }
 
-func (s *expenseService) GetExpenseStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (*dto.ExpenseStatsResponse, error) {
-	totalCount, totalAmount, thisMonth, lastMonth, err := s.expenseRepo.GetExpenseStats(ctx, familyID, userId)
+func (s *expenseService) GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (*dto.ExpenseStatsResponse, error) {
+	totalCount, totalAmount, thisMonth, lastMonth, err := s.expenseRepo.GetStats(ctx, familyID, userId)
 	if err != nil {
 		return nil, err
 	}

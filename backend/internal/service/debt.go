@@ -10,7 +10,7 @@ import (
 
 type DebtService interface {
 	Create(ctx context.Context, debt *model.Debt) error
-	GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
+	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,8 +26,8 @@ func (s *debtService) Create(ctx context.Context, debt *model.Debt) error {
 	return s.repo.Create(ctx, debt)
 }
 
-func (s *debtService) GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error) {
-	return s.repo.GetAll(ctx, familyID, userID)
+func (s *debtService) List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error) {
+	return s.repo.List(ctx, familyID, userID)
 }
 
 func (s *debtService) Delete(ctx context.Context, id uuid.UUID) error {

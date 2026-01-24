@@ -18,7 +18,7 @@ func NewIncomeController(svc service.IncomeService) *IncomeController {
 	return &IncomeController{svc: svc}
 }
 
-func (ctrl *IncomeController) CreateIncome(c *gin.Context) {
+func (ctrl *IncomeController) Create(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -37,18 +37,18 @@ func (ctrl *IncomeController) CreateIncome(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.svc.CreateIncome(c, &incomeDTO, uid); err != nil {
+	if err := ctrl.svc.Create(c, &incomeDTO, uid); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "Income created successfully", nil)
 }
 
-func (ctrl *IncomeController) GetIncomeById(c *gin.Context) {
+func (ctrl *IncomeController) GetByID(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Income retrieved successfully", nil)
 }
 
-func (ctrl *IncomeController) ListIncomes(c *gin.Context) {
+func (ctrl *IncomeController) List(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -73,7 +73,7 @@ func (ctrl *IncomeController) ListIncomes(c *gin.Context) {
 		return
 	}
 	
-	incomes, err := ctrl.svc.ListIncomes(c, fid, uid)
+	incomes, err := ctrl.svc.List(c, fid, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -81,14 +81,14 @@ func (ctrl *IncomeController) ListIncomes(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Incomes retrieved successfully", incomes)
 }
 
-func (ctrl *IncomeController) UpdateIncome(c *gin.Context) {
+func (ctrl *IncomeController) Update(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Income updated successfully", nil)
 }
 
-func (ctrl *IncomeController) DeleteIncome(c *gin.Context) {
+func (ctrl *IncomeController) Delete(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Income deleted successfully", nil)
 }
 
-func (ctrl *IncomeController) GetIncomeStats(c *gin.Context) {
+func (ctrl *IncomeController) GetStats(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Income stats retrieved successfully", nil)
 }

@@ -18,7 +18,7 @@ func RegisterExpenseRoutes(app *config.Application, rg *gin.RouterGroup) {
 	expenseCtrl := controller.NewExpenseController(expenseSvc)
 
 	// Routes for expenses
-	rg.POST("", expenseCtrl.CreateExpense)
-	rg.GET("/:family_id", expenseCtrl.GetExpenses)
-	rg.GET("/stats/:family_id", expenseCtrl.GetExpenseStats)
+	rg.POST("", expenseCtrl.Create)
+	rg.GET("/:family_id", expenseCtrl.List)
+	rg.GET("/stats/:family_id", expenseCtrl.GetStats)
 }

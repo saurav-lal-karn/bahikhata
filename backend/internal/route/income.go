@@ -16,10 +16,10 @@ func RegisterIncomeRoutes(app *config.Application, router *gin.RouterGroup) {
 	incomeService := service.NewIncomeService(incomeRepo, walletRepo, incomeTypeRepo, familyRepo)
 	incomeController := controller.NewIncomeController(incomeService)
 
-	router.POST("", incomeController.CreateIncome)
-	router.GET("details/:id", incomeController.GetIncomeById)
-	router.GET("/:familyId", incomeController.ListIncomes)
-	router.PUT("/:id", incomeController.UpdateIncome)
-	router.DELETE("/:id", incomeController.DeleteIncome)
-	router.GET("/stats", incomeController.GetIncomeStats)
+	router.POST("", incomeController.Create)
+	router.GET("details/:id", incomeController.GetByID)
+	router.GET("/:familyId", incomeController.List)
+	router.PUT("/:id", incomeController.Update)
+	router.DELETE("/:id", incomeController.Delete)
+	router.GET("/stats", incomeController.GetStats)
 }

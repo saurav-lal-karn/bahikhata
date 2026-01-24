@@ -18,7 +18,7 @@ func NewWalletController(svc service.WalletService) WalletController {
 	return WalletController{svc: svc}
 }
 
-func (ctrl *WalletController) CreateWallet(c *gin.Context) {
+func (ctrl *WalletController) Create(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -49,7 +49,7 @@ func (ctrl *WalletController) CreateWallet(c *gin.Context) {
 		}
 	}
 
-	wallet, err := ctrl.svc.CreateWallet(c, &req, uid)
+	wallet, err := ctrl.svc.Create(c, &req, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -58,7 +58,7 @@ func (ctrl *WalletController) CreateWallet(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "Wallet created successfully", wallet)
 }
 
-func (ctrl *WalletController) GetWallets(c *gin.Context) {
+func (ctrl *WalletController) List(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -84,7 +84,7 @@ func (ctrl *WalletController) GetWallets(c *gin.Context) {
 		return
 	}
 
-	wallets, err := ctrl.svc.GetWallets(c, fid, uid)
+	wallets, err := ctrl.svc.List(c, fid, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -93,7 +93,7 @@ func (ctrl *WalletController) GetWallets(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Wallets fetched successfully", wallets)
 }
 
-func (ctrl *WalletController) GetWalletDetails(c *gin.Context) {
+func (ctrl *WalletController) GetByID(c *gin.Context) {
 	walletID := c.Param("wallet_id")
 	if walletID == "" {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
@@ -106,7 +106,7 @@ func (ctrl *WalletController) GetWalletDetails(c *gin.Context) {
 		return
 	}
 
-	wallet, err := ctrl.svc.GetWalletDetails(c, parsedWalletID)
+	wallet, err := ctrl.svc.GetByID(c, parsedWalletID)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -115,7 +115,7 @@ func (ctrl *WalletController) GetWalletDetails(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Wallet details fetched successfully", wallet)
 }
 
-func (ctrl *WalletController) UpdateWallet(c *gin.Context) {
+func (ctrl *WalletController) Update(c *gin.Context) {
 	walletID := c.Param("wallet_id")
 	if walletID == "" {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
@@ -145,7 +145,7 @@ func (ctrl *WalletController) UpdateWallet(c *gin.Context) {
 		return
 	}
 
-	wallet, err := ctrl.svc.UpdateWallet(c, parsedWalletID, &req, uid)
+	wallet, err := ctrl.svc.Update(c, parsedWalletID, &req, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -154,7 +154,7 @@ func (ctrl *WalletController) UpdateWallet(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Wallet updated successfully", wallet)
 }
 
-func (ctrl *WalletController) DeleteWallet(c *gin.Context) {
+func (ctrl *WalletController) Delete(c *gin.Context) {
 	walletID := c.Param("wallet_id")
 	if walletID == "" {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
@@ -178,7 +178,7 @@ func (ctrl *WalletController) DeleteWallet(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.svc.DeleteWallet(c, parsedWalletID, uid)
+	err = ctrl.svc.Delete(c, parsedWalletID, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

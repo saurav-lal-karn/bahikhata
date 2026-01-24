@@ -7,8 +7,10 @@ import {
   Zap,
   CheckCircle2,
   Clock,
-  Filter
+  Filter,
+  ChevronDown
 } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 import { SubscriptionManager } from "@/components/recurring/SubscriptionManager";
 import { UpcomingBillReminders } from "@/components/recurring/UpcomingBillReminders";
@@ -23,6 +25,20 @@ export default function RecurringPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState<RecurringTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
+  // Extract unique transaction types
+  const transactionTypes = Array.from(new Set(transactions.map(t => t.type).filter(Boolean))) as string[];
+
+  const filteredTransactions = transactions.filter(t => {
+    const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         t.type.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !selectedType || t.type === selectedType;
+    return matchesSearch && matchesType;
+  });
+
 
   const fetchTransactions = async () => {
     if (familyDetails?.id) {
@@ -76,27 +92,64 @@ export default function RecurringPageClient() {
                <div className="p-3 bg-blue-50 text-blue-600 dark:bg-blue-900/20 rounded-2xl">
                  <Repeat className="w-6 h-6" />
                </div>
-               <div>
-                  <h3 className="text-xl font-black text-gray-800 dark:text-white">Active Subscriptions</h3>
-                  <p className="text-xs text-gray-500 font-medium">Tracking {transactions.length} digital services</p>
-               </div>
-             </div>
-             <div className="flex items-center gap-2">
-                <div className="relative">
-                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                   <input 
-                     type="text" 
-                     placeholder="Search..." 
-                     className="pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs focus:ring-1 focus:ring-blue-500 outline-none w-32 md:w-48"
-                   />
+                <div>
+                   <h3 className="text-xl font-black text-gray-800 dark:text-white">Active Subscriptions</h3>
+                   <p className="text-xs text-gray-500 font-medium">Tracking {filteredTransactions.length} digital services</p>
                 </div>
-                <button className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                  <Filter className="w-4 h-4 text-gray-400" />
-                </button>
+
              </div>
+              <div className="flex items-center gap-2">
+                 <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs focus:ring-1 focus:ring-blue-500 outline-none w-32 md:w-48"
+                    />
+                 </div>
+                 <button 
+                   onClick={() => setIsFilterVisible(!isFilterVisible)}
+                   className={`p-2 rounded-xl transition-all border ${isFilterVisible ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-gray-50 dark:bg-gray-800 border-transparent text-gray-400'}`}
+                 >
+                   <Filter className="w-4 h-4" />
+                 </button>
+              </div>
            </div>
 
-           <SubscriptionManager transactions={transactions} isLoading={isLoading} />
+           {/* Filter Bar */}
+           {isFilterVisible && (
+             <div className="p-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-sm animate-in slide-in-from-top-4 duration-300">
+                <div className="flex flex-wrap items-end gap-4">
+                   <div className="space-y-2 min-w-[200px]">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Filter by Type</label>
+                      <div className="relative">
+                         <select 
+                           value={selectedType || ""}
+                           onChange={(e) => setSelectedType(e.target.value || null)}
+                           className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-xl text-xs font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                         >
+                            <option value="">All Categories</option>
+                            {transactionTypes.map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                         </select>
+                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                      </div>
+                   </div>
+                   <button 
+                     onClick={() => { setSearchTerm(""); setSelectedType(null); }}
+                     className="px-6 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                   >
+                     Clear
+                   </button>
+                </div>
+             </div>
+           )}
+
+           <SubscriptionManager transactions={filteredTransactions} isLoading={isLoading} />
+
         </div>
 
         {/* Right: Alerts & Calendar (4/12) */}

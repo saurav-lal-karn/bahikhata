@@ -9,8 +9,8 @@ import (
 )
 
 type WalletTypeService interface {
-	CreateWalletType(ctx context.Context, walletType *model.WalletType) error
-	GetWalletTypes(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletType, error)
+	Create(ctx context.Context, walletType *model.WalletType) error
+	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletType, error)
 }
 
 type walletTypeService struct {
@@ -21,12 +21,12 @@ func NewWalletTypeService(repo repository.WalletTypeRepository) WalletTypeServic
 	return &walletTypeService{repo: repo}
 }
 
-func (s *walletTypeService) CreateWalletType(ctx context.Context, walletType *model.WalletType) error {
+func (s *walletTypeService) Create(ctx context.Context, walletType *model.WalletType) error {
 	_, err := s.repo.Create(ctx, walletType)
 	return err
 }
 
-func (s *walletTypeService) GetWalletTypes(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletType, error) {
+func (s *walletTypeService) List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletType, error) {
 	walletTypes, err := s.repo.List(ctx, familyId, userId)
 	if err != nil {
 		return nil, err

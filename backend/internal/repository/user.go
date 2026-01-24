@@ -11,10 +11,10 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *model.User) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
-	ListUsers(ctx context.Context) ([]model.User, error)
-	GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error)
-	UpdateUser(ctx context.Context, id uuid.UUID,  user *model.User) error
-	DeleteUser(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context) ([]model.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
+	Update(ctx context.Context, id uuid.UUID,  user *model.User) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type userRepository struct {
@@ -38,22 +38,22 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &user, err
 }
 
-func (r *userRepository) ListUsers(ctx context.Context) ([]model.User, error) {
+func (r *userRepository) List(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	err := r.db.WithContext(ctx).Find(&users).Error
 	return users, err
 }
 
-func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("FamilyMembers.Family").First(&user).Error
 	return &user, err
 }
 
-func (r *userRepository) UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error {
+func (r *userRepository) Update(ctx context.Context, id uuid.UUID, user *model.User) error {
 	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(user).Error
 }
 
-func (r *userRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.User{}, id).Error
 }

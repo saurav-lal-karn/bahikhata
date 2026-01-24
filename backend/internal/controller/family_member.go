@@ -18,7 +18,7 @@ func NewFamilyMemberController(svc service.FamilyMemberService) FamilyMemberCont
 	return FamilyMemberController{svc: svc}
 }
 
-func (ctrl *FamilyMemberController) CreateFamilyMember(c *gin.Context) {
+func (ctrl *FamilyMemberController) Create(c *gin.Context) {
 	var req dto.CreateFamilyMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
@@ -27,7 +27,7 @@ func (ctrl *FamilyMemberController) CreateFamilyMember(c *gin.Context) {
 
 	familyMember := req.ToFamilyMember()
 
-	if err := ctrl.svc.CreateFamilyMember(c.Request.Context(), familyMember); err != nil {
+	if err := ctrl.svc.Create(c.Request.Context(), familyMember); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -39,9 +39,9 @@ func (ctrl *FamilyMemberController) CreateFamilyMember(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "Family member created successfully", familyMemberResponse)
 }
 
-func (ctrl *FamilyMemberController) ListFamilyMembers(c *gin.Context) {
+func (ctrl *FamilyMemberController) List(c *gin.Context) {
 	familyId := c.Param("family_id")
-	familyMembers, err := ctrl.svc.GetFamilyMembersByFamilyId(c.Request.Context(), familyId)
+	familyMembers, err := ctrl.svc.GetByFamilyID(c.Request.Context(), familyId)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -63,7 +63,7 @@ func (ctrl *FamilyMemberController) ListFamilyMembers(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Family members listed successfully", familyMemberResponses)
 }
 
-func (ctrl *FamilyMemberController) InviteMember(c *gin.Context) {
+func (ctrl *FamilyMemberController) Invite(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
@@ -82,7 +82,7 @@ func (ctrl *FamilyMemberController) InviteMember(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.svc.InviteMember(c.Request.Context(), req, uid); err != nil {
+	if err := ctrl.svc.Invite(c.Request.Context(), req, uid); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

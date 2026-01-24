@@ -9,8 +9,8 @@ import (
 )
 
 type WalletTransferService interface {
-	CreateWalletTransfer(ctx context.Context, walletTransfer *model.WalletTransfer) error
-	ListWalletTransfers(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error)
+	Create(ctx context.Context, walletTransfer *model.WalletTransfer) error
+	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error)
 }
 
 type walletTransferService struct {
@@ -22,20 +22,20 @@ func NewWalletTransferService(walletTransferRepository repository.WalletTransfer
 	return &walletTransferService{walletTransferRepository: walletTransferRepository, walletRepository: walletRepository}
 }
 
-func (w *walletTransferService) CreateWalletTransfer(ctx context.Context, walletTransfer *model.WalletTransfer) error {
-	walletFrom, err := w.walletRepository.GetWalletById(ctx, walletTransfer.FromWalletID)
+func (w *walletTransferService) Create(ctx context.Context, walletTransfer *model.WalletTransfer) error {
+	walletFrom, err := w.walletRepository.GetByID(ctx, walletTransfer.FromWalletID)
 	if err != nil {
 		return err
 	}
-	walletTo, err := w.walletRepository.GetWalletById(ctx, walletTransfer.ToWalletID)
+	walletTo, err := w.walletRepository.GetByID(ctx, walletTransfer.ToWalletID)
 	if err != nil {
 		return err
 	}
 	walletTransfer.FromWallet = walletFrom
 	walletTransfer.ToWallet = walletTo
-	return w.walletTransferRepository.CreateWalletTransfer(ctx, walletTransfer)
+	return w.walletTransferRepository.Create(ctx, walletTransfer)
 }
 
-func (w *walletTransferService) ListWalletTransfers(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error) {
-	return w.walletTransferRepository.ListWalletTransfers(ctx, familyId, userId)
+func (w *walletTransferService) List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error) {
+	return w.walletTransferRepository.List(ctx, familyId, userId)
 }

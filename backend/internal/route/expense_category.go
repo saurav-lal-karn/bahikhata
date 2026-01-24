@@ -13,6 +13,6 @@ func RegisterExpenseCategoryRoutes(app *config.Application, rg *gin.RouterGroup)
 	expenseCategorySvc := service.NewExpenseCategoryService(expenseCategoryRepo)
 	expenseCategoryCtrl := controller.NewExpenseCategoryController(expenseCategorySvc)
 
-	rg.GET("/:family_id", expenseCategoryCtrl.GetCategories)
-	rg.DELETE("/:id", expenseCategoryCtrl.DeleteCategory)
+	rg.GET("/:family_id", expenseCategoryCtrl.List)
+	rg.DELETE("/:id", expenseCategoryCtrl.Delete)
 }

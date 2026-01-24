@@ -18,7 +18,7 @@ func NewGoalController(goalService service.GoalService) *GoalController {
 	return &GoalController{goalService: goalService}
 }
 
-func (c *GoalController) CreateGoal(ctx *gin.Context) {
+func (c *GoalController) Create(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -44,7 +44,7 @@ func (c *GoalController) CreateGoal(ctx *gin.Context) {
 	}
 	goal.UserID = &uid
 
-	err = c.goalService.CreateGoal(ctx.Request.Context(), goal)
+	err = c.goalService.Create(ctx.Request.Context(), goal)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create goal"})
 		return
@@ -53,7 +53,7 @@ func (c *GoalController) CreateGoal(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Goal created successfully", nil)
 }
 
-func(c *GoalController) GetGoals(ctx *gin.Context) {
+func(c *GoalController) List(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -73,7 +73,7 @@ func(c *GoalController) GetGoals(ctx *gin.Context) {
     }
     familyID := uuid.MustParse(familyId)
 
-	goals, err := c.goalService.GetGoals(ctx.Request.Context(), familyID, uid)
+	goals, err := c.goalService.List(ctx.Request.Context(), familyID, uid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get goals"})
 		return

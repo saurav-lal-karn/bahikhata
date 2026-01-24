@@ -9,12 +9,12 @@ import (
 )
 
 type GoalService interface {
-	CreateGoal(ctx context.Context, goal *model.Goal) error
-	UpdateGoal(ctx context.Context, goal model.Goal) error
-	DeleteGoal(ctx context.Context, goal model.Goal) error
-	GetGoal(ctx context.Context, goalID uuid.UUID) (model.Goal, error)
-	GetGoals(ctx context.Context, familyID uuid.UUID, created_by_id uuid.UUID) ([]model.Goal, error)
-	GetGoalByName(ctx context.Context, goalName string) (model.Goal, error)
+	Create(ctx context.Context, goal *model.Goal) error
+	Update(ctx context.Context, goal model.Goal) error
+	Delete(ctx context.Context, goal model.Goal) error
+	Get(ctx context.Context, goalID uuid.UUID) (model.Goal, error)
+	List(ctx context.Context, familyID uuid.UUID, created_by_id uuid.UUID) ([]model.Goal, error)
+	GetByName(ctx context.Context, goalName string) (model.Goal, error)
 }
 
 type goalService struct {
@@ -25,26 +25,26 @@ func NewGoalService(goalRepo repository.GoalRepository) GoalService {
 	return &goalService{goalRepo: goalRepo}
 }
 
-func (s *goalService) CreateGoal(ctx context.Context, goal *model.Goal) error {
-	return s.goalRepo.CreateGoal(ctx, goal)
+func (s *goalService) Create(ctx context.Context, goal *model.Goal) error {
+	return s.goalRepo.Create(ctx, goal)
 }
 
-func (s *goalService) UpdateGoal(ctx context.Context, goal model.Goal) error {
-	return s.goalRepo.UpdateGoal(ctx, goal)
+func (s *goalService) Update(ctx context.Context, goal model.Goal) error {
+	return s.goalRepo.Update(ctx, goal)
 }
 
-func (s *goalService) DeleteGoal(ctx context.Context, goal model.Goal) error {
-	return s.goalRepo.DeleteGoal(ctx, goal)
+func (s *goalService) Delete(ctx context.Context, goal model.Goal) error {
+	return s.goalRepo.Delete(ctx, goal)
 }
 
-func (s *goalService) GetGoal(ctx context.Context, goalID uuid.UUID) (model.Goal, error) {
-	return s.goalRepo.GetGoal(ctx, goalID)
+func (s *goalService) Get(ctx context.Context, goalID uuid.UUID) (model.Goal, error) {
+	return s.goalRepo.Get(ctx, goalID)
 }
 
-func (s *goalService) GetGoals(ctx context.Context, familyID uuid.UUID, created_by_id uuid.UUID) ([]model.Goal, error) {
-	return s.goalRepo.GetGoals(ctx, familyID, created_by_id)
+func (s *goalService) List(ctx context.Context, familyID uuid.UUID, created_by_id uuid.UUID) ([]model.Goal, error) {
+	return s.goalRepo.List(ctx, familyID, created_by_id)
 }
 
-func (s *goalService) GetGoalByName(ctx context.Context, goalName string) (model.Goal, error) {
-	return s.goalRepo.GetGoalByName(ctx, goalName)
+func (s *goalService) GetByName(ctx context.Context, goalName string) (model.Goal, error) {
+	return s.goalRepo.GetByName(ctx, goalName)
 }

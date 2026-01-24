@@ -11,11 +11,11 @@ import (
 )
 
 type UserService interface {
-	ListUsers(ctx context.Context) ([]model.User, error)
-	CreateUser(ctx context.Context, user *model.User) error
-	GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error)
-	UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error
-	DeleteUser(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context) ([]model.User, error)
+	Create(ctx context.Context, user *model.User) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
+	Update(ctx context.Context, id uuid.UUID, user *model.User) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type userService struct {
@@ -26,7 +26,7 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
+func (s *userService) Create(ctx context.Context, user *model.User) error {
 	// hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -50,18 +50,18 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (s *userService) ListUsers(ctx context.Context) ([]model.User, error) {
-	return s.repo.ListUsers(ctx)
+func (s *userService) List(ctx context.Context) ([]model.User, error) {
+	return s.repo.List(ctx)
 }
 
-func (s *userService) GetUserById(ctx context.Context, id uuid.UUID) (*model.User, error) {
-	return s.repo.GetUserById(ctx, id)
+func (s *userService) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
-func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, user *model.User) error {
-	return s.repo.UpdateUser(ctx, id, user)
+func (s *userService) Update(ctx context.Context, id uuid.UUID, user *model.User) error {
+	return s.repo.Update(ctx, id, user)
 }
 
-func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	return s.repo.DeleteUser(ctx, id)
+func (s *userService) Delete(ctx context.Context, id uuid.UUID) error {
+	return s.repo.Delete(ctx, id)
 }

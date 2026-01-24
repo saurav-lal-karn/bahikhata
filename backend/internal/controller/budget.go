@@ -18,7 +18,7 @@ func NewBudgetController(budgetService service.BudgetService) *BudgetController 
 	return &BudgetController{budgetService: budgetService}
 }
 
-func (bc *BudgetController) CreateBudget(ctx *gin.Context) {
+func (bc *BudgetController) Create(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -40,14 +40,14 @@ func (bc *BudgetController) CreateBudget(ctx *gin.Context) {
 	budget  := req.ToBudget()
 	budget.UserID = &uid
 
-	if err := bc.budgetService.CreateBudget(ctx, budget); err != nil {
+	if err := bc.budgetService.Create(ctx, budget); err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create budget")
 		return
 	}
 	helper.SuccessResponse(ctx, http.StatusCreated, "Budget created successfully", nil)
 }
 
-func (bc *BudgetController) GetBudgets(ctx *gin.Context) {
+func (bc *BudgetController) List(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -67,7 +67,7 @@ func (bc *BudgetController) GetBudgets(ctx *gin.Context) {
     }
     familyID := uuid.MustParse(familyId)
 
-	budgets, err := bc.budgetService.GetBudgets(ctx, &familyID, &uid)
+	budgets, err := bc.budgetService.List(ctx, &familyID, &uid)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to get budgets")
 		return

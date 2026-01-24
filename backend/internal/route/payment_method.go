@@ -13,5 +13,5 @@ func RegisterPaymentMethodRoutes(app *config.Application, rg *gin.RouterGroup) {
 	paymentMethodSvc := service.NewPaymentMethodService(paymentMethodRepo)
 	paymentMethodCtrl := controller.NewPaymentMethodController(paymentMethodSvc)
 
-	rg.GET("/:family_id", paymentMethodCtrl.GetPaymentMethods)
+	rg.GET("/:family_id", paymentMethodCtrl.List)
 }

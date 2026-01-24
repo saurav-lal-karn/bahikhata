@@ -10,7 +10,7 @@ import (
 
 type InvestmentRepository interface {
 	Create(ctx context.Context, investment *model.Investment) error
-	GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error)
+	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,7 +26,7 @@ func (r *investmentRepository) Create(ctx context.Context, investment *model.Inv
 	return r.db.WithContext(ctx).Create(investment).Error
 }
 
-func (r *investmentRepository) GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error) {
+func (r *investmentRepository) List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error) {
 	var investments []model.Investment
 	query := r.db.WithContext(ctx)
 

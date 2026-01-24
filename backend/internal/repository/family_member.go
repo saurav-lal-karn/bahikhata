@@ -9,11 +9,11 @@ import (
 )
 
 type FamilyMemberRepository interface {
-	CreateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
-	GetFamilyMemberById(ctx context.Context, id string) (*model.FamilyMember, error)
-	GetFamilyMembersByFamilyId(ctx context.Context, familyId string) ([]model.User, error)
-	UpdateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
-	DeleteFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
+	Create(ctx context.Context, familyMember *model.FamilyMember) error
+	GetByID(ctx context.Context, id string) (*model.FamilyMember, error)
+	GetByFamilyID(ctx context.Context, familyId string) ([]model.User, error)
+	Update(ctx context.Context, familyMember *model.FamilyMember) error
+	Delete(ctx context.Context, familyMember *model.FamilyMember) error
 	CheckUserInFamily(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) (bool, error)
 }
 
@@ -25,11 +25,11 @@ func NewFamilyMemberRepository(db *gorm.DB) FamilyMemberRepository {
 	return &familyMemberRepository{db: db}
 }
 
-func (r *familyMemberRepository) CreateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
+func (r *familyMemberRepository) Create(ctx context.Context, familyMember *model.FamilyMember) error {
 	return r.db.WithContext(ctx).Create(familyMember).Error
 }
 
-func (r *familyMemberRepository) GetFamilyMemberById(ctx context.Context, id string) (*model.FamilyMember, error) {
+func (r *familyMemberRepository) GetByID(ctx context.Context, id string) (*model.FamilyMember, error) {
 	var familyMember model.FamilyMember
 	if err := r.db.WithContext(ctx).First(&familyMember, id).Error; err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (r *familyMemberRepository) GetFamilyMemberById(ctx context.Context, id str
 	return &familyMember, nil
 }
 
-func (r *familyMemberRepository) GetFamilyMembersByFamilyId(ctx context.Context, familyId string) ([]model.User, error) {
+func (r *familyMemberRepository) GetByFamilyID(ctx context.Context, familyId string) ([]model.User, error) {
 	var familyMembers []model.FamilyMember
 	if err := r.db.WithContext(ctx).Where("family_id = ?", familyId).Preload("User").Find(&familyMembers).Error; err != nil {
 		return nil, err
@@ -51,11 +51,11 @@ func (r *familyMemberRepository) GetFamilyMembersByFamilyId(ctx context.Context,
 	return users, nil
 }
 
-func (r *familyMemberRepository) UpdateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
+func (r *familyMemberRepository) Update(ctx context.Context, familyMember *model.FamilyMember) error {
 	return r.db.WithContext(ctx).Save(familyMember).Error
 }
 
-func (r *familyMemberRepository) DeleteFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
+func (r *familyMemberRepository) Delete(ctx context.Context, familyMember *model.FamilyMember) error {
 	return r.db.WithContext(ctx).Delete(familyMember).Error
 }
 

@@ -13,11 +13,11 @@ import (
 )
 
 type WalletService interface {
-	CreateWallet(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error)
-	GetWallets(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error)
-	GetWalletDetails(ctx context.Context, id uuid.UUID) (*model.Wallet, error)
-	UpdateWallet(ctx context.Context,id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error)
-	DeleteWallet(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	Create(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error)
+	List(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Wallet, error)
+	Update(ctx context.Context,id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 }
 
 type walletService struct {
@@ -30,11 +30,11 @@ func NewWalletService(walletRepo repository.WalletRepository, walletTypeRepo rep
 	return &walletService{walletRepo: walletRepo, walletTypeRepo: walletTypeRepo, familyRepo: familyRepo}
 }
 
-func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error) {
+func (s *walletService) Create(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error) {
 	// Validate family id
 	// Verify the family exists
 	familyID := uuid.MustParse(wallet.FamilyID)
-	_, err := s.familyRepo.GetFamilyById(ctx, familyID)
+	_, err := s.familyRepo.GetByID(ctx, familyID)
 	if err != nil {
 		return nil, fmt.Errorf("Family not found: %w", err)
 	}
@@ -46,7 +46,7 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 			return nil, fmt.Errorf("Custom type name is required when is_custom_type is true")
 		}
 		// Check if custom type exists
-		walletType, err := s.walletTypeRepo.GetWalletTypeByName(ctx, wallet.CustomTypeName, familyID)
+		walletType, err := s.walletTypeRepo.GetByName(ctx, wallet.CustomTypeName, familyID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Custom type not found, create a new one
@@ -69,7 +69,7 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 	} else {
 		// Verify the wallet type exists
 		walletTypeID = uuid.MustParse(wallet.WalletTypeID)
-		_, err := s.walletTypeRepo.GetWalletTypeById(ctx, walletTypeID)
+		_, err := s.walletTypeRepo.GetByID(ctx, walletTypeID)
 		if err != nil {
 			return nil, fmt.Errorf("Wallet type not found: %w", err)
 		}
@@ -91,17 +91,17 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 	return s.walletRepo.Create(ctx, newWallet)
 }
 
-func (s *walletService) GetWallets(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error) {
-	return s.walletRepo.GetWallets(ctx, family_id, created_by_id)
+func (s *walletService) List(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error) {
+	return s.walletRepo.List(ctx, family_id, created_by_id)
 }
 
-func(s *walletService) GetWalletDetails(ctx context.Context, id uuid.UUID) (*model.Wallet, error) {
-	return s.walletRepo.GetWalletById(ctx, id)
+func(s *walletService) GetByID(ctx context.Context, id uuid.UUID) (*model.Wallet, error) {
+	return s.walletRepo.GetByID(ctx, id)
 }
 
-func(s *walletService) UpdateWallet(ctx context.Context, id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error) {
+func(s *walletService) Update(ctx context.Context, id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error) {
 	// 1. Get existing wallet
-	existingWallet, err := s.walletRepo.GetWalletById(ctx, id)
+	existingWallet, err := s.walletRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch wallet: %w", err)
 	}
@@ -134,9 +134,9 @@ func(s *walletService) UpdateWallet(ctx context.Context, id uuid.UUID, wallet *d
 	return s.walletRepo.Update(ctx, id, existingWallet)
 }
 
-func(s *walletService) DeleteWallet(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+func(s *walletService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
 	// 1. Get existing wallet
-	existingWallet, err := s.walletRepo.GetWalletById(ctx, id)
+	existingWallet, err := s.walletRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch wallet: %w", err)
 	}

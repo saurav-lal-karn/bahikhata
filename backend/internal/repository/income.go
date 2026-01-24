@@ -9,12 +9,12 @@ import (
 )
 
 type IncomeRepository interface {
-	CreateIncome(ctx context.Context, income *model.Income) error
-	GetIncomeById(ctx context.Context, id uuid.UUID) (*model.Income, error)
-	ListIncomes(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error)
-	UpdateIncome(ctx context.Context, income *model.Income) error
-	DeleteIncome(ctx context.Context, id uuid.UUID) error
-	GetIncomeStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error)
+	Create(ctx context.Context, income *model.Income) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Income, error)
+	List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error)
+	Update(ctx context.Context,id uuid.UUID, income *model.Income) (*model.Income, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error)
 }
 
 type incomeRepository struct {
@@ -25,11 +25,11 @@ func NewIncomeRepository(db *gorm.DB) IncomeRepository {
 	return &incomeRepository{db: db}
 }
 
-func (r *incomeRepository) CreateIncome(ctx context.Context, income *model.Income) error {
+func (r *incomeRepository) Create(ctx context.Context, income *model.Income) error {
 	return r.db.WithContext(ctx).Create(income).Error
 }
 
-func (r *incomeRepository) GetIncomeById(ctx context.Context, id uuid.UUID) (*model.Income, error) {
+func (r *incomeRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Income, error) {
 	var income model.Income
 	if err := r.db.WithContext(ctx).First(&income, id).Error; err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (r *incomeRepository) GetIncomeById(ctx context.Context, id uuid.UUID) (*mo
 	return &income, nil
 }
 
-func (r *incomeRepository) ListIncomes(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error) {
+func (r *incomeRepository) List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error) {
 	var incomes []model.Income
 	if err := r.db.WithContext(ctx).Preload("Source").Preload("Wallet").Where("family_id = ? OR created_by_id = ?", familyID, userId).Find(&incomes).Error; err != nil {
 		return nil, err
@@ -45,14 +45,18 @@ func (r *incomeRepository) ListIncomes(ctx context.Context, familyID uuid.UUID, 
 	return incomes, nil
 }
 
-func (r *incomeRepository) UpdateIncome(ctx context.Context, income *model.Income) error {
-	return r.db.WithContext(ctx).Save(income).Error
+func (r *incomeRepository) Update(ctx context.Context,id uuid.UUID, income *model.Income) (*model.Income, error) {
+	income.ID = id
+	if err := r.db.WithContext(ctx).Save(income).Error; err != nil {
+		return nil, err
+	}
+	return income, nil
 }
 
-func (r *incomeRepository) DeleteIncome(ctx context.Context, id uuid.UUID) error {
+func (r *incomeRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Income{}, id).Error
 }
 
-func (r *incomeRepository) GetIncomeStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error) {
+func (r *incomeRepository) GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error) {
 	return nil
 }

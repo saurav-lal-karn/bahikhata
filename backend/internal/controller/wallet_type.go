@@ -18,14 +18,14 @@ func NewWalletTypeController(service service.WalletTypeService) WalletTypeContro
 	return WalletTypeController{service: service}
 }
 
-func (ctrl *WalletTypeController) CreateWalletType(c *gin.Context) {
+func (ctrl *WalletTypeController) Create(c *gin.Context) {
 	var walletType model.WalletType
 	if err := c.ShouldBindJSON(&walletType); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := ctrl.service.CreateWalletType(c.Request.Context(), &walletType); err != nil {
+	if err := ctrl.service.Create(c.Request.Context(), &walletType); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -33,7 +33,7 @@ func (ctrl *WalletTypeController) CreateWalletType(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Wallet type created successfully", walletType)
 }
 
-func (ctrl *WalletTypeController) GetWalletTypes(c *gin.Context) {
+func (ctrl *WalletTypeController) List(c *gin.Context) {
 	familyId := c.Param("family_id")
 	if familyId == "" {
 		helper.ErrorResponse(c, http.StatusBadRequest, "family_id is required")
@@ -58,7 +58,7 @@ func (ctrl *WalletTypeController) GetWalletTypes(c *gin.Context) {
 		return
 	}
 
-	walletTypes, err := ctrl.service.GetWalletTypes(c.Request.Context(), familyUid, uid)
+	walletTypes, err := ctrl.service.List(c.Request.Context(), familyUid, uid)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

@@ -1,12 +1,16 @@
 "use client";
 import React, { useState } from "react";
 import { 
-  ShieldAlert, 
-  Plus, 
+  ShieldAlert,
+  Plus,
   TrendingDown,
   Calculator,
-  Info
+  Info,
+  Filter,
+  Search,
+  ChevronDown
 } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 import { LoanTracker } from "@/components/debts/LoanTracker";
 import { CreditCardOverview } from "@/components/debts/CreditCardOverview";
@@ -24,6 +28,12 @@ export default function DebtsPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [selectedLender, setSelectedLender] = useState<string | null>(null);
+
+  // Extract unique lenders
+  const uniqueLenders = Array.from(new Set(debts.map(d => d.lender).filter(Boolean))) as string[];
 
   const fetchDebts = async () => {
      if(familyDetails?.id) {
@@ -98,10 +108,64 @@ export default function DebtsPageClient() {
         <div className="col-span-12 xl:col-span-8 space-y-8">
           {activeTab === "overview" ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <LiabilityList debts={debts} isLoading={isLoading} />
-               {/* Keeping older components if needed, or removing them? User asked to integrate APIs. I'll comment out old hardcoded ones for now or put them below if beneficial. For now replacing seems correct for "Integration" */}
-               {/* <LoanTracker /> */}
-               {/* <CreditCardOverview /> */}
+               <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm">
+                  <div className="relative flex-1 w-full">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                     <input 
+                       type="text"
+                       value={searchTerm}
+                       onChange={(e) => setSearchTerm(e.target.value)}
+                       placeholder="Search liabilities..."
+                       className="w-full pl-12 pr-4 py-2 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-2xl text-sm focus:ring-2 focus:ring-red-500/20 transition-all font-medium"
+                     />
+                  </div>
+                  <button 
+                    onClick={() => setIsFilterVisible(!isFilterVisible)}
+                    className={`flex items-center gap-2 px-6 py-2 border rounded-2xl text-sm font-bold transition-all ${isFilterVisible ? 'bg-red-50 border-red-200 text-red-600' : 'bg-gray-50 dark:bg-gray-900 border-transparent text-gray-500'}`}
+                  >
+                    <Filter className="w-4 h-4" /> Filters
+                  </button>
+               </div>
+
+               {isFilterVisible && (
+                  <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-sm animate-in slide-in-from-top-4 duration-300">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Lender</label>
+                           <div className="relative">
+                              <select 
+                                value={selectedLender || ""}
+                                onChange={(e) => setSelectedLender(e.target.value || null)}
+                                className="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-red-500/20 transition-all"
+                              >
+                                 <option value="">All Lenders</option>
+                                 {uniqueLenders.map(lender => (
+                                   <option key={lender} value={lender}>{lender}</option>
+                                 ))}
+                              </select>
+                              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                           </div>
+                        </div>
+                        <div className="flex items-end">
+                           <button 
+                             onClick={() => { setSearchTerm(""); setSelectedLender(null); }}
+                             className="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                           >
+                              Reset Filters
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               )}
+
+               <LiabilityList 
+                 debts={debts.filter(d => {
+                   const matchesSearch = d.lender.toLowerCase().includes(searchTerm.toLowerCase());
+                   const matchesLender = !selectedLender || d.lender === selectedLender;
+                   return matchesSearch && matchesLender;
+                 })} 
+                 isLoading={isLoading} 
+               />
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">

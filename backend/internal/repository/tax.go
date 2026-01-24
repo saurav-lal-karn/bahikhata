@@ -10,11 +10,11 @@ import (
 
 type TaxRepository interface {
 	CreateDocument(ctx context.Context, doc *model.TaxDocument) error
-	GetDocuments(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDocument, error)
+	ListDocuments(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDocument, error)
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
 
 	CreateDeduction(ctx context.Context, ded *model.TaxDeduction) error
-	GetDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error)
+	ListDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error)
 	DeleteDeduction(ctx context.Context, id uuid.UUID) error
 }
 
@@ -31,7 +31,7 @@ func (r *taxRepository) CreateDocument(ctx context.Context, doc *model.TaxDocume
 	return r.db.WithContext(ctx).Create(doc).Error
 }
 
-func (r *taxRepository) GetDocuments(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDocument, error) {
+func (r *taxRepository) ListDocuments(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDocument, error) {
 	var docs []model.TaxDocument
 	query := r.db.WithContext(ctx).Where("family_id = ?", familyID)
 	if year != "" {
@@ -52,7 +52,7 @@ func (r *taxRepository) CreateDeduction(ctx context.Context, ded *model.TaxDeduc
 	return r.db.WithContext(ctx).Create(ded).Error
 }
 
-func (r *taxRepository) GetDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error) {
+func (r *taxRepository) ListDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error) {
 	var deds []model.TaxDeduction
 	query := r.db.WithContext(ctx).Where("family_id = ?", familyID)
 	if year != "" {

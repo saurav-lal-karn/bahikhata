@@ -15,12 +15,12 @@ import (
 )
 
 type FamilyMemberService interface {
-	CreateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
-	GetFamilyMemberById(ctx context.Context, id string) (*model.FamilyMember, error)
-	GetFamilyMembersByFamilyId(ctx context.Context, familyId string) ([]model.User, error)
-	UpdateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
-	DeleteFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error
-	InviteMember(ctx context.Context, inviteMemberRequest dto.InviteMemberRequest, createdByUserID uuid.UUID) error
+	Create(ctx context.Context, familyMember *model.FamilyMember) error
+	GetByID(ctx context.Context, id string) (*model.FamilyMember, error)
+	GetByFamilyID(ctx context.Context, familyId string) ([]model.User, error)
+	Update(ctx context.Context, familyMember *model.FamilyMember) error
+	Delete(ctx context.Context, familyMember *model.FamilyMember) error
+	Invite(ctx context.Context, inviteMemberRequest dto.InviteMemberRequest, createdByUserID uuid.UUID) error
 }
 
 type familyMemberService struct {
@@ -41,13 +41,13 @@ func NewFamilyMemberService(familyMemberRepository repository.FamilyMemberReposi
 	}
 }
 
-func (s *familyMemberService) CreateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
-	_, err := s.userRepository.GetUserById(ctx, familyMember.UserID)
+func (s *familyMemberService) Create(ctx context.Context, familyMember *model.FamilyMember) error {
+	_, err := s.userRepository.GetByID(ctx, familyMember.UserID)
 	if err != nil {
 		return errors.New("User not found")
 	}
 
-	_, err = s.familyRepository.GetFamilyById(ctx, familyMember.FamilyID)
+	_, err = s.familyRepository.GetByID(ctx, familyMember.FamilyID)
 	if err != nil {
 		return errors.New("Family not found")
 	}
@@ -63,26 +63,26 @@ func (s *familyMemberService) CreateFamilyMember(ctx context.Context, familyMemb
 
 	familyMember.ID = uuid.New()
 	
-	return s.familyMemberRepository.CreateFamilyMember(ctx, familyMember)
+	return s.familyMemberRepository.Create(ctx, familyMember)
 }
 
-func (s *familyMemberService) GetFamilyMemberById(ctx context.Context, id string) (*model.FamilyMember, error) {
-	return s.familyMemberRepository.GetFamilyMemberById(ctx, id)
+func (s *familyMemberService) GetByID(ctx context.Context, id string) (*model.FamilyMember, error) {
+	return s.familyMemberRepository.GetByID(ctx, id)
 }
 
-func (s *familyMemberService) GetFamilyMembersByFamilyId(ctx context.Context, familyId string) ([]model.User, error) {
-	return s.familyMemberRepository.GetFamilyMembersByFamilyId(ctx, familyId)
+func (s *familyMemberService) GetByFamilyID(ctx context.Context, familyId string) ([]model.User, error) {
+	return s.familyMemberRepository.GetByFamilyID(ctx, familyId)
 }
 
-func (s *familyMemberService) UpdateFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
-	return s.familyMemberRepository.UpdateFamilyMember(ctx, familyMember)
+func (s *familyMemberService) Update(ctx context.Context, familyMember *model.FamilyMember) error {
+	return s.familyMemberRepository.Update(ctx, familyMember)
 }
 
-func (s *familyMemberService) DeleteFamilyMember(ctx context.Context, familyMember *model.FamilyMember) error {
-	return s.familyMemberRepository.DeleteFamilyMember(ctx, familyMember)
+func (s *familyMemberService) Delete(ctx context.Context, familyMember *model.FamilyMember) error {
+	return s.familyMemberRepository.Delete(ctx, familyMember)
 }
 
-func (s *familyMemberService) InviteMember(ctx context.Context, inviteMemberRequest dto.InviteMemberRequest, createdByUserID uuid.UUID) error {
+func (s *familyMemberService) Invite(ctx context.Context, inviteMemberRequest dto.InviteMemberRequest, createdByUserID uuid.UUID) error {
 	existingUser, err := s.userRepository.GetByEmail(ctx, inviteMemberRequest.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
@@ -124,7 +124,7 @@ func (s *familyMemberService) InviteMember(ctx context.Context, inviteMemberRequ
 		}
 		familyMember.ID = uuid.New()
 
-		if err := s.familyMemberRepository.CreateFamilyMember(ctx, &familyMember); err != nil {
+		if err := s.familyMemberRepository.Create(ctx, &familyMember); err != nil {
 			return err
 		}
 
@@ -143,7 +143,7 @@ func (s *familyMemberService) InviteMember(ctx context.Context, inviteMemberRequ
 		}
 		familyMember.ID = uuid.New()
 
-		if err := s.familyMemberRepository.CreateFamilyMember(ctx, &familyMember); err != nil {
+		if err := s.familyMemberRepository.Create(ctx, &familyMember); err != nil {
 			return err
 		}
 

@@ -10,7 +10,7 @@ import (
 
 type InvestmentService interface {
 	Create(ctx context.Context, investment *model.Investment) error
-	GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error)
+	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,8 +26,8 @@ func (s *investmentService) Create(ctx context.Context, investment *model.Invest
 	return s.repo.Create(ctx, investment)
 }
 
-func (s *investmentService) GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error) {
-	return s.repo.GetAll(ctx, familyID, userID)
+func (s *investmentService) List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error) {
+	return s.repo.List(ctx, familyID, userID)
 }
 
 func (s *investmentService) Delete(ctx context.Context, id uuid.UUID) error {

@@ -9,13 +9,13 @@ import (
 )
 
 type BudgetService interface {
-	CreateBudget(ctx context.Context, budget *model.Budget) error
-	GetBudgetsByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error)
-	GetBudgetsByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error)
-	GetBudgetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error)
-	UpdateBudget(ctx context.Context, budget *model.Budget) error
-	DeleteBudget(ctx context.Context, id uuid.UUID) error
-	GetBudgets(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error)
+	Create(ctx context.Context, budget *model.Budget) error
+	GetByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error)
+	Update(ctx context.Context, budget *model.Budget) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error)
 }
 
 type budgetService struct {
@@ -26,30 +26,30 @@ func NewBudgetService(repo repository.BudgetRepository) BudgetService {
 	return &budgetService{repo: repo}
 }
 
-func (bs *budgetService) CreateBudget(ctx context.Context, budget *model.Budget) error {
-	return bs.repo.CreateBudget(ctx, budget)
+func (bs *budgetService) Create(ctx context.Context, budget *model.Budget) error {
+	return bs.repo.Create(ctx, budget)
 }
 
-func (bs *budgetService) GetBudgetsByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error) {
-	return bs.repo.GetBudgetsByFamilyID(ctx, familyID)
+func (bs *budgetService) GetByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error) {
+	return bs.repo.GetByFamilyID(ctx, familyID)
 }
 
-func (bs *budgetService) GetBudgetsByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error) {
-	return bs.repo.GetBudgetsByUserID(ctx, userID)
+func (bs *budgetService) GetByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error) {
+	return bs.repo.GetByUserID(ctx, userID)
 }
 
-func (bs *budgetService) GetBudgetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error) {
-	return bs.repo.GetBudgetByID(ctx, id)
+func (bs *budgetService) GetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error) {
+	return bs.repo.GetByID(ctx, id)
 }
 
-func (bs *budgetService) UpdateBudget(ctx context.Context, budget *model.Budget) error {
-	return bs.repo.UpdateBudget(ctx, budget)
+func (bs *budgetService) Update(ctx context.Context, budget *model.Budget) error {
+	return bs.repo.Update(ctx, budget)
 }
 
-func (bs *budgetService) DeleteBudget(ctx context.Context, id uuid.UUID) error {
-	return bs.repo.DeleteBudget(ctx, id)
+func (bs *budgetService) Delete(ctx context.Context, id uuid.UUID) error {
+	return bs.repo.Delete(ctx, id)
 }
 
-func (bs *budgetService) GetBudgets(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error) {
-	return bs.repo.GetBudgets(ctx, family_id, user_id)
+func (bs *budgetService) List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error) {
+	return bs.repo.List(ctx, family_id, user_id)
 }

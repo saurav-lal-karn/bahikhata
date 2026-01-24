@@ -14,12 +14,12 @@ import (
 )
 
 type IncomeService interface {
-	CreateIncome(ctx context.Context, income *dto.IncomeDTO, created_by_id uuid.UUID) error
-	GetIncomeById(ctx context.Context, id uuid.UUID) (*model.Income, error)
-	ListIncomes(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error)
-	UpdateIncome(ctx context.Context, income *model.Income) error
-	DeleteIncome(ctx context.Context, id uuid.UUID) error
-	GetIncomeStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error)
+	Create(ctx context.Context, income *dto.IncomeDTO, created_by_id uuid.UUID) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Income, error)
+	List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error)
+	Update(ctx context.Context, id uuid.UUID, income *model.Income) (*model.Income, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error)
 }
 
 type incomeService struct {
@@ -33,17 +33,17 @@ func NewIncomeService(repo repository.IncomeRepository, walletRepo repository.Wa
 	return &incomeService{incomeRepo: repo, walletRepo: walletRepo, incomeTypeRepo: incomeTypeRepo, familyRepo: familyRepo}
 }
 
-func (s *incomeService) CreateIncome(ctx context.Context, income *dto.IncomeDTO, created_by_id uuid.UUID) error {
+func (s *incomeService) Create(ctx context.Context, income *dto.IncomeDTO, created_by_id uuid.UUID) error {
 	// Verify the family exists
 	familyID := uuid.MustParse(income.FamilyId)
-	_, err := s.familyRepo.GetFamilyById(ctx, familyID)
+	_, err := s.familyRepo.GetByID(ctx, familyID)
 	if err != nil {
 		return fmt.Errorf("Family not found: %w", err)
 	}
 
 	// Verify the wallet exists
 	walletID := uuid.MustParse(income.WalletId)
-	_, err = s.walletRepo.GetWalletById(ctx, walletID)
+	_, err = s.walletRepo.GetByID(ctx, walletID)
 	if err != nil {
 		return fmt.Errorf("Wallet not found: %w", err)
 	}
@@ -51,7 +51,7 @@ func (s *incomeService) CreateIncome(ctx context.Context, income *dto.IncomeDTO,
 	var incomeTypeId uuid.UUID
 	if income.IsCustomSource {
 		// Check if the income type exists, if not, create a new one
-		incomeType, err := s.incomeTypeRepo.GetIncomeTypeByName(ctx, income.CustomSourceName, familyID)
+		incomeType, err := s.incomeTypeRepo.GetByName(ctx, income.CustomSourceName, familyID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Income type not found, create a new one
@@ -74,7 +74,7 @@ func (s *incomeService) CreateIncome(ctx context.Context, income *dto.IncomeDTO,
 	} else {
 		// Verify the income type exists
 		incomeTypeId = uuid.MustParse(income.SourceId)
-		_, err := s.incomeTypeRepo.GetIncomeTypeById(ctx, incomeTypeId)
+		_, err := s.incomeTypeRepo.GetByID(ctx, incomeTypeId)
 		if err != nil {
 			return fmt.Errorf("Source not found: %w", err)
 		}
@@ -97,25 +97,25 @@ func (s *incomeService) CreateIncome(ctx context.Context, income *dto.IncomeDTO,
 		CreatedByID: &created_by_id,
 		Date: transactionDate,
 	}
-	return s.incomeRepo.CreateIncome(ctx, createIncome)
+	return s.incomeRepo.Create(ctx, createIncome)
 }
 
-func (s *incomeService) GetIncomeById(ctx context.Context, id uuid.UUID) (*model.Income, error) {
-	return s.incomeRepo.GetIncomeById(ctx, id)
+func (s *incomeService) GetByID(ctx context.Context, id uuid.UUID) (*model.Income, error) {
+	return s.incomeRepo.GetByID(ctx, id)
 }
 
-func (s *incomeService) ListIncomes(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error) {
-	return s.incomeRepo.ListIncomes(ctx, familyID, userId)
+func (s *incomeService) List(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) ([]model.Income, error) {
+	return s.incomeRepo.List(ctx, familyID, userId)
 }
 
-func (s *incomeService) UpdateIncome(ctx context.Context, income *model.Income) error {
-	return s.incomeRepo.UpdateIncome(ctx, income)
+func (s *incomeService) Update(ctx context.Context, id uuid.UUID, income *model.Income) (*model.Income, error) {
+	return s.incomeRepo.Update(ctx, id, income)
 }
 
-func (s *incomeService) DeleteIncome(ctx context.Context, id uuid.UUID) error {
-	return s.incomeRepo.DeleteIncome(ctx, id)
+func (s *incomeService) Delete(ctx context.Context, id uuid.UUID) error {
+	return s.incomeRepo.Delete(ctx, id)
 }
 
-func (s *incomeService) GetIncomeStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error) {
-	return s.incomeRepo.GetIncomeStats(ctx, familyID, userId)
+func (s *incomeService) GetStats(ctx context.Context, familyID uuid.UUID, userId uuid.UUID) (error) {
+	return s.incomeRepo.GetStats(ctx, familyID, userId)
 }

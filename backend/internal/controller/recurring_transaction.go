@@ -51,7 +51,7 @@ func (c *RecurringTransactionController) Create(ctx *gin.Context) {
 	helper.SuccessResponse(ctx, http.StatusCreated, "Recurring transaction created successfully", rt)
 }
 
-func (c *RecurringTransactionController) GetAll(ctx *gin.Context) {
+func (c *RecurringTransactionController) List(ctx *gin.Context) {
 	userId, exists := ctx.Get("userId")
 	if !exists {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
@@ -71,7 +71,7 @@ func (c *RecurringTransactionController) GetAll(ctx *gin.Context) {
 		}
 	}
 
-	rts, err := c.service.GetAll(ctx, familyID, &uid)
+	rts, err := c.service.List(ctx, familyID, &uid)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch recurring transactions")
 		return

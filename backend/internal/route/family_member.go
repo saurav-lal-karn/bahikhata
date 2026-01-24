@@ -18,7 +18,7 @@ func RegisterFamilyMemberRoutes(app *config.Application, rg *gin.RouterGroup) {
 	familyMemberCtrl := controller.NewFamilyMemberController(familyMemberSvc)
 	
 
-	rg.POST("", familyMemberCtrl.CreateFamilyMember)
-	rg.GET(":family_id", familyMemberCtrl.ListFamilyMembers)
-	rg.POST("/invite", familyMemberCtrl.InviteMember)
+	rg.POST("", familyMemberCtrl.Create)
+	rg.GET(":family_id", familyMemberCtrl.List)
+	rg.POST("/invite", familyMemberCtrl.Invite)
 }

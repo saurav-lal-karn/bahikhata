@@ -16,14 +16,14 @@ func RegisterTaxRoutes(app *config.Application, router *gin.RouterGroup) {
 	docs := router.Group("/documents")
 	{
 		docs.POST("", ctrl.CreateDocument)
-		docs.GET("", ctrl.GetDocuments)
+		docs.GET("", ctrl.ListDocuments)
 		docs.DELETE("/:id", ctrl.DeleteDocument)
 	}
 
 	deds := router.Group("/deductions")
 	{
 		deds.POST("", ctrl.CreateDeduction)
-		deds.GET("", ctrl.GetDeductions)
+		deds.GET("", ctrl.ListDeductions)
 		deds.DELETE("/:id", ctrl.DeleteDeduction)
 	}
 }

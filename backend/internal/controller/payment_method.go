@@ -16,13 +16,13 @@ func NewPaymentMethodController(service service.PaymentMethodService) PaymentMet
 	return PaymentMethodController{service: service}
 }
 
-func (c *PaymentMethodController) GetPaymentMethods(ctx *gin.Context){
+func (c *PaymentMethodController) List(ctx *gin.Context){
 	familyId := ctx.Param("family_id")
 	if familyId == "" {
 		helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
 		return
 	}
-	paymentMethods, err := c.service.GetPaymentMethods(ctx, familyId)
+	paymentMethods, err := c.service.List(ctx, familyId)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

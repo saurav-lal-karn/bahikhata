@@ -13,8 +13,8 @@ func RegisterGoalRoutes(app *config.Application, router *gin.RouterGroup) {
     goalService := service.NewGoalService(goalRepo)
 	goalController := controller.NewGoalController(goalService)
 
-	router.POST("", goalController.CreateGoal)
-	router.GET(":family_id", goalController.GetGoals)
+	router.POST("", goalController.Create)
+	router.GET(":family_id", goalController.List)
 	// router.GET(":id", goalController.GetGoal)
 	// router.PUT(":id", goalController.UpdateGoal)
 	// router.DELETE(":id", goalController.DeleteGoal)

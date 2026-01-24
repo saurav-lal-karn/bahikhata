@@ -13,6 +13,6 @@ func RegisterWalletTypeRoutes(app *config.Application, router *gin.RouterGroup) 
 	walletTypeService := service.NewWalletTypeService(walletTypeRepo)
 	walletTypeController := controller.NewWalletTypeController(walletTypeService)
 
-	router.GET(":family_id", walletTypeController.GetWalletTypes)
-	router.POST(":family_id", walletTypeController.CreateWalletType)
+	router.GET(":family_id", walletTypeController.List)
+	router.POST(":family_id", walletTypeController.Create)
 }

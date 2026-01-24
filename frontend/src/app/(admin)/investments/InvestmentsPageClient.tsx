@@ -12,8 +12,10 @@ import {
   PieChart,
   Gem,
   Coins,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronDown
 } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 import { AddInvestmentForm } from "@/components/investments/AddInvestmentForm";
 import { BulkImportInvestments } from "@/components/investments/BulkImportInvestments";
@@ -30,6 +32,12 @@ export default function InvestmentsPageClient() {
   
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  // Extract unique investment types
+  const investmentTypes = Array.from(new Set(investments.map(inv => inv.type).filter(Boolean))) as string[];
+
 
   const fetchInvestments = async () => {
     if (familyDetails?.id) {
@@ -58,10 +66,14 @@ export default function InvestmentsPageClient() {
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
 
-  const filteredInvestments = investments.filter(inv =>
-    inv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInvestments = investments.filter(inv => {
+    const matchesSearch = inv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inv.type.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !selectedType || inv.type === selectedType;
+    
+    return matchesSearch && matchesType;
+  });
+
 
   const totalInvested = investments.reduce((acc, inv) => acc + (inv.quantity * inv.avg_buy_price), 0);
   const totalCurrent = investments.reduce((acc, inv) => acc + (inv.quantity * inv.current_price), 0);
@@ -154,11 +166,46 @@ export default function InvestmentsPageClient() {
                 className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-medium" 
               />
             </div>
-            <button className="p-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-400">
+            <button 
+              onClick={() => setIsFilterVisible(!isFilterVisible)}
+              className={`p-2.5 rounded-xl transition-all border ${isFilterVisible ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-gray-50 dark:bg-gray-900 border-transparent text-gray-400'}`}
+            >
               <Filter className="w-5 h-5" />
             </button>
           </div>
         </div>
+
+        {/* Filter Bar */}
+        {isFilterVisible && (
+          <div className="p-6 bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-2 min-w-[200px]">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Asset Type</label>
+                <div className="relative">
+                  <select 
+                    value={selectedType || ""}
+                    onChange={(e) => setSelectedType(e.target.value || null)}
+                    className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  >
+                    <option value="">All Types</option>
+                    {investmentTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => { setSelectedType(null); setSearchTerm(""); }}
+                className="px-6 py-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 hover:bg-gray-50 text-gray-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        )}
+
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">

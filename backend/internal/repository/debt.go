@@ -10,7 +10,7 @@ import (
 
 type DebtRepository interface {
 	Create(ctx context.Context, debt *model.Debt) error
-	GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
+	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,7 +26,7 @@ func (r *debtRepository) Create(ctx context.Context, debt *model.Debt) error {
 	return r.db.WithContext(ctx).Create(debt).Error
 }
 
-func (r *debtRepository) GetAll(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error) {
+func (r *debtRepository) List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error) {
 	var debts []model.Debt
 	query := r.db.WithContext(ctx)
 

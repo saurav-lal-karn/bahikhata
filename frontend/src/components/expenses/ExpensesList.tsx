@@ -7,8 +7,10 @@ import {
   Trash2, 
   ShoppingCart,
   Pencil,
-  MoreVertical
+  MoreVertical,
+  ChevronDown
 } from "lucide-react";
+
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
@@ -19,12 +21,29 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
   const [searchTerm, setSearchTerm] = useState("");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
+  // Extract unique filter options
+  const categories = Array.from(new Set(expenses.map(e => e.category).filter(Boolean))) as string[];
+  const methods = Array.from(new Set(expenses.map(e => e.payment_method).filter(Boolean))) as string[];
 
-  const filteredExpenses = expenses.filter(expense => 
-    expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || expense.category === selectedCategory;
+    const matchesMethod = !selectedMethod || expense.payment_method === selectedMethod;
+    
+    return matchesSearch && matchesCategory && matchesMethod;
+  });
+
+  const clearFilters = () => {
+    setSelectedCategory(null);
+    setSelectedMethod(null);
+    setSearchTerm("");
+  };
+
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -56,14 +75,71 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
               className="pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all w-full sm:w-64"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
-            <Filter className="w-4 h-4" /> Filters
+          <button 
+            onClick={() => setIsFilterVisible(!isFilterVisible)}
+            className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all ${isFilterVisible ? 'bg-purple-50 border-purple-200 text-purple-600 shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 hover:bg-gray-50'}`}
+          >
+            <Filter className={`w-4 h-4 ${isFilterVisible ? 'fill-purple-600' : ''}`} /> Filters
+            {(selectedCategory || selectedMethod) && (
+              <span className="flex h-2 w-2 rounded-full bg-purple-500" />
+            )}
           </button>
           <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>
       </div>
+
+      {/* Filter Bar */}
+      {isFilterVisible && (
+        <div className="p-6 bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-100 dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</label>
+              <div className="relative">
+                <select 
+                  value={selectedCategory || ""}
+                  onChange={(e) => setSelectedCategory(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all font-bold"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment Method</label>
+              <div className="relative">
+                <select 
+                  value={selectedMethod || ""}
+                  onChange={(e) => setSelectedMethod(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all font-bold"
+                >
+                  <option value="">All Methods</option>
+                  {methods.map(method => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pb-0.5">
+              <button 
+                onClick={clearFilters}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Table Content */}
       <div className="overflow-x-auto">

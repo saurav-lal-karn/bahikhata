@@ -14,6 +14,6 @@ func RegisterDebtRoutes(app *config.Application, router *gin.RouterGroup) {
 	ctrl := controller.NewDebtController(svc)
 
 	router.POST("", ctrl.Create)
-	router.GET("", ctrl.GetAll)
+	router.GET("", ctrl.List)
 	router.DELETE("/:id", ctrl.Delete)
 }

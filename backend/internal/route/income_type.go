@@ -13,6 +13,6 @@ func RegisterIncomeTypeRoutes(app *config.Application, router *gin.RouterGroup) 
 	incomeTypeService := service.NewIncomeTypeService(incomeTypeRepo)
 	incomeTypeController := controller.NewIncomeTypeController(incomeTypeService)
 
-	router.POST("", incomeTypeController.CreateIncomeType)
-	router.GET(":family_id", incomeTypeController.GetIncomeTypes)
+	router.POST("", incomeTypeController.Create)
+	router.GET(":family_id", incomeTypeController.List)
 }

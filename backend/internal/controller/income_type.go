@@ -17,12 +17,12 @@ func NewIncomeTypeController(svc service.IncomeTypeService) IncomeTypeController
 	return IncomeTypeController{svc: svc}
 }
 
-func (c *IncomeTypeController) CreateIncomeType(ctx *gin.Context) {
+func (c *IncomeTypeController) Create(ctx *gin.Context) {
 	// return c.svc.CreateIncomeType(ctx, incomeType)
 	helper.SuccessResponse(ctx, 200, "Income type created successfully", nil)
 }
 
-func (c *IncomeTypeController) GetIncomeTypes(ctx *gin.Context) {
+func (c *IncomeTypeController) List(ctx *gin.Context) {
 	familyId := ctx.Param("family_id")
 	if familyId == "" {
 		helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
@@ -47,7 +47,7 @@ func (c *IncomeTypeController) GetIncomeTypes(ctx *gin.Context) {
 		return
 	}
 
-	incomeTypes, err := c.svc.GetIncomeTypes(ctx, familyUid, uid)
+	incomeTypes, err := c.svc.List(ctx, familyUid, uid)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch income types")
 		return

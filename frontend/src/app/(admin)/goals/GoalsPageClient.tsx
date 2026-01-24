@@ -6,10 +6,13 @@ import {
   ShieldCheck, 
   PieChart, 
   TrendingUp,
-  Landmark,
   Coins,
-  ArrowRight
+  ArrowRight,
+  Filter,
+  Search,
+  ChevronDown
 } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { AddGoalForm } from "@/components/goals/AddGoalForm";
@@ -52,6 +55,19 @@ export default function GoalsPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
+  // Extract unique goal icons as categories for now
+  const goalCategories = Array.from(new Set(goals.map(g => g.icon_name).filter(Boolean))) as string[];
+
+  const filteredGoals = goals.filter(goal => {
+    const matchesSearch = goal.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || goal.icon_name === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
 
   const fetchGoals = async () => {
     if (!familyId) return;
@@ -99,21 +115,84 @@ export default function GoalsPageClient() {
       <div className="grid grid-cols-12 gap-8">
         {/* Left: Goals List (8/12) */}
         <div className="col-span-12 xl:col-span-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
-              <Target className="text-emerald-500 w-6 h-6" /> Active Target Goals
-            </h3>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-              {goals.length} Goals in Progress
-            </span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+                <Target className="text-emerald-500 w-6 h-6" /> Active Target Goals
+              </h3>
+              <span className="hidden sm:inline-block text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                {filteredGoals.length} Goals in Progress
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+               <div className="relative isolate group">
+                  <div className={`absolute inset-0 bg-emerald-500/10 blur-xl transition-opacity duration-500 ${isFilterVisible ? 'opacity-100' : 'opacity-0'}`} />
+                  <button 
+                    onClick={() => setIsFilterVisible(!isFilterVisible)}
+                    className={`relative p-2.5 rounded-xl border transition-all ${isFilterVisible ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 hover:text-gray-600'}`}
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+               </div>
+            </div>
           </div>
+
+          {/* Filter Bar */}
+          {isFilterVisible && (
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Goal Name</label>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input 
+                        type="text" 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="e.g. Dream House..." 
+                        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Category</label>
+                    <div className="relative">
+                      <select 
+                        value={selectedCategory || ""}
+                        onChange={(e) => setSelectedCategory(e.target.value || null)}
+                        className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none capitalize"
+                      >
+                         <option value="">All Categories</option>
+                         {goalCategories.map(cat => (
+                           <option key={cat} value={cat}>{cat}</option>
+                         ))}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-end">
+                     <button 
+                       onClick={() => { setSearchTerm(""); setSelectedCategory(null); }}
+                       className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                     >
+                        Clear Filters
+                     </button>
+                  </div>
+               </div>
+            </div>
+          )}
+
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {isLoading ? (
                // Skeletons
                Array(4).fill(0).map((_, i) => <GoalSkeleton key={i} />)
-            ) : goals.length > 0 ? (
-               goals.map((goal) => {
+            ) : filteredGoals.length > 0 ? (
+               filteredGoals.map((goal) => {
+
                  const { color, barColor } = getGoalColors(goal.icon_name);
                  return (
                   <GoalCard 

@@ -9,8 +9,11 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Filter
+  Filter,
+  Search,
+  ChevronDown
 } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 import { BudgetList } from "@/components/budgets/BudgetList";
 import { AddBudgetForm } from "@/components/budgets/AddBudgetForm";
@@ -30,6 +33,10 @@ export default function BudgetsPageClient() {
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -107,34 +114,102 @@ export default function BudgetsPageClient() {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-white/[0.03] rounded-2xl w-fit border border-gray-50 dark:border-gray-800/50">
-        {[
-          { id: "active", label: "Active Budgets", icon: <Target className="w-4 h-4" /> },
-          { id: "suggestions", label: "AI Suggestions", icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
-          { id: "archives", label: "Monthly Archives", icon: <History className="w-4 h-4" /> }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all ${
-              activeTab === tab.id 
-                ? "bg-white dark:bg-gray-900 text-purple-600 shadow-sm ring-1 ring-black/5" 
-                : "text-gray-500 hover:text-gray-800 dark:hover:text-white"
-            }`}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 dark:bg-white/[0.03] rounded-2xl w-fit border border-gray-50 dark:border-gray-800/50">
+          {[
+            { id: "active", label: "Active Budgets", icon: <Target className="w-4 h-4" /> },
+            { id: "suggestions", label: "AI Suggestions", icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
+            { id: "archives", label: "Monthly Archives", icon: <History className="w-4 h-4" /> }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all ${
+                activeTab === tab.id 
+                  ? "bg-white dark:bg-gray-900 text-purple-600 shadow-sm ring-1 ring-black/5" 
+                  : "text-gray-500 hover:text-gray-800 dark:hover:text-white"
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+           <div className="relative isolate">
+             <button 
+               onClick={() => setIsFilterVisible(!isFilterVisible)}
+               className={`p-2.5 rounded-xl transition-all border ${isFilterVisible ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 hover:text-gray-600'}`}
+             >
+               <Filter className="w-5 h-5" />
+             </button>
+           </div>
+        </div>
       </div>
+
+      {/* Filter Bar */}
+      {isFilterVisible && activeTab === "active" && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-4 duration-300">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Search Categories</label>
+                 <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search budget categories..."
+                      className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-2xl text-sm font-medium focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    />
+                 </div>
+              </div>
+
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Specific Category</label>
+                 <div className="relative">
+                    <select 
+                      value={selectedCategory || ""}
+                      onChange={(e) => setSelectedCategory(e.target.value || null)}
+                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-transparent rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    >
+                       <option value="">All Categories</option>
+                       {categories.map(cat => (
+                         <option key={cat.id} value={cat.name}>{cat.name}</option>
+                       ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                 </div>
+              </div>
+
+              <div className="flex items-end">
+                <button 
+                  onClick={() => { setSearchTerm(""); setSelectedCategory(null); }}
+                  className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                   Reset Filters
+                </button>
+              </div>
+           </div>
+        </div>
+      )}
+
 
       {/* Main Content Area */}
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8 space-y-6">
           {activeTab === "active" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <BudgetList budgets={budgets} isLoading={isLoading} />
+               <BudgetList 
+                 budgets={budgets.filter(b => {
+                   const matchesSearch = b.category?.name.toLowerCase().includes(searchTerm.toLowerCase());
+                   const matchesCategory = !selectedCategory || b.category?.name === selectedCategory;
+                   return matchesSearch && matchesCategory;
+                 })} 
+                 isLoading={isLoading} 
+               />
             </div>
+
           )}
           {activeTab === "suggestions" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">

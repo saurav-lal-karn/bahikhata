@@ -14,6 +14,6 @@ func RegisterWalletTransferRoutes(app *config.Application, router *gin.RouterGro
 	walletTransferService := service.NewWalletTransferService(walletTransferRepo, walletRepo)
 	walletTransferController := controller.NewWalletTransferController(walletTransferService)
 
-	router.POST("", walletTransferController.CreateWalletTransfer)
-	router.GET(":family_id", walletTransferController.ListWalletTransfers)
+	router.POST("", walletTransferController.Create)
+	router.GET(":family_id", walletTransferController.List)
 }

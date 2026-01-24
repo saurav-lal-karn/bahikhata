@@ -14,12 +14,12 @@ func RegisterUserRoutes(app *config.Application, rg *gin.RouterGroup) {
 	userSvc := service.NewUserService(userRepo)
 	userCtrl := controller.NewUserController(userSvc)
 
-	rg.GET("/", userCtrl.ListUsers)
+	rg.GET("/", userCtrl.List)
 	rg.GET("/me", userCtrl.GetMe)
-	rg.POST("/", userCtrl.CreateUser)
-	rg.GET("/:id", userCtrl.GetUser)
-	rg.PUT("/:id", userCtrl.UpdateUser)
-	rg.DELETE("/:id", userCtrl.DeleteUser)
+	rg.POST("/", userCtrl.Create)
+	rg.GET("/:id", userCtrl.GetByID)
+	rg.PUT("/:id", userCtrl.Update)
+	rg.DELETE("/:id", userCtrl.Delete)
 	rg.PUT("/me", userCtrl.UpdateMe)
 	rg.POST("/me/avatar", userCtrl.UploadAvatar)
 }

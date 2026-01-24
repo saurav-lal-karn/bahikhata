@@ -11,8 +11,8 @@ import (
 type IncomeTypeRepository interface {
 	Create(ctx context.Context, incomeType *model.IncomeType) (*model.IncomeType, error)
 	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.IncomeType, error)
-	GetIncomeTypeById(ctx context.Context, id uuid.UUID) (*model.IncomeType, error)
-	GetIncomeTypeByName(ctx context.Context, name string, familyId uuid.UUID) (*model.IncomeType, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.IncomeType, error)
+	GetByName(ctx context.Context, name string, familyId uuid.UUID) (*model.IncomeType, error)
 }
 
 type incomeTypeRepository struct {
@@ -38,7 +38,7 @@ func (r *incomeTypeRepository) List(ctx context.Context, familyId uuid.UUID, use
 	return incomeTypes, nil
 }
 
-func (r *incomeTypeRepository) GetIncomeTypeById(ctx context.Context, id uuid.UUID) (*model.IncomeType, error) {
+func (r *incomeTypeRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.IncomeType, error) {
 	var incomeType model.IncomeType
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&incomeType).Error; err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (r *incomeTypeRepository) GetIncomeTypeById(ctx context.Context, id uuid.UU
 	return &incomeType, nil
 }
 
-func (r *incomeTypeRepository) GetIncomeTypeByName(ctx context.Context, name string, familyId uuid.UUID) (*model.IncomeType, error) {
+func (r *incomeTypeRepository) GetByName(ctx context.Context, name string, familyId uuid.UUID) (*model.IncomeType, error) {
 	var incomeType model.IncomeType
 	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyId).First(&incomeType).Error; err != nil {
 		return nil, err
