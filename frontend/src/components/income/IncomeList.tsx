@@ -11,8 +11,13 @@ import {
   Briefcase,
   TrendingUp,
   CreditCard,
-  Building
+  Building,
+  Pencil,
+  MoreVertical
 } from "lucide-react";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+
 import { Income } from "@/types";
 
 interface IncomeListProps {
@@ -22,6 +27,8 @@ interface IncomeListProps {
 
 export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
 
   const filteredIncome = incomes.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,18 +139,41 @@ export const IncomeList = ({ incomes, isLoading }: IncomeListProps) => {
                   + ₹{item.amount.toLocaleString()}
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all">
-                      <Edit className="w-4 h-4" />
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenu(activeMenu === item.id ? null : item.id);
+                      }}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-all dropdown-toggle"
+                    >
+                      <MoreVertical className="w-5 h-5" />
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
+                    
+                    <Dropdown 
+                      isOpen={activeMenu === item.id} 
+                      onClose={() => setActiveMenu(null)} 
+                      className="w-32"
+                    >
+                      <DropdownItem onClick={() => setActiveMenu(null)}>
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <Pencil className="w-4 h-4" />
+                          <span>Edit</span>
+                        </div>
+                      </DropdownItem>
+                      <DropdownItem 
+                        onClick={() => setActiveMenu(null)}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </div>
+                      </DropdownItem>
+                    </Dropdown>
                   </div>
                 </td>
+
               </tr>
             ))}
           </tbody>

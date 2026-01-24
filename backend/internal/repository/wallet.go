@@ -12,6 +12,8 @@ type WalletRepository interface {
 	Create(ctx context.Context, wallet *model.Wallet) (*model.Wallet, error)
 	GetWallets(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error)
 	GetWalletById(ctx context.Context, id uuid.UUID) (*model.Wallet, error)
+	Update(ctx context.Context, id uuid.UUID, wallet *model.Wallet) (*model.Wallet, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type walletRepository struct {
@@ -43,4 +45,19 @@ func (r *walletRepository) GetWalletById(ctx context.Context, id uuid.UUID) (*mo
 		return nil, err
 	}
 	return &wallet, nil
+}
+
+func (r *walletRepository) Update(ctx context.Context, id uuid.UUID, wallet *model.Wallet) (*model.Wallet, error) {
+	wallet.ID = id
+	if err := r.db.WithContext(ctx).Save(wallet).Error; err != nil {
+		return nil, err
+	}
+	return wallet, nil
+}
+
+func (r *walletRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := r.db.WithContext(ctx).Delete(&model.Wallet{}, id).Error; err != nil {
+		return err
+	}
+	return nil
 }

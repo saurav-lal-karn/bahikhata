@@ -8,11 +8,19 @@ import {
   Zap, 
   HeartPulse,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  MoreVertical,
+  Pencil,
+  Trash2
 } from "lucide-react";
+
 
 import { Budget } from "@/types";
 import { BudgetSkeleton } from "./BudgetSkeleton";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+import { useState } from "react";
+
 
 interface BudgetListProps {
   budgets?: Budget[];
@@ -49,8 +57,11 @@ const getCategoryColor = (name: string = '') => {
 };
 
 export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading = false }) => {
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
   return (
     <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-sm">
+
       <div className="p-6 border-b border-gray-50 dark:border-gray-800">
         <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">Category Allocation</h3>
       </div>
@@ -73,9 +84,10 @@ export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading 
             const categoryName = budget.category?.name || "Unknown";
 
             return (
-                <div key={budget.id} className="group">
+                <div key={budget.id} className={`group relative ${activeMenu === budget.id ? 'z-50' : 'z-10'}`}>
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-4">
+
                     <div className={`p-3 rounded-2xl ${color} transition-transform group-hover:scale-110`}>
                         {getCategoryIcon(budget.category?.name || 'default')} 
                     </div>
@@ -96,13 +108,50 @@ export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading 
                         </div>
                     </div>
                     </div>
-                    <div className="text-right">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Spent</p>
-                    <p className="text-lg font-black text-gray-900 dark:text-white">
-                        ₹{spent.toLocaleString()}
-                        <span className="text-xs text-gray-400 font-bold ml-1">/ ₹{limit.toLocaleString()}</span>
-                    </p>
+                    <div className="text-right flex items-center gap-4">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Spent</p>
+                            <p className="text-lg font-black text-gray-900 dark:text-white">
+                                ₹{spent.toLocaleString()}
+                                <span className="text-xs text-gray-400 font-bold ml-1">/ ₹{limit.toLocaleString()}</span>
+                            </p>
+                        </div>
+                        
+                        <div className="relative">
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenu(activeMenu === budget.id ? null : budget.id);
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors dropdown-toggle"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                            
+                            <Dropdown 
+                                isOpen={activeMenu === budget.id} 
+                                onClose={() => setActiveMenu(null)} 
+                                className="w-32"
+                            >
+                                <DropdownItem onClick={() => setActiveMenu(null)}>
+                                    <div className="flex items-center gap-2">
+                                        <Pencil className="w-4 h-4 text-gray-500" />
+                                        <span>Edit</span>
+                                    </div>
+                                </DropdownItem>
+                                <DropdownItem 
+                                    onClick={() => setActiveMenu(null)}
+                                    className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Delete</span>
+                                    </div>
+                                </DropdownItem>
+                            </Dropdown>
+                        </div>
                     </div>
+
                 </div>
                 
                 <div className="relative h-3 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">

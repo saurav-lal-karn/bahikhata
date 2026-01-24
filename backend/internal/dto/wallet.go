@@ -1,5 +1,10 @@
 package dto
 
+import (
+	"github.com/google/uuid"
+	"github.com/sauravkarn541/bahikhata/internal/model"
+)
+
 type CreateWalletRequest struct {
 	Name string `json:"name" binding:"required"`
 	StartingBalance float64 `json:"starting_balance" binding:"required"`
@@ -12,4 +17,25 @@ type CreateWalletRequest struct {
 	CustomTypeName string `json:"custom_type_name"`
 	CustomTypeDescription string `json:"custom_type_description"`
 	FamilyID string `json:"family_id" binding:"required"`
+}
+
+func (c *CreateWalletRequest) ToModel() (*model.Wallet, error) {
+	walletTypeID, err := uuid.Parse(c.WalletTypeID)
+	if err != nil {
+		return nil, err
+	}
+	familyID, err := uuid.Parse(c.FamilyID)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Wallet{
+		Name: c.Name,
+		StartingBalance: c.StartingBalance,
+		Currency: c.Currency,
+		Description: c.Description,
+		WalletIssuerName: c.WalletIssuerName,
+		ProviderWalletID: c.ProviderWalletID,
+		WalletTypeID: walletTypeID,
+		FamilyID: familyID,
+	}, nil
 }

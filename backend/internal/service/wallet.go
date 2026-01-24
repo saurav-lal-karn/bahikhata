@@ -15,6 +15,9 @@ import (
 type WalletService interface {
 	CreateWallet(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error)
 	GetWallets(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error)
+	GetWalletDetails(ctx context.Context, id uuid.UUID) (*model.Wallet, error)
+	UpdateWallet(ctx context.Context,id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error)
+	DeleteWallet(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 }
 
 type walletService struct {
@@ -90,4 +93,58 @@ func (s *walletService) CreateWallet(ctx context.Context, wallet *dto.CreateWall
 
 func (s *walletService) GetWallets(ctx context.Context, family_id uuid.UUID, created_by_id uuid.UUID) ([]model.Wallet, error) {
 	return s.walletRepo.GetWallets(ctx, family_id, created_by_id)
+}
+
+func(s *walletService) GetWalletDetails(ctx context.Context, id uuid.UUID) (*model.Wallet, error) {
+	return s.walletRepo.GetWalletById(ctx, id)
+}
+
+func(s *walletService) UpdateWallet(ctx context.Context, id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error) {
+	// 1. Get existing wallet
+	existingWallet, err := s.walletRepo.GetWalletById(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch wallet: %w", err)
+	}
+	
+	// 2. Check ownership
+	if existingWallet.UserID != userID {
+		return nil, fmt.Errorf("unauthorized: wallet does not belong to user")
+	}
+
+	// 3. Update fields (re-using logic from CreateWallet or manual assignment)
+	// We parse the new values
+	updatedData, err := wallet.ToModel()
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply updates to existing wallet to preserve ID, CreatedAt, UserID etc.
+	existingWallet.Name = updatedData.Name
+	existingWallet.StartingBalance = updatedData.StartingBalance
+	existingWallet.Currency = updatedData.Currency
+	existingWallet.Description = updatedData.Description
+	existingWallet.WalletIssuerName = updatedData.WalletIssuerName
+	existingWallet.ProviderWalletID = updatedData.ProviderWalletID
+	existingWallet.WalletTypeID = updatedData.WalletTypeID
+	existingWallet.FamilyID = updatedData.FamilyID 
+	
+	// Custom type logic (if changed) is a bit complex. For now assuming simple update.
+	// existingWallet.UserID is already preserved.
+
+	return s.walletRepo.Update(ctx, id, existingWallet)
+}
+
+func(s *walletService) DeleteWallet(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+	// 1. Get existing wallet
+	existingWallet, err := s.walletRepo.GetWalletById(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to fetch wallet: %w", err)
+	}
+
+	// 2. Check ownership
+	if existingWallet.UserID != userID {
+		return fmt.Errorf("unauthorized: wallet does not belong to user")
+	}
+
+	return s.walletRepo.Delete(ctx, id)
 }

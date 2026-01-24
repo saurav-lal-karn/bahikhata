@@ -1,11 +1,14 @@
 "use client";
 import React from "react";
 import { MoreVertical, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 interface WalletCardProps {
+  id: string; // Add id prop
   name: string;
   type: string;
   balance: number;
@@ -20,6 +23,7 @@ interface WalletCardProps {
 }
 
 export const WalletCard: React.FC<WalletCardProps> = ({ 
+  id,
   name, 
   type, 
   balance, 
@@ -32,7 +36,12 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   onEdit,
   onDelete
 }) => {
+  const router = useRouter(); // Use router
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const handleEdit = () => {
+     router.push(`/accounts/${id}`);
+  };
   const getCurrencySymbol = (code: string) => {
     switch (code) {
       case "INR": return "₹";
@@ -44,7 +53,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${active ? 'ring-2 ring-amber-500/50' : ''}`}>
+    <div className={`bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all group relative ${isMenuOpen ? 'z-50' : 'z-10'} ${active ? 'ring-2 ring-amber-500/50' : ''}`}>
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div className={`p-4 rounded-2xl ${color} transition-transform group-hover:scale-110 shadow-sm`}>
           {icon}
@@ -58,10 +67,13 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           </button>
           
           <Dropdown isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} className="w-36">
-            <DropdownItem onClick={() => { onEdit?.(); setIsMenuOpen(false); }}>
+            <DropdownItem onClick={() => { 
+                setIsMenuOpen(false); 
+                router.push(`/accounts/${id}`);
+            }}>
               <div className="flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-gray-500" />
-                <span>Edit Wallet</span>
+                <span>Details / Edit</span>
               </div>
             </DropdownItem>
             <DropdownItem 
@@ -88,7 +100,10 @@ export const WalletCard: React.FC<WalletCardProps> = ({
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Available Balance</p>
             <h3 className="text-2xl font-black text-gray-900 dark:text-white">{getCurrencySymbol(currency)}{balance.toLocaleString()}</h3>
          </div>
-         <button className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-amber-500 hover:text-white transition-all">
+         <button 
+           onClick={() => router.push(`/accounts/${id}`)}
+           className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-amber-500 hover:text-white transition-all"
+         >
             <ExternalLink className="w-4 h-4" />
          </button>
       </div>

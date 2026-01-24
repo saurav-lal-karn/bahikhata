@@ -22,20 +22,21 @@ interface AddAccountFormProps {
   onCancel?: () => void;
   familyId: string;
   walletTypes: WalletType[];
+  initialData?: any; // Using any for now to be flexible, but should be WalletInfoType
 }
 
-export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCancel, familyId, walletTypes }) => {
+export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCancel, familyId, walletTypes, initialData }) => {
   const { user } = useAuth();
   const familyCurrency = user?.family?.currency || "USD";
 
   const [formData, setFormData] = useState({
-    name: "",
-    wallet_type_id: "",
-    starting_balance: "",
-    currency: familyCurrency,
-    provider_wallet_id: "",
-    wallet_issuer_name: "",
-    description: "",
+    name: initialData?.name || "",
+    wallet_type_id: initialData?.wallet_type_id || "",
+    starting_balance: initialData?.starting_balance?.toString() || "",
+    currency: initialData?.currency || familyCurrency,
+    provider_wallet_id: initialData?.provider_wallet_id || "",
+    wallet_issuer_name: initialData?.wallet_issuer_name || "",
+    description: initialData?.description || "",
     is_custom_type: false,
     custom_type_name: "",
     custom_type_description: "",
@@ -53,11 +54,17 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
             is_custom_type: isCustomType,
         };
 
-        await walletService.createWallet(accountData);
-        toast.success("Account added successfully");
+        if (initialData) {
+            await walletService.updateWallet(initialData.id, accountData);
+            toast.success("Account updated successfully");
+        } else {
+            await walletService.createWallet(accountData);
+            toast.success("Account added successfully");
+        }
+        
         if (onSuccess) onSuccess();
     } catch (error) {
-        toast.error("Failed to add account");
+        toast.error(initialData ? "Failed to update account" : "Failed to add account");
     }
   };
 
@@ -224,7 +231,7 @@ export const AddAccountForm: React.FC<AddAccountFormProps> = ({ onSuccess, onCan
           type="submit" 
           className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-amber-500/20 transition-all flex items-center gap-2"
         >
-          <Check className="w-5 h-5" /> Save Account
+          <Check className="w-5 h-5" /> {initialData ? "Update Account" : "Save Account"}
         </Button>
       </div>
     </form>

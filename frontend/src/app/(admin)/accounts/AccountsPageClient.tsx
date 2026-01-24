@@ -9,8 +9,11 @@ import {
   TrendingUp,
   History,
   Info,
-  Wallet
+  Wallet,
+  Trash2
 } from "lucide-react";
+import toast from "react-hot-toast";
+
 import { Modal } from "@/components/ui/modal";
 import { WalletCard } from "@/components/accounts/WalletCard";
 import { InternalTransferForm } from "@/components/accounts/InternalTransferForm";
@@ -29,6 +32,9 @@ export default function AccountsPageClient() {
     const [walletTypes, setWalletTypes] = useState<WalletType[]>([]);
     const [wallets, setWallets] = useState<WalletInfoType[]>([]);
     const [transfers, setTransfers] = useState<WalletTransfer[]>([]);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [walletToDelete, setWalletToDelete] = useState<WalletInfoType | null>(null);
+
 
     const fetchData = async () => {
         if (!familyDetails?.id) return;
@@ -57,6 +63,21 @@ export default function AccountsPageClient() {
         setIsTransferModalOpen(false);
         fetchData();
     };
+
+    const handleDelete = async () => {
+        if (!walletToDelete) return;
+        try {
+            await walletService.deleteWallet(walletToDelete.id);
+            toast.success("Wallet deleted successfully");
+            setIsDeleteModalOpen(false);
+            setWalletToDelete(null);
+            fetchData();
+        } catch (error) {
+            console.error('Failed to delete wallet:', error);
+            toast.error("Failed to delete wallet");
+        }
+    };
+
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -122,16 +143,22 @@ export default function AccountsPageClient() {
                   return (
                     <WalletCard 
                       key={wallet.id}
+                      id={wallet.id}
                       name={wallet.name}
                       type={wallet.wallet_type?.name || "Other"}
                       balance={wallet.balance + (wallet.starting_balance || 0)}
                       currency={wallet.currency}
-                      accountNo={wallet.wallet_id || "N/A"}
+                      accountNo={wallet.wallet_type?.name || "N/A"}
                       bank={wallet.wallet_issuer_name || "N/A"}
                       icon={getWalletIcon(wallet.wallet_type?.name || "")}
                       color={getWalletColor(wallet.wallet_type?.name || "")}
                       active={index === 0}
+                      onDelete={() => {
+                        setWalletToDelete(wallet);
+                        setIsDeleteModalOpen(true);
+                      }}
                     />
+
                   );
                 })
               ) : (
@@ -219,6 +246,32 @@ export default function AccountsPageClient() {
             familyId={familyDetails?.id || ""} 
          />
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="max-w-md p-8 text-center">
+         <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full mx-auto flex items-center justify-center mb-6">
+            <Trash2 className="w-8 h-8 text-red-600" />
+         </div>
+         <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Delete this wallet?</h3>
+         <p className="text-sm text-gray-500 mb-8">
+            Are you sure you want to delete <strong>{walletToDelete?.name}</strong>? This action cannot be undone and will remove all associated transaction history.
+         </p>
+         <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="px-6 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleDelete}
+              className="px-6 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
+            >
+              Confirm Delete
+            </button>
+         </div>
+      </Modal>
     </div>
+
   );
 }

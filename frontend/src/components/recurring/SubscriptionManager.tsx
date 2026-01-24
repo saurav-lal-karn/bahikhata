@@ -8,9 +8,16 @@ import {
   ExternalLink,
   CreditCard,
   AlertCircle,
-  Zap
+  Zap,
+  MoreVertical,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import { RecurringTransaction } from "@/types";
+import { useState } from "react";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+
 
 interface SubscriptionManagerProps {
   transactions?: RecurringTransaction[];
@@ -35,24 +42,64 @@ const getStyle = (type: string, name: string) => {
 };
 
 export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transactions = [], isLoading = false }) => {
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
   if (isLoading) return <div className="text-center py-10">Loading...</div>;
   if (transactions.length === 0) return <div className="text-center py-10 text-gray-500">No active subscriptions found.</div>;
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
        {transactions.map((sub) => {
          const style = getStyle(sub.type, sub.name);
          return (
-         <div key={sub.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group border-b-4 border-b-transparent hover:border-b-blue-500">
+         <div key={sub.id} className={`bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group border-b-4 border-b-transparent hover:border-b-blue-500 relative ${activeMenu === sub.id ? 'z-50' : 'z-10'}`}>
            <div className="flex items-center justify-between mb-6">
               <div className={`p-4 rounded-2xl ${style.color} transition-transform group-hover:scale-110`}>
                 {style.icon}
               </div>
-              <div className="text-right">
-                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cost</p>
-                 <p className="text-lg font-black text-gray-900 dark:text-white">₹{sub.amount.toLocaleString()}</p>
-                 <span className="text-[9px] font-bold text-gray-400 uppercase">{sub.frequency}</span>
+              <div className="text-right flex items-center gap-4">
+                 <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Cost</p>
+                    <p className="text-lg font-black text-gray-900 dark:text-white">₹{sub.amount.toLocaleString()}</p>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase">{sub.frequency}</span>
+                 </div>
+
+                 <div className="relative">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenu(activeMenu === sub.id ? null : sub.id);
+                      }}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-all dropdown-toggle"
+                    >
+                       <MoreVertical className="w-4 h-4" />
+                    </button>
+                    
+                    <Dropdown 
+                      isOpen={activeMenu === sub.id} 
+                      onClose={() => setActiveMenu(null)} 
+                      className="w-32 text-left"
+                    >
+                      <DropdownItem onClick={() => setActiveMenu(null)}>
+                        <div className="flex items-center gap-2">
+                          <Pencil className="w-4 h-4 text-gray-500" />
+                          <span>Edit</span>
+                        </div>
+                      </DropdownItem>
+                      <DropdownItem 
+                        onClick={() => setActiveMenu(null)}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </div>
+                      </DropdownItem>
+                    </Dropdown>
+                 </div>
               </div>
+
            </div>
 
            <div className="mb-6">

@@ -92,3 +92,97 @@ func (ctrl *WalletController) GetWallets(c *gin.Context) {
 
 	helper.SuccessResponse(c, http.StatusOK, "Wallets fetched successfully", wallets)
 }
+
+func (ctrl *WalletController) GetWalletDetails(c *gin.Context) {
+	walletID := c.Param("wallet_id")
+	if walletID == "" {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
+		return
+	}
+
+	parsedWalletID, err := uuid.Parse(walletID)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
+		return
+	}
+
+	wallet, err := ctrl.svc.GetWalletDetails(c, parsedWalletID)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Wallet details fetched successfully", wallet)
+}
+
+func (ctrl *WalletController) UpdateWallet(c *gin.Context) {
+	walletID := c.Param("wallet_id")
+	if walletID == "" {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
+		return
+	}
+
+	parsedWalletID, err := uuid.Parse(walletID)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
+		return
+	}
+
+	var req dto.CreateWalletRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	userId, exists := c.Get("userId")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+	uid, err := uuid.Parse(userId.(string))
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		return
+	}
+
+	wallet, err := ctrl.svc.UpdateWallet(c, parsedWalletID, &req, uid)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Wallet updated successfully", wallet)
+}
+
+func (ctrl *WalletController) DeleteWallet(c *gin.Context) {
+	walletID := c.Param("wallet_id")
+	if walletID == "" {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
+		return
+	}
+
+	parsedWalletID, err := uuid.Parse(walletID)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
+		return
+	}
+
+	userId, exists := c.Get("userId")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+	uid, err := uuid.Parse(userId.(string))
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		return
+	}
+
+	err = ctrl.svc.DeleteWallet(c, parsedWalletID, uid)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "Wallet deleted successfully", nil)
+}
