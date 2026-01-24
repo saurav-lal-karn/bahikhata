@@ -31,19 +31,35 @@ func NewWalletService(walletRepo repository.WalletRepository, walletTypeRepo rep
 }
 
 func (s *walletService) Create(ctx context.Context, wallet *dto.CreateWalletRequest, created_by_id uuid.UUID) (*model.Wallet, error) {
-	// Validate family id
+	// Validate input
+	if err := s.validateWalletRequest(wallet); err != nil {
+		return nil, err
+	}
+	
 	// Verify the family exists
 	familyID := uuid.MustParse(wallet.FamilyID)
 	_, err := s.familyRepo.GetByID(ctx, familyID)
 	if err != nil {
-		return nil, fmt.Errorf("Family not found: %w", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, NewNotFoundError("family", familyID)
+		}
+		return nil, NewInternalError("verify family", err)
+	}
+	
+	// Check for duplicate wallet name in family
+	exists, err := s.walletRepo.ExistsByNameAndFamily(ctx, wallet.Name, familyID)
+	if err != nil {
+		return nil, NewInternalError("check wallet name", err)
+	}
+	if exists {
+		return nil, NewConflictError(fmt.Sprintf("wallet with name '%s' already exists in family", wallet.Name))
 	}
 
 	var walletTypeID uuid.UUID
 	if wallet.IsCustomType {
 		// Check if custom type name is provided
 		if wallet.CustomTypeName == "" {
-			return nil, fmt.Errorf("Custom type name is required when is_custom_type is true")
+			return nil, NewValidationError("custom type name is required when is_custom_type is true")
 		}
 		// Check if custom type exists
 		walletType, err := s.walletTypeRepo.GetByName(ctx, wallet.CustomTypeName, familyID)
@@ -58,11 +74,11 @@ func (s *walletService) Create(ctx context.Context, wallet *dto.CreateWalletRequ
 					IsSystem: false,
 				})
 				if err != nil {
-					return nil, fmt.Errorf("Failed to create custom type: %w", err)
+					return nil, NewInternalError("create custom wallet type", err)
 				}
 			} else {
 				// Some other error occurred
-				return nil, fmt.Errorf("Failed to get custom type: %w", err)
+				return nil, NewInternalError("get custom wallet type", err)
 			}
 		}
 		walletTypeID = walletType.ID
@@ -71,7 +87,10 @@ func (s *walletService) Create(ctx context.Context, wallet *dto.CreateWalletRequ
 		walletTypeID = uuid.MustParse(wallet.WalletTypeID)
 		_, err := s.walletTypeRepo.GetByID(ctx, walletTypeID)
 		if err != nil {
-			return nil, fmt.Errorf("Wallet type not found: %w", err)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, NewNotFoundError("wallet type", walletTypeID)
+			}
+			return nil, NewInternalError("verify wallet type", err)
 		}
 	}
 
@@ -96,19 +115,34 @@ func (s *walletService) List(ctx context.Context, family_id uuid.UUID, created_b
 }
 
 func(s *walletService) GetByID(ctx context.Context, id uuid.UUID) (*model.Wallet, error) {
-	return s.walletRepo.GetByID(ctx, id)
+	wallet, err := s.walletRepo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, NewNotFoundError("wallet", id)
+		}
+		return nil, NewInternalError("get wallet", err)
+	}
+	return wallet, nil
 }
 
 func(s *walletService) Update(ctx context.Context, id uuid.UUID, wallet *dto.CreateWalletRequest, userID uuid.UUID) (*model.Wallet, error) {
+	// Validate input
+	if err := s.validateWalletRequest(wallet); err != nil {
+		return nil, err
+	}
+	
 	// 1. Get existing wallet
 	existingWallet, err := s.walletRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch wallet: %w", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, NewNotFoundError("wallet", id)
+		}
+		return nil, NewInternalError("get wallet", err)
 	}
 	
 	// 2. Check ownership
 	if existingWallet.UserID != userID {
-		return nil, fmt.Errorf("unauthorized: wallet does not belong to user")
+		return nil, NewUnauthorizedError("wallet does not belong to user")
 	}
 
 	// 3. Update fields (re-using logic from CreateWallet or manual assignment)
@@ -138,13 +172,36 @@ func(s *walletService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUI
 	// 1. Get existing wallet
 	existingWallet, err := s.walletRepo.GetByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("failed to fetch wallet: %w", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return NewNotFoundError("wallet", id)
+		}
+		return NewInternalError("get wallet", err)
 	}
 
 	// 2. Check ownership
 	if existingWallet.UserID != userID {
-		return fmt.Errorf("unauthorized: wallet does not belong to user")
+		return NewUnauthorizedError("wallet does not belong to user")
 	}
 
 	return s.walletRepo.Delete(ctx, id)
+}
+
+// validateWalletRequest validates wallet request input
+func (s *walletService) validateWalletRequest(req *dto.CreateWalletRequest) error {
+	if req.Name == "" {
+		return NewValidationError("wallet name is required")
+	}
+	if len(req.Name) > 100 {
+		return NewValidationError("wallet name must not exceed 100 characters")
+	}
+	if req.StartingBalance < 0 {
+		return NewValidationError("starting balance cannot be negative")
+	}
+	if req.Currency == "" {
+		return NewValidationError("currency is required")
+	}
+	if len(req.Description) > 500 {
+		return NewValidationError("description must not exceed 500 characters")
+	}
+	return nil
 }

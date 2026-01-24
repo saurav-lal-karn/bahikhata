@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
@@ -19,15 +18,9 @@ func NewWalletController(svc service.WalletService) WalletController {
 }
 
 func (ctrl *WalletController) Create(c *gin.Context) {
-	userId, exists := c.Get("userId")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(c)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -51,7 +44,7 @@ func (ctrl *WalletController) Create(c *gin.Context) {
 
 	wallet, err := ctrl.svc.Create(c, &req, uid)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handleServiceError(c, err)
 		return
 	}
 
@@ -59,34 +52,21 @@ func (ctrl *WalletController) Create(c *gin.Context) {
 }
 
 func (ctrl *WalletController) List(c *gin.Context) {
-	userId, exists := c.Get("userId")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(c)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-
-	familyID := c.Param("family_id")
-	if familyID == "" {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "Family ID not found in context")
-		return
-	}
-
-	fid, err := uuid.Parse(familyID)
+	fid, err := parseUUIDParam(c, "family_id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid family ID format in context")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	wallets, err := ctrl.svc.List(c, fid, uid)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handleServiceError(c, err)
 		return
 	}
 
@@ -94,21 +74,15 @@ func (ctrl *WalletController) List(c *gin.Context) {
 }
 
 func (ctrl *WalletController) GetByID(c *gin.Context) {
-	walletID := c.Param("wallet_id")
-	if walletID == "" {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
+	walletID, err := parseUUIDParam(c, "wallet_id")
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	parsedWalletID, err := uuid.Parse(walletID)
+	wallet, err := ctrl.svc.GetByID(c, walletID)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
-		return
-	}
-
-	wallet, err := ctrl.svc.GetByID(c, parsedWalletID)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handleServiceError(c, err)
 		return
 	}
 
@@ -116,15 +90,9 @@ func (ctrl *WalletController) GetByID(c *gin.Context) {
 }
 
 func (ctrl *WalletController) Update(c *gin.Context) {
-	walletID := c.Param("wallet_id")
-	if walletID == "" {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
-		return
-	}
-
-	parsedWalletID, err := uuid.Parse(walletID)
+	walletID, err := parseUUIDParam(c, "wallet_id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -134,20 +102,15 @@ func (ctrl *WalletController) Update(c *gin.Context) {
 		return
 	}
 
-	userId, exists := c.Get("userId")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(c)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	wallet, err := ctrl.svc.Update(c, parsedWalletID, &req, uid)
+	wallet, err := ctrl.svc.Update(c, walletID, &req, uid)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handleServiceError(c, err)
 		return
 	}
 
@@ -155,32 +118,21 @@ func (ctrl *WalletController) Update(c *gin.Context) {
 }
 
 func (ctrl *WalletController) Delete(c *gin.Context) {
-	walletID := c.Param("wallet_id")
-	if walletID == "" {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "Wallet ID not found in context")
+	walletID, err := parseUUIDParam(c, "wallet_id")
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	parsedWalletID, err := uuid.Parse(walletID)
+	uid, err := getUserIDFromContext(c)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid wallet ID format in context")
+		helper.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	userId, exists := c.Get("userId")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-	uid, err := uuid.Parse(userId.(string))
+	err = ctrl.svc.Delete(c, walletID, uid)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "Invalid user ID format in context")
-		return
-	}
-
-	err = ctrl.svc.Delete(c, parsedWalletID, uid)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handleServiceError(c, err)
 		return
 	}
 
