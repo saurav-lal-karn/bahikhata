@@ -16,4 +16,6 @@ func RegisterInvestmentRoutes(app *config.Application, router *gin.RouterGroup) 
 	router.POST("", ctrl.Create)
 	router.GET("", ctrl.List)
 	router.DELETE("/:id", ctrl.Delete)
+	router.POST("/:id/transactions", ctrl.AddTransaction)
+	router.GET("/:id/transactions", ctrl.ListTransactions)
 }

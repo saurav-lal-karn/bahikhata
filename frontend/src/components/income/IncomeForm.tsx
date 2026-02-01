@@ -14,18 +14,19 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
-import { Income, IncomeType, WalletInfoType } from "@/types";
+import { Income, IncomeType, WalletInfoType, TransactionType, Transaction, TransactionCategory } from "@/types";
 import toast from "react-hot-toast";
-import { incomeService } from "@/services/incomeService";
+import { transactionService } from "@/services/transactionService";
+import { transactionCategoryService } from "@/services/transactionCategoryService";
 import DatePicker from "../form/date-picker";
 
 interface IncomeFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   wallets: WalletInfoType[];
-  incomeTypes: IncomeType[];
+  incomeTypes: TransactionCategory[];
   familyId: string;
-  income?: Income; // Added for editing
+  income?: Transaction; // Updated to Transaction
 }
 
 export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income }) => {
@@ -34,33 +35,46 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
     const [formData, setFormData] = useState({
     name: income?.name || "",
     amount: income?.amount || 0,
-    source_id: income?.source_id || "",
+    source_id: income?.category_id || "", // Unified category_id
     wallet_id: income?.wallet_id || "",
-    date: income?.date ? new Date(income.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    date: income?.transaction_date ? new Date(income.transaction_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     description: income?.description || "",
-    is_custom_source: income?.is_custom_source || false,
-    custom_source_name: income?.custom_source_name || "",
     family_id: familyId,
   });
   
-  const [isCustomSource, setIsCustomSource] = useState(income?.is_custom_source || false);
-  const [customSourceName, setCustomSourceName] = useState(income?.custom_source_name || "");
+  const [isCustomSource, setIsCustomSource] = useState(false);
+  const [customSourceName, setCustomSourceName] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        const finalData = {
-            ...formData,
-            source_id: isCustomSource ? "" : formData.source_id,
-            custom_source_name: isCustomSource ? customSourceName : "",
-            is_custom_source: isCustomSource,
+        let categoryId = formData.source_id;
+        
+        if (isCustomSource && customSourceName) {
+            const newCategory = await transactionCategoryService.createCategory({
+                name: customSourceName,
+                type: 'INCOME' as TransactionType,
+                family_id: familyId
+            });
+            categoryId = newCategory.id;
+        }
+
+        const payload = {
+            type: 'INCOME' as TransactionType,
+            name: formData.name,
+            amount: Number(formData.amount),
+            description: formData.description,
+            transaction_date: new Date(formData.date).toISOString(),
+            wallet_id: formData.wallet_id,
+            category_id: categoryId,
+            family_id: familyId,
         };
         
         if (isEditing && income?.id) {
-          await incomeService.updateIncome(income.id, finalData);
+          await transactionService.updateTransaction(income.id, payload);
           toast.success("Income updated successfully");
         } else {
-          await incomeService.createIncome(finalData);
+          await transactionService.createTransaction(payload);
           toast.success("Income added successfully");
         }
         

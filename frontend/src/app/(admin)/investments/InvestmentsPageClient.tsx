@@ -22,6 +22,7 @@ import { BulkImportInvestments } from "@/components/investments/BulkImportInvest
 import { useAuth } from "@/context/AuthContext";
 import { investmentService } from "@/services/investmentService";
 import { Investment } from "@/types";
+import { InvestmentList } from "@/components/investments/InvestmentList";
 
 export default function InvestmentsPageClient() {
   const { user } = useAuth();
@@ -207,59 +208,11 @@ export default function InvestmentsPageClient() {
         )}
 
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50 dark:bg-white/[0.02]">
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Asset Name</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Invested</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Current</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Returns</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-              {isLoading ? (
-                  <tr><td colSpan={5} className="text-center py-10">Loading...</td></tr>
-              ) : filteredInvestments.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-10 text-gray-500">No investments found.</td></tr>
-              ) : filteredInvestments.map((inv) => {
-                  const investedAmount = inv.quantity * inv.avg_buy_price;
-                  const currentVal = inv.quantity * inv.current_price;
-                  const gain = investedAmount > 0 ? ((currentVal - investedAmount) / investedAmount) * 100 : 0;
-                  
-                  return (
-                    <tr key={inv.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-all">
-                    <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:rotate-6 transition-transform`}>
-                            <PieChart className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-black text-gray-800 dark:text-white">{inv.name}</span>
-                        </div>
-                    </td>
-                    <td className="px-8 py-6">
-                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {inv.type}
-                        </span>
-                    </td>
-                    <td className="px-8 py-6">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">₹{investedAmount.toLocaleString()}</span>
-                    </td>
-                    <td className="px-8 py-6">
-                        <span className="text-sm font-black text-gray-900 dark:text-white">₹{currentVal.toLocaleString()}</span>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                        <div className={`inline-flex items-center gap-1 text-sm font-black ${gain >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {gain >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                        {Math.abs(gain).toFixed(1)}%
-                        </div>
-                    </td>
-                    </tr>
-                  );
-              })}
-            </tbody>
-          </table>
+        <div className="p-6">
+            <InvestmentList 
+                investments={filteredInvestments} 
+                isLoading={isLoading} 
+            />
         </div>
       </div>
 

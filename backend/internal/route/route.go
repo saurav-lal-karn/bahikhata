@@ -41,8 +41,14 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	userRouter := protected.Group("/users")
 	RegisterUserRoutes(app, userRouter)
 
-	expenseRouter := protected.Group("/expenses")
-	RegisterExpenseRoutes(app, expenseRouter)
+	// expenseRouter := protected.Group("/expenses")
+	// RegisterExpenseRoutes(app, expenseRouter)
+
+	transactionRouter := protected.Group("/transactions")
+	RegisterTransactionRoutes(app, transactionRouter)
+
+	transactionCategoryRouter := protected.Group("/transaction-categories")
+	RegisterTransactionCategoryRoutes(app, transactionCategoryRouter)
 
 	familyRouter := protected.Group("/families")
 	RegisterFamilyRoutes(app, familyRouter)
@@ -50,8 +56,8 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	familyMemberRouter := protected.Group("/family-members")
 	RegisterFamilyMemberRoutes(app, familyMemberRouter)
 
-	expenseCategoryRouter := protected.Group("/expense-categories")
-	RegisterExpenseCategoryRoutes(app, expenseCategoryRouter)
+	// expenseCategoryRouter := protected.Group("/expense-categories")
+	// RegisterExpenseCategoryRoutes(app, expenseCategoryRouter)
 
 	paymentMethodRouter := protected.Group("/payment-methods")
 	RegisterPaymentMethodRoutes(app, paymentMethodRouter)
@@ -65,11 +71,11 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	walletTransferRouter := protected.Group("/wallet-transfers")
 	RegisterWalletTransferRoutes(app, walletTransferRouter)
 
-	incomeTypeRouter := protected.Group("/income-types")
-	RegisterIncomeTypeRoutes(app, incomeTypeRouter)
+	// incomeTypeRouter := protected.Group("/income-types")
+	// RegisterIncomeTypeRoutes(app, incomeTypeRouter)
 
-	incomeRouter := protected.Group("/incomes")
-	RegisterIncomeRoutes(app, incomeRouter)
+	// incomeRouter := protected.Group("/incomes")
+	// RegisterIncomeRoutes(app, incomeRouter)
 
 	goalRouter := protected.Group("/goals")
 	RegisterGoalRoutes(app, goalRouter)
@@ -88,6 +94,9 @@ func SetupRouter(app *config.Application) *gin.Engine {
 
 	taxRouter := protected.Group("/tax")
 	RegisterTaxRoutes(app, taxRouter)
+
+	analyticsRouter := protected.Group("/analytics")
+	RegisterAnalyticsRoutes(app, analyticsRouter)
 
 	// Serve static files
 	router.Static("/uploads", "./uploads")

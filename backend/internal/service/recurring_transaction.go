@@ -12,6 +12,8 @@ type RecurringTransactionService interface {
 	Create(ctx context.Context, rt *model.RecurringTransaction) error
 	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.RecurringTransaction, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	CreateInstance(ctx context.Context, instance *model.RecurringInstance) error
+	ListInstances(ctx context.Context, recurringID uuid.UUID) ([]model.RecurringInstance, error)
 }
 
 type recurringTransactionService struct {
@@ -32,4 +34,12 @@ func (s *recurringTransactionService) List(ctx context.Context, familyID *uuid.U
 
 func (s *recurringTransactionService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *recurringTransactionService) CreateInstance(ctx context.Context, instance *model.RecurringInstance) error {
+	return s.repo.CreateInstance(ctx, instance)
+}
+
+func (s *recurringTransactionService) ListInstances(ctx context.Context, recurringID uuid.UUID) ([]model.RecurringInstance, error) {
+	return s.repo.ListInstances(ctx, recurringID)
 }

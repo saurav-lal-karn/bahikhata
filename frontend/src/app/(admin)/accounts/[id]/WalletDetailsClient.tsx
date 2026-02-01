@@ -18,6 +18,7 @@ import { walletTypeService } from "@/services/walletTypeService";
 import { useAuth } from "@/context/AuthContext";
 import { Modal } from "@/components/ui/modal";
 import { AddAccountForm } from "@/components/accounts/AddAccountForm";
+import { WalletStatement } from "@/components/accounts/WalletStatement";
 import toast from "react-hot-toast";
 
 interface WalletDetailsClientProps {
@@ -207,6 +208,9 @@ export default function WalletDetailsClient({ walletId }: WalletDetailsClientPro
             </div>
         </div>
       </div>
+
+      {/* Wallet Statement */}
+      <WalletStatement walletId={walletId} familyId={user?.family?.id || ""} />
 
       {/* Edit Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="max-w-2xl p-10">

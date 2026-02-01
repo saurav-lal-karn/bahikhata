@@ -12,6 +12,8 @@ type DebtService interface {
 	Create(ctx context.Context, debt *model.Debt) error
 	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	CreateRepayment(ctx context.Context, repayment *model.DebtRepayment) error
+	ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error)
 }
 
 type debtService struct {
@@ -32,4 +34,12 @@ func (s *debtService) List(ctx context.Context, familyID *uuid.UUID, userID *uui
 
 func (s *debtService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *debtService) CreateRepayment(ctx context.Context, repayment *model.DebtRepayment) error {
+	return s.repo.CreateRepayment(ctx, repayment)
+}
+
+func (s *debtService) ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error) {
+	return s.repo.ListRepayments(ctx, debtID)
 }

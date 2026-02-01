@@ -1,9 +1,13 @@
 "use client";
 import React from "react";
-import { Calendar, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Calendar, MoreVertical, Pencil, Trash2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+import { AddContributionForm } from "./AddContributionForm";
+import { Modal } from "@/components/ui/modal";
+import { goalService } from "@/services/goalService";
+import { GoalContribution } from "@/types";
 
 
 interface GoalCardProps {
@@ -33,6 +37,30 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   onDelete
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<GoalContribution[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  const fetchHistory = async () => {
+    if (!id) return;
+    try {
+      setIsLoadingHistory(true);
+      const data = await goalService.getContributions(id);
+      setHistory(data);
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const toggleHistory = () => {
+    if (!showHistory) {
+      fetchHistory();
+    }
+    setShowHistory(!showHistory);
+  };
 
   const percentage = Math.min(Math.round((current / target) * 100), 100);
   const remaining = Math.max(target - current, 0);
@@ -60,20 +88,33 @@ export const GoalCard: React.FC<GoalCardProps> = ({
                 <MoreVertical className="w-4 h-4" />
              </button>
              
-             <Dropdown isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} className="w-32 text-left">
-                <DropdownItem onClick={() => { setIsMenuOpen(false); onEdit?.(); }}>
+             <Dropdown isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} className="w-48 text-left">
+                <DropdownItem onClick={() => { setIsMenuOpen(false); setIsContributionModalOpen(true); }}>
                   <div className="flex items-center gap-2">
-                    <Pencil className="w-4 h-4 text-gray-500" />
-                    <span>Edit</span>
+                    <Plus className="w-4 h-4 text-emerald-500" />
+                    <span className="font-bold">Record Contribution</span>
+                  </div>
+                </DropdownItem>
+                <DropdownItem onClick={() => { setIsMenuOpen(false); toggleHistory(); }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-500" />
+                    <span>{showHistory ? 'Hide History' : 'View History'}</span>
+                  </div>
+                </DropdownItem>
+                <div className="h-px bg-gray-50 dark:bg-gray-800 my-1" />
+                <DropdownItem onClick={() => { setIsMenuOpen(false); onEdit?.(); }}>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Pencil className="w-4 h-4" />
+                    <span>Edit Goal</span>
                   </div>
                 </DropdownItem>
                 <DropdownItem 
                   onClick={() => { setIsMenuOpen(false); onDelete?.(); }}
-                  className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                  className="text-red-500 hover:bg-red-50 hover:text-red-600 font-bold"
                 >
                   <div className="flex items-center gap-2">
                     <Trash2 className="w-4 h-4" />
-                    <span>Delete</span>
+                    <span>Delete Goal</span>
                   </div>
                 </DropdownItem>
              </Dropdown>
@@ -109,6 +150,47 @@ export const GoalCard: React.FC<GoalCardProps> = ({
            ₹{(remaining / 100000).toFixed(1)}L to go
          </div>
       </div>
+
+      {showHistory && (
+        <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-2 duration-300">
+           <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Contribution History</h5>
+           {isLoadingHistory ? (
+             <div className="space-y-2">
+                {[1, 2].map(i => <div key={i} className="h-10 bg-gray-50 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+             </div>
+           ) : history.length > 0 ? (
+             <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {history.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all">
+                     <div className="flex flex-col">
+                        <span className="text-xs font-black text-gray-900 dark:text-white">₹{item.amount.toLocaleString()}</span>
+                        <span className="text-[10px] font-medium text-gray-400">{new Date(item.contribution_date).toLocaleDateString()}</span>
+                     </div>
+                     <Plus className="w-3 h-3 text-emerald-500" />
+                  </div>
+                ))}
+             </div>
+           ) : (
+             <p className="text-[10px] text-gray-400 font-medium italic">No contributions recorded yet.</p>
+           )}
+        </div>
+      )}
+
+      <Modal isOpen={isContributionModalOpen} onClose={() => setIsContributionModalOpen(false)} className="max-w-md p-8">
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-gray-800 dark:text-white mb-1">Add Contribution</h3>
+          <p className="text-xs text-gray-500 font-medium">Record a new payment towards your goal: <span className="text-emerald-600 font-bold">{title}</span></p>
+        </div>
+        <AddContributionForm 
+          goalId={id || ""} 
+          onSuccess={() => {
+            setIsContributionModalOpen(false);
+            fetchHistory();
+            window.location.reload();
+          }} 
+          onCancel={() => setIsContributionModalOpen(false)} 
+        />
+      </Modal>
     </div>
   );
 };

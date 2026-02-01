@@ -8,9 +8,10 @@ import { AddExpenseForm } from "@/components/expenses/AddExpenseForm";
 import { BulkImportExpenses } from "@/components/expenses/BulkImportExpenses";
 import { FileSpreadsheet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { ExpenseCategory, PaymentMethod } from "@/types";
-import { expenseCategoryService } from "@/services/expenseCategoryService";
+import { ExpenseCategory, PaymentMethod, WalletInfoType } from "@/types";
+import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { paymentMethodService } from "@/services/paymentMethodService";
+import { walletService } from "@/services/walletService";
 
 export default function ExpensesPageClient() {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ export default function ExpensesPageClient() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [wallets, setWallets] = useState<WalletInfoType[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const openModal = () => setIsModalOpen(true);
@@ -40,14 +42,16 @@ export default function ExpensesPageClient() {
       if (!familyDetails?.id) return;
 
       try {
-        const [categoriesResponse, paymentMethodsResponse] = await Promise.all([
-          expenseCategoryService.getCategories(familyDetails.id),
-          paymentMethodService.getPaymentMethods(familyDetails.id)
+        const [categoriesResponse, paymentMethodsResponse, walletResponse] = await Promise.all([
+          transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
+          paymentMethodService.getPaymentMethods(familyDetails.id),
+          walletService.getWallets(familyDetails.id, 1, 100)
         ]);
 
         if (isMounted) {
           setCategories(categoriesResponse);
           setPaymentMethods(paymentMethodsResponse);
+          setWallets(walletResponse.wallets);
         }
       } catch (error) {
         if (isMounted) {
@@ -108,6 +112,7 @@ export default function ExpensesPageClient() {
           onCancel={closeModal}
           categories={categories}
           paymentMethods={paymentMethods}
+          wallets={wallets}
           familyId={familyDetails?.id || ""}
         />
       </Modal>

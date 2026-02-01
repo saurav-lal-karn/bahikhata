@@ -12,6 +12,8 @@ type InvestmentService interface {
 	Create(ctx context.Context, investment *model.Investment) error
 	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Investment, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	CreateTransaction(ctx context.Context, transaction *model.InvestmentTransaction) error
+	ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error)
 }
 
 type investmentService struct {
@@ -32,4 +34,12 @@ func (s *investmentService) List(ctx context.Context, familyID *uuid.UUID, userI
 
 func (s *investmentService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *investmentService) CreateTransaction(ctx context.Context, transaction *model.InvestmentTransaction) error {
+	return s.repo.CreateTransaction(ctx, transaction)
+}
+
+func (s *investmentService) ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error) {
+	return s.repo.ListTransactions(ctx, investmentID)
 }

@@ -38,7 +38,7 @@ func (bc *BudgetController) Create(ctx *gin.Context) {
 	}
 
 	budget  := req.ToBudget()
-	budget.UserID = &uid
+	budget.UserID = uid
 
 	if err := bc.budgetService.Create(ctx, budget); err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create budget")

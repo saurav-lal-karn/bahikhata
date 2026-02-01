@@ -6,8 +6,8 @@ export const walletService = {
         const walletResponse = await apiClient.post("/wallets", wallet);
         return walletResponse.data.data;
     },
-    getWallets: async (familyId: string) => {
-        const walletResponse = await apiClient.get(`/wallets/family/${familyId}`);
+    getWallets: async (familyId: string, page: number = 1, pageSize: number = 10) => {
+        const walletResponse = await apiClient.get(`/wallets/family/${familyId}?page=${page}&page_size=${pageSize}`);
         return walletResponse.data.data;
     },
     getWallet: async (id: string) => {

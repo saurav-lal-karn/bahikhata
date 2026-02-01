@@ -19,7 +19,7 @@ import { BudgetList } from "@/components/budgets/BudgetList";
 import { AddBudgetForm } from "@/components/budgets/AddBudgetForm";
 import { PredictiveBudgetPanel } from "@/components/budgets/PredictiveBudgetPanel";
 import { useAuth } from "@/context/AuthContext";
-import { expenseCategoryService } from "@/services/expenseCategoryService";
+import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { budgetService } from "@/services/budgetService";
 import { ExpenseCategory, Budget } from "@/types";
 
@@ -56,7 +56,7 @@ export default function BudgetsPageClient() {
         try {
           setIsLoading(true);
           const [categoriesResponse, budgetsResponse] = await Promise.all([
-            expenseCategoryService.getCategories(familyDetails.id),
+            transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
             budgetService.getBudgets(familyDetails.id)
           ]);
   

@@ -1,79 +1,60 @@
 "use client";
 import React from "react";
-import { Zap, Trophy, TrendingUp, ShieldCheck, HeartPulse } from "lucide-react";
+import { ShieldCheck, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { analyticsService, ReportData } from "@/services/analyticsService";
+import { useAuth } from "@/context/AuthContext";
 
 export const FinancialHealthScore = () => {
-  const score = 84;
-  
+  const { user } = useAuth();
+  const familyId = user?.family?.id;
+  const [data, setData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (familyId) {
+      analyticsService.getReportData(familyId)
+        .then(setData)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [familyId]);
+
+  if (isLoading) return <div className="h-48 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-[2rem]" />;
+
+  const score = data?.health_score ?? 0;
+
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-10">
-        <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center gap-3">
-           <HeartPulse className="w-6 h-6 text-rose-500" /> Health Score
-        </h3>
-        <Trophy className="w-5 h-5 text-amber-500" />
+    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-[2.5rem] text-white shadow-lg shadow-indigo-500/20">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+          <ShieldCheck className="w-6 h-6 text-white" />
+        </div>
+        <h3 className="text-xl font-bold">Financial Health</h3>
       </div>
 
-      <div className="flex flex-col items-center justify-center py-10 relative">
-         {/* Circular Score Visual */}
-         <div className="w-48 h-48 flex items-center justify-center relative">
-            <svg 
-              viewBox="0 0 192 192" 
-              className="absolute inset-0 w-full h-full -rotate-90 drop-shadow-sm"
-            >
-               {/* Track Circle */}
-               <circle 
-                 cx="96" cy="96" r="84" 
-                 fill="transparent" 
-                 stroke="currentColor" 
-                 strokeWidth="12" 
-                 className="text-gray-100 dark:text-gray-800"
-               />
-               {/* Progress Circle */}
-               <circle 
-                 cx="96" cy="96" r="84" 
-                 fill="transparent" 
-                 stroke="currentColor" 
-                 strokeWidth="12" 
-                 strokeDasharray={2 * Math.PI * 84}
-                 strokeDashoffset={2 * Math.PI * 84 * (1 - score/100)}
-                 strokeLinecap="round"
-                 className="text-emerald-500 transition-all duration-1000 ease-out"
-               />
-            </svg>
-            <div className="text-center group cursor-pointer relative z-20">
-               <h2 className="text-5xl font-black text-gray-900 dark:text-white group-hover:scale-110 transition-transform">{score}</h2>
-               <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Excellent</p>
-            </div>
-         </div>
-         
-         {/* Pulse Effect Gradient at bottom of score area */}
-         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white dark:from-gray-900 to-transparent z-10 pointer-events-none" />
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h2 className="text-6xl font-black mb-2">{score}</h2>
+          <p className="text-white/60 text-sm font-medium">Out of 100 points</p>
+        </div>
+        <div className="text-right">
+          <span className="px-4 py-2 bg-emerald-500 rounded-full text-xs font-black uppercase tracking-widest">
+            {score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : 'Needs Work'}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mt-8">
-         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Savings Rate</p>
-            <div className="flex items-center gap-2">
-               <span className="text-sm font-black text-gray-800 dark:text-white">32%</span>
-               <TrendingUp className="w-3 h-3 text-emerald-500" />
-            </div>
-         </div>
-         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Debt Ratio</p>
-            <div className="flex items-center gap-2">
-               <span className="text-sm font-black text-gray-800 dark:text-white">14%</span>
-               <ShieldCheck className="w-3 h-3 text-emerald-500" />
-            </div>
-         </div>
+      <div className="space-y-4">
+        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full bg-emerald-400 rounded-full transition-all duration-1000" style={{ width: `${score}%` }} />
+        </div>
+        <p className="text-xs text-white/60 font-medium">Your score is calculated based on savings rate, debt-to-income ratio, and consistency.</p>
       </div>
 
-      <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl flex items-start gap-3">
-         <Zap className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-         <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-            Your score is in the top 5% of Bahikhata users. Boost it to 90 by increasing your ELSS investments.
-         </p>
-      </div>
+      <button className="w-full mt-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors group">
+        Improve Score <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </button>
     </div>
   );
 };

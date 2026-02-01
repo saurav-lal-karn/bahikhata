@@ -34,3 +34,25 @@ func (req *CreateGoalRequest) ToGoal() (*model.Goal, error) {
 		FamilyID: &req.FamilyID,
 	}, nil
 }
+
+type AddGoalContributionRequest struct {
+	Amount           float64    `json:"amount" binding:"required"`
+	TransactionID    *uuid.UUID `json:"transaction_id,omitempty"`
+	ContributionDate string     `json:"contribution_date"`
+}
+
+func (req *AddGoalContributionRequest) ToModel(goalID uuid.UUID) *model.GoalContribution {
+	contributionDate := time.Now()
+	if req.ContributionDate != "" {
+		if t, err := time.Parse(time.RFC3339, req.ContributionDate); err == nil {
+			contributionDate = t
+		}
+	}
+	return &model.GoalContribution{
+		ID:               uuid.New(),
+		GoalID:           goalID,
+		TransactionID:    req.TransactionID,
+		Amount:           req.Amount,
+		ContributionDate: contributionDate,
+	}
+}

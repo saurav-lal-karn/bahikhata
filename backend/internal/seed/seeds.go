@@ -3,11 +3,10 @@ package seed
 import "github.com/sauravkarn541/bahikhata/internal/config"
 
 func SeedBaseData(app config.Application) {
-	// Seed base data here like expense categories
-	seedExpenseCategories(app.DB)
+	// Seed base data here like transaction categories
 	seedPaymentMethods(app.DB)
 	seedWalletTypes(app.DB)
-	seedIncomeTypes(app.DB)
+	seedTransactionCategories(app.DB)
 }
 
 func SeedDevData(app config.Application) {

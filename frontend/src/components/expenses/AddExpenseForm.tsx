@@ -8,22 +8,25 @@ import {
   Loader2, 
   CheckCircle2, 
   X,
-  RefreshCcw
+  RefreshCcw,
+  Wallet
 } from "lucide-react";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 import DatePicker from "@/components/form/date-picker";
-import { expenseService } from "@/services/expenseService";
+import { transactionService } from "@/services/transactionService";
+import { transactionCategoryService } from "@/services/transactionCategoryService";
 import toast from "react-hot-toast";
-import { ExpenseCategory, PaymentMethod } from "@/types";
+import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType } from "@/types";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   categories?: ExpenseCategory[];
   paymentMethods?: PaymentMethod[];
+  wallets?: WalletInfoType[];
   familyId: string;
 }
 
@@ -32,6 +35,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   onCancel,
   categories = [],
   paymentMethods = [],
+  wallets = [],
   familyId
 }) => {
 
@@ -42,6 +46,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         description: "",
         category_id: "",
         payment_method_id: "",
+        wallet_id: "",
         family_id: familyId
     });
   
@@ -98,18 +103,34 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.wallet_id) {
+        toast.error("Please select a wallet");
+        return;
+    }
     try {
-        const finalData = {
-            ...formData,
-            category_id: isCustomCategory ? "" : formData.category_id,
-            payment_method_id: isCustomPaymentMethod ? "" : formData.payment_method_id,
-            is_custom_category: isCustomCategory,
-            custom_category_name: isCustomCategory ? customCategoryName : "",
-            is_custom_payment_method: isCustomPaymentMethod,
-            custom_payment_method_name: isCustomPaymentMethod ? customPaymentMethodName : "",
+        let categoryId = formData.category_id;
+        if (isCustomCategory && customCategoryName) {
+            const newCategory = await transactionCategoryService.createCategory({
+                name: customCategoryName,
+                type: 'EXPENSE' as TransactionType,
+                family_id: familyId
+            });
+            categoryId = newCategory.id;
+        }
+
+        const payload = {
+            type: 'EXPENSE' as TransactionType,
+            name: formData.name,
+            amount: Number(formData.amount),
+            description: formData.description,
+            transaction_date: new Date(formData.transaction_date).toISOString(),
+            wallet_id: formData.wallet_id,
+            category_id: categoryId,
+            payment_method_id: formData.payment_method_id, // Payment methods are currently simple lookups
+            family_id: familyId,
         };
 
-        await expenseService.createExpense(finalData);
+        await transactionService.createTransaction(payload);
         toast.success("Expense added successfully");
         if (onSuccess) onSuccess();
     } catch (error) {
@@ -235,6 +256,21 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             />
           </div>
           <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Wallet / Account</Label>
+            <div className="relative group">
+              <Select 
+                options={wallets.map(wallet => ({value: wallet.id, label: wallet.name}))}
+                placeholder="Where did the money go from?"
+                onChange={(value: string) => setFormData({...formData, wallet_id: value})}
+                className="rounded-2xl h-14 pl-11"
+              />
+              <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="col-span-1 space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Payment Method</Label>
             <Select 
               options={[

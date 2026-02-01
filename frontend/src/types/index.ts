@@ -1,3 +1,7 @@
+import { DebtRepayment, GoalContribution, InvestmentTransaction, RecurringInstance } from './tracking';
+
+export * from './tracking';
+
 export interface Family {
   id: string;
   name: string;
@@ -72,6 +76,7 @@ export interface CreateExpensePayload {
     is_custom_payment_method: boolean;
     custom_category_name: string;
     custom_payment_method_name: string;
+    wallet_id: string;
 }
 
 export interface Expense {
@@ -105,16 +110,24 @@ export interface ExpenseStatsResponse {
     average_expense: number;
 }
 
-// Types for categories
-export interface ExpenseCategory {
+// Unified Transaction Types
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
+
+export interface TransactionCategory {
     id: string;
     name: string;
-    description: string;
+    type: TransactionType;
+    icon_name?: string;
+    color?: string;
+    parent_id?: string;
+    family_id?: string;
     is_system: boolean;
-    tags: string[];
-    family_id: string;
-    created_by_id: string;
+    is_active: boolean;
+    created_at: string;
 }
+
+export type ExpenseCategory = TransactionCategory;
+export type IncomeType = TransactionCategory;
 
 // Types for payment methods
 export interface PaymentMethod {
@@ -125,6 +138,50 @@ export interface PaymentMethod {
     is_system: boolean;
     family_id: string;
     created_by_id: string;
+}
+
+export interface Transaction {
+    id: string;
+    type: TransactionType;
+    name: string;
+    amount: number;
+    description: string;
+    transaction_date: string;
+    wallet_id: string;
+    category_id?: string;
+    payment_method_id?: string;
+    family_id: string;
+    created_by_id: string;
+    tags?: string[];
+    attachments?: string[];
+    created_at: string;
+    updated_at: string;
+    
+    // Associations
+    wallet?: WalletInfoType;
+    category?: TransactionCategory;
+    payment_method?: PaymentMethod;
+}
+
+export interface CreateTransactionPayload {
+    type: TransactionType;
+    name: string;
+    amount: number;
+    description: string;
+    transaction_date: string;
+    wallet_id: string;
+    category_id?: string;
+    payment_method_id?: string;
+    family_id: string;
+    tags?: string[];
+    attachments?: string[];
+}
+
+export interface TransactionListResponse {
+    transactions: Transaction[];
+    total_count: number;
+    page: number;
+    page_size: number;
 }
 
 // Types for wallet types
@@ -170,6 +227,13 @@ export interface WalletInfoType {
     wallet_type: WalletType;
 }
 
+export interface WalletListResponse {
+    wallets: WalletInfoType[];
+    total_count: number;
+    page: number;
+    page_size: number;
+}
+
 export interface CreateWalletTransferPayload {
     from_wallet_id: string;
     to_wallet_id: string;
@@ -196,17 +260,7 @@ export interface WalletTransfer {
 }
 
 // Types for income types
-export interface IncomeType {
-    id: string;
-    name: string;
-    description: string;
-    is_system: boolean;
-    family_id: string;
-    created_by_id: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-}
+// IncomeType is now an alias for TransactionCategory
 
 export interface Income {
     id: string;
@@ -262,6 +316,7 @@ export interface Goal {
     creator_id: string;
     created_at: string;
     updated_at: string;
+    contributions?: GoalContribution[];
 }
 
 export interface CreateBudgetPayload {
@@ -303,6 +358,7 @@ export interface Debt {
     due_date: string;
     created_at: string;
     updated_at: string;
+    repayments?: DebtRepayment[];
 }
 
 export interface CreateDebtPayload {
@@ -325,6 +381,7 @@ export interface Investment {
     current_price: number;
     created_at: string;
     updated_at: string;
+    transactions?: InvestmentTransaction[];
 }
 
 export interface CreateInvestmentPayload {
@@ -347,6 +404,7 @@ export interface RecurringTransaction {
     type: string;
     created_at: string;
     updated_at: string;
+    instances?: RecurringInstance[];
 }
 
 export interface CreateRecurringTransactionPayload {

@@ -12,6 +12,8 @@ type DebtRepository interface {
 	Create(ctx context.Context, debt *model.Debt) error
 	List(ctx context.Context, familyID *uuid.UUID, userID *uuid.UUID) ([]model.Debt, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	CreateRepayment(ctx context.Context, repayment *model.DebtRepayment) error
+	ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error)
 }
 
 type debtRepository struct {
@@ -45,4 +47,13 @@ func (r *debtRepository) List(ctx context.Context, familyID *uuid.UUID, userID *
 
 func (r *debtRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Debt{}, id).Error
+}
+
+func (r *debtRepository) CreateRepayment(ctx context.Context, repayment *model.DebtRepayment) error {
+	return r.db.WithContext(ctx).Create(repayment).Error
+}
+
+func (r *debtRepository) ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error) {
+	var repayments []model.DebtRepayment
+	return repayments, r.db.WithContext(ctx).Preload("Transaction").Where("debt_id = ?", debtID).Order("repayment_date desc").Find(&repayments).Error
 }

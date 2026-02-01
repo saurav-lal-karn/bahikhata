@@ -41,7 +41,7 @@ func (c *DebtController) Create(ctx *gin.Context) {
 		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid due date format")
 		return
 	}
-	debt.UserID = &uid
+	debt.UserID = uid
 
 	if err := c.service.Create(ctx, debt); err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create debt")
@@ -94,4 +94,44 @@ func (c *DebtController) Delete(ctx *gin.Context) {
 	}
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Debt deleted successfully", nil)
+}
+
+func (c *DebtController) AddRepayment(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	debtID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.AddDebtRepaymentRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	repayment := req.ToModel(debtID)
+	if err := c.service.CreateRepayment(ctx, repayment); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add repayment")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Repayment added successfully", repayment)
+}
+
+func (c *DebtController) ListRepayments(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	debtID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	repayments, err := c.service.ListRepayments(ctx, debtID)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch repayments")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Repayments fetched successfully", repayments)
 }

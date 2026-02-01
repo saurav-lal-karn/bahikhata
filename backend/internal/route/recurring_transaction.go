@@ -16,4 +16,6 @@ func RegisterRecurringTransactionRoutes(app *config.Application, router *gin.Rou
 	router.POST("", ctrl.Create)
 	router.GET("", ctrl.List)
 	router.DELETE("/:id", ctrl.Delete)
+	router.POST("/:id/instances", ctrl.AddInstance)
+	router.GET("/:id/instances", ctrl.ListInstances)
 }

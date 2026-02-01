@@ -32,3 +32,27 @@ func (req *CreateRecurringTransactionRequest) ToModel() (*model.RecurringTransac
 		Type:        req.Type,
 	}, nil
 }
+
+type AddRecurringInstanceRequest struct {
+	TransactionID *uuid.UUID `json:"transaction_id,omitempty"`
+	ExecutionDate string     `json:"execution_date"`
+	Status        string     `json:"status" binding:"required"` // SUCCESS, FAILED
+	ErrorMessage  *string    `json:"error_message,omitempty"`
+}
+
+func (req *AddRecurringInstanceRequest) ToModel(recurringID uuid.UUID) *model.RecurringInstance {
+	executionDate := time.Now()
+	if req.ExecutionDate != "" {
+		if t, err := time.Parse(time.RFC3339, req.ExecutionDate); err == nil {
+			executionDate = t
+		}
+	}
+	return &model.RecurringInstance{
+		ID:            uuid.New(),
+		RecurringID:   recurringID,
+		TransactionID: req.TransactionID,
+		ExecutionDate: executionDate,
+		Status:        req.Status,
+		ErrorMessage:  req.ErrorMessage,
+	}
+}

@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { ArrowUpRight, ArrowDownRight, IndianRupee, PieChart, CreditCard, TrendingUp } from "lucide-react";
-import { expenseService } from "@/services/expenseService";
-import { ExpenseStats, ExpenseStatsResponse } from "@/types";
+import { transactionService } from "@/services/transactionService";
+import { ExpenseStats } from "@/types";
 
 export const ExpensesStats = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [stats, setStats] = useState<ExpenseStats[]>([]);
@@ -31,13 +31,13 @@ export const ExpensesStats = ({ familyId, refreshKey }: { familyId: string; refr
 
       try {
         setLoading(true);
-        const response: ExpenseStatsResponse = await expenseService.getExpenseStats(familyId);
+        const response = await transactionService.getTransactionStats(familyId, 'EXPENSE');
         
         const formattedStats: ExpenseStats[] = [
           {
             title: "Total Expenses",
             value: formatCurrency(response.total_amount),
-            subtitle: `${response.total_expenses} transactions`,
+            subtitle: `${response.total_count} transactions`,
             icon: <IndianRupee className="w-6 h-6" />,
             bg: "bg-purple-100 dark:bg-purple-900/20",
             color: "text-purple-600 dark:text-purple-400",
@@ -54,7 +54,7 @@ export const ExpensesStats = ({ familyId, refreshKey }: { familyId: string; refr
           },
           {
             title: "Average Expense",
-            value: formatCurrency(response.average_expense),
+            value: formatCurrency(response.average_amount),
             subtitle: "Per transaction",
             icon: <PieChart className="w-6 h-6" />,
             bg: "bg-green-100 dark:bg-green-900/20",
@@ -62,7 +62,7 @@ export const ExpensesStats = ({ familyId, refreshKey }: { familyId: string; refr
           },
           {
             title: "Total Transactions",
-            value: response.total_expenses.toString(),
+            value: response.total_count.toString(),
             subtitle: "All time",
             icon: <CreditCard className="w-6 h-6" />,
             bg: "bg-orange-100 dark:bg-orange-900/20",

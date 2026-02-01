@@ -1,42 +1,63 @@
 "use client";
 import React from "react";
-import { TrendingUp, TrendingDown, Target, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, Zap, Wallet, BarChart3 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { analyticsService, DashboardSummary } from "@/services/analyticsService";
+import { useAuth } from "@/context/AuthContext";
 
 export const ReportsStats = () => {
+  const { user } = useAuth();
+  const familyId = user?.family?.id;
+  const [data, setData] = useState<DashboardSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (familyId) {
+      analyticsService.getDashboardSummary(familyId)
+        .then(setData)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [familyId]);
+
+  if (isLoading) return <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-3xl" />)}
+  </div>;
+
   const stats = [
     {
-      title: "Net Savings",
-      value: "₹42,150",
-      change: "+8.4%",
+      title: "Total Wealth",
+      value: `₹${((data?.total_balance ?? 0) + (data?.investments.total_value ?? 0)).toLocaleString()}`,
+      change: "+4.2%",
       isPositive: true,
-      icon: <Target className="w-6 h-6" />,
-      color: "text-green-600 dark:text-green-400",
-      bg: "bg-green-50 dark:bg-green-900/20"
-    },
-    {
-      title: "Avg. Daily Spend",
-      value: "₹1,320",
-      change: "-5.2%",
-      isPositive: true,
-      icon: <TrendingDown className="w-6 h-6" />,
+      icon: <Wallet className="w-6 h-6" />,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-900/20"
     },
     {
-      title: "Savings Rate",
-      value: "49.5%",
-      change: "+1.2%",
+      title: "Avg. Savings",
+      value: `₹${data?.net_savings.toLocaleString() ?? '0'}`,
+      change: `${data?.savings_change != null ? (data.savings_change >= 0 ? '+' : '') + data.savings_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.savings_change ?? 0) >= 0,
+      icon: <TrendingUp className="w-6 h-6" />,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-900/20"
+    },
+    {
+      title: "Goal Completion",
+      value: `${data?.goals_summary.length ? (data.goals_summary.reduce((acc, g) => acc + g.percentage, 0) / data.goals_summary.length).toFixed(0) : '0'}%`,
+      change: "On Track",
       isPositive: true,
-      icon: <Zap className="w-6 h-6" />,
+      icon: <Target className="w-6 h-6" />,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-50 dark:bg-purple-900/20"
     },
     {
-      title: "Projected Spend",
-      value: "₹48,000",
-      change: "+2.1%",
-      isPositive: false,
-      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Invest. ROI",
+      value: `₹${data?.investments.total_profit.toLocaleString() ?? '0'}`,
+      change: `${data?.investments.profit_change != null ? (data.investments.profit_change >= 0 ? '+' : '') + data.investments.profit_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.investments.profit_change ?? 0) >= 0,
+      icon: <BarChart3 className="w-6 h-6" />,
       color: "text-orange-600 dark:text-orange-400",
       bg: "bg-orange-50 dark:bg-orange-900/20"
     }
@@ -57,7 +78,7 @@ export const ReportsStats = () => {
               {stat.value}
             </h4>
             <p className={`mt-2 text-xs font-bold ${stat.isPositive ? 'text-green-500' : 'text-red-500'}`}>
-              {stat.change} vs last month
+              {stat.change}
             </p>
           </div>
         </div>

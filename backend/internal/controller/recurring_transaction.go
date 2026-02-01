@@ -95,3 +95,43 @@ func (c *RecurringTransactionController) Delete(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Recurring transaction deleted successfully", nil)
 }
+
+func (c *RecurringTransactionController) AddInstance(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	recurringID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.AddRecurringInstanceRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	instance := req.ToModel(recurringID)
+	if err := c.service.CreateInstance(ctx, instance); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add instance")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Instance added successfully", instance)
+}
+
+func (c *RecurringTransactionController) ListInstances(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	recurringID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	instances, err := c.service.ListInstances(ctx, recurringID)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch instances")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Instances fetched successfully", instances)
+}

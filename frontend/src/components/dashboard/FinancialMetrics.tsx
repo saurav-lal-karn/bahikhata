@@ -1,38 +1,61 @@
 "use client";
 import React from "react";
 import { Wallet, TrendingUp, TrendingDown, PiggyBank, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { analyticsService, DashboardSummary } from "@/services/analyticsService";
+import { useAuth } from "@/context/AuthContext";
 
 export const FinancialMetrics = () => {
+  const { user } = useAuth();
+  const familyId = user?.family?.id;
+  const [data, setData] = useState<DashboardSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (familyId) {
+      analyticsService.getDashboardSummary(familyId)
+        .then(setData)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [familyId]);
+
+  if (isLoading) {
+    return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+      {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-2xl" />)}
+    </div>;
+  }
+
   const metrics = [
     {
       title: "Total Balance",
-      value: "₹2,45,600",
-      change: "+2.5%",
-      isPositive: true,
+      value: `₹${data?.total_balance.toLocaleString() ?? '0'}`,
+      change: `${data?.income_change != null ? (data.income_change >= 0 ? '+' : '') + data.income_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.income_change ?? 0) >= 0,
       icon: <Wallet className="text-purple-600 dark:text-purple-400" />,
       color: "purple"
     },
     {
       title: "Monthly Income",
-      value: "₹85,000",
-      change: "+12%",
-      isPositive: true,
+      value: `₹${data?.monthly_income.toLocaleString() ?? '0'}`,
+      change: `${data?.income_change != null ? (data.income_change >= 0 ? '+' : '') + data.income_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.income_change ?? 0) >= 0,
       icon: <TrendingUp className="text-green-600 dark:text-green-400" />,
       color: "green"
     },
     {
       title: "Monthly Expenses",
-      value: "₹42,300",
-      change: "-5%",
-      isPositive: false,
+      value: `₹${data?.monthly_expense.toLocaleString() ?? '0'}`,
+      change: `${data?.expense_change != null ? (data.expense_change >= 0 ? '+' : '') + data.expense_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.expense_change ?? 0) <= 0,
       icon: <TrendingDown className="text-red-600 dark:text-red-400" />,
       color: "red"
     },
     {
       title: "Net Savings",
-      value: "₹42,700",
-      change: "+18%",
-      isPositive: true,
+      value: `₹${data?.net_savings.toLocaleString() ?? '0'}`,
+      change: `${data?.savings_change != null ? (data.savings_change >= 0 ? '+' : '') + data.savings_change.toFixed(1) : '0.0'}%`,
+      isPositive: (data?.savings_change ?? 0) >= 0,
       icon: <PiggyBank className="text-blue-600 dark:text-blue-400" />,
       color: "blue"
     }

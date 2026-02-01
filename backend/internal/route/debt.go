@@ -16,4 +16,6 @@ func RegisterDebtRoutes(app *config.Application, router *gin.RouterGroup) {
 	router.POST("", ctrl.Create)
 	router.GET("", ctrl.List)
 	router.DELETE("/:id", ctrl.Delete)
+	router.POST("/:id/repayments", ctrl.AddRepayment)
+	router.GET("/:id/repayments", ctrl.ListRepayments)
 }

@@ -8,24 +8,24 @@ import { IncomeForm } from "@/components/income/IncomeForm";
 import { BulkImportIncome } from "@/components/income/BulkImportIncome";
 import { FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { incomeService } from "@/services/incomeService";
-import { incomeTypeService } from "@/services/incomeTypeService";
+import { transactionService } from "@/services/transactionService";
+import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { walletService } from "@/services/walletService";
-import { Income, IncomeType, WalletInfoType } from "@/types";
+import { Transaction, TransactionCategory, WalletInfoType } from "@/types";
 import toast from "react-hot-toast";
 
 export default function IncomePageClient() {
     const {user} = useAuth();
     const familyDetails = user?.family;
 
-    const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
+    const [incomeTypes, setIncomeTypes] = useState<TransactionCategory[]>([]);
     const [wallets, setWallets] = useState<WalletInfoType[]>([]);
-    const [incomes, setIncomes] = useState<Income[]>([]);
+    const [incomes, setIncomes] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
+  const [selectedIncome, setSelectedIncome] = useState<Transaction | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
 
@@ -41,7 +41,7 @@ export default function IncomePageClient() {
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
 
-  const handleEdit = (income: Income) => {
+  const handleEdit = (income: Transaction) => {
     setSelectedIncome(income);
     setIsModalOpen(true);
   };
@@ -54,7 +54,7 @@ export default function IncomePageClient() {
   const handleDelete = async () => {
     if (!incomeToDelete) return;
     try {
-      await incomeService.deleteIncome(incomeToDelete);
+      await transactionService.deleteTransaction(incomeToDelete);
       toast.success("Income record deleted");
       setIncomes(incomes.filter(i => i.id !== incomeToDelete));
       setIsDeleteModalOpen(false);
@@ -66,8 +66,8 @@ export default function IncomePageClient() {
   const refreshIncomes = async () => {
     if (!familyDetails?.id) return;
     try {
-      const incomeResponse = await incomeService.getIncomes(familyDetails.id);
-      setIncomes(incomeResponse);
+      const response = await transactionService.getTransactions(familyDetails.id, { type: 'INCOME' });
+      setIncomes(response.transactions);
     } catch (error) {
       console.error('Failed to refresh incomes:', error);
     }
@@ -81,16 +81,16 @@ export default function IncomePageClient() {
   
         setIsLoading(true);
         try {
-          const [walletResponse, incomeTypeResponse, incomeResponse] = await Promise.all([
-            walletService.getWallets(familyDetails.id),
-            incomeTypeService.getIncomeTypes(familyDetails.id),
-            incomeService.getIncomes(familyDetails.id)
+          const [walletResponse, incomeTypeResponse, response] = await Promise.all([
+            walletService.getWallets(familyDetails.id, 1, 100),
+            transactionCategoryService.getCategories(familyDetails.id, true, 'INCOME'),
+            transactionService.getTransactions(familyDetails.id, { type: 'INCOME' })
           ]);
   
           if (isMounted) {
-            setWallets(walletResponse);
+            setWallets(walletResponse.wallets);
             setIncomeTypes(incomeTypeResponse);
-            setIncomes(incomeResponse);
+            setIncomes(response.transactions);
           }
         } catch (error) {
           if (isMounted) {
@@ -137,7 +137,7 @@ export default function IncomePageClient() {
         </div>
       </div>
 
-      <IncomeStats />
+      <IncomeStats familyId={familyDetails?.id || ""} />
 
       {/* Main Table / List Area */}
       <IncomeList 

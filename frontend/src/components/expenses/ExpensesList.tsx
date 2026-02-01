@@ -14,26 +14,26 @@ import {
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
-import { expenseService } from "@/services/expenseService";
-import { Expense } from "@/types";
+import { transactionService } from "@/services/transactionService";
+import { Transaction } from "@/types";
 
 export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   // Extract unique filter options
-  const categories = Array.from(new Set(expenses.map(e => e.category).filter(Boolean))) as string[];
-  const methods = Array.from(new Set(expenses.map(e => e.payment_method).filter(Boolean))) as string[];
+  const categories = Array.from(new Set(expenses.map(e => e.category?.name).filter(Boolean))) as string[];
+  const methods = Array.from(new Set(expenses.map(e => e.payment_method?.name).filter(Boolean))) as string[];
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || expense.category === selectedCategory;
-    const matchesMethod = !selectedMethod || expense.payment_method === selectedMethod;
+    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         expense.category?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || expense.category?.name === selectedCategory;
+    const matchesMethod = !selectedMethod || expense.payment_method?.name === selectedMethod;
     
     return matchesSearch && matchesCategory && matchesMethod;
   });
@@ -47,8 +47,12 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expenses = await expenseService.getExpenses(familyId);
-      setExpenses(expenses);
+      try {
+        const response = await transactionService.getTransactions(familyId, { type: 'EXPENSE' });
+        setExpenses(response.transactions);
+      } catch (error) {
+        console.error('Failed to fetch expenses:', error);
+      }
     };
     if (familyId && familyId !== "") {
       fetchExpenses();
@@ -170,12 +174,12 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
                   </div>
                 </td>
                 <td className="py-4 px-6">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-                    {expense.category}
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                    {expense.category?.name}
                   </span>
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400 italic">
-                  {expense.payment_method}
+                  {expense.payment_method?.name}
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
                   {expense.transaction_date}

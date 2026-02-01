@@ -37,6 +37,7 @@ export default function AccountsPageClient() {
 
     const [walletTypes, setWalletTypes] = useState<WalletType[]>([]);
     const [wallets, setWallets] = useState<WalletInfoType[]>([]);
+    const [allWallets, setAllWallets] = useState<WalletInfoType[]>([]);
     const [transfers, setTransfers] = useState<WalletTransfer[]>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [walletToDelete, setWalletToDelete] = useState<WalletInfoType | null>(null);
@@ -45,30 +46,73 @@ export default function AccountsPageClient() {
     const [selectedBank, setSelectedBank] = useState<string | null>(null);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(6);
+    const [totalCount, setTotalCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
 
 
-    const fetchData = async () => {
+
+    const fetchData = async (isInitial: boolean = false) => {
         if (!familyDetails?.id) return;
 
+        setIsLoading(true);
         try {
-            const [typesRes, walletsRes, transfersRes] = await Promise.all([
-                walletTypeService.getWalletTypes(familyDetails.id),
-                walletService.getWallets(familyDetails.id),
-                walletService.getWalletTransfers(familyDetails.id)
-            ]);
+            if (isInitial) {
+                // Full initial load
+                const [typesRes, allWalletsRes, transfersRes] = await Promise.all([
+                    walletTypeService.getWalletTypes(familyDetails.id),
+                    walletService.getWallets(familyDetails.id, 1, 100), // Broad fetch for stats/forms/initial page
+                    walletService.getWalletTransfers(familyDetails.id)
+                ]);
 
-            setWalletTypes(typesRes);
-            setWallets(walletsRes);
-            setTransfers(transfersRes);
-
+                setWalletTypes(typesRes);
+                setAllWallets(allWalletsRes.wallets);
+                setTotalCount(allWalletsRes.total_count);
+                setTransfers(transfersRes);
+                
+                // Derive the first page display from the broad fetch
+                if (currentPage === 1) {
+                    setWallets(allWalletsRes.wallets.slice(0, pageSize));
+                } else {
+                    // If user was on a different page, fetch that specifically
+                    const walletsRes = await walletService.getWallets(familyDetails.id, currentPage, pageSize);
+                    setWallets(walletsRes.wallets);
+                }
+            } else {
+                // Just a page change
+                // If it's page 1 and we have the cache, use it
+                if (currentPage === 1 && allWallets.length > 0) {
+                    setWallets(allWallets.slice(0, pageSize));
+                } else {
+                    const walletsRes = await walletService.getWallets(familyDetails.id, currentPage, pageSize);
+                    setWallets(walletsRes.wallets);
+                    setTotalCount(walletsRes.total_count);
+                }
+            }
         } catch (error) {
             console.error('Failed to fetch data:', error);
+            toast.error("Failed to load wallets");
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    // Load initial data only when family changes
     useEffect(() => {
-        fetchData();
-    }, [familyDetails]);
+        if (familyDetails?.id) {
+            fetchData(true);
+        }
+    }, [familyDetails?.id]);
+
+    // Update list only when page changes (skip initial to avoid double call)
+    useEffect(() => {
+        // We only trigger this if we aren't in the middle of an initial family-based load
+        // This effectively handles user navigation
+        if (allWallets.length > 0) {
+            fetchData(false);
+        }
+    }, [currentPage]);
 
     const handleTransferSuccess = () => {
         setIsTransferModalOpen(false);
@@ -96,8 +140,8 @@ export default function AccountsPageClient() {
     };
 
     // Calculate total liquid value
-    const totalLiquidValue = wallets.reduce((acc, w) => acc + (w.balance + (w.starting_balance || 0)), 0);
-    const baseCurrency = wallets[0]?.currency || "₹";
+    const totalLiquidValue = allWallets.reduce((acc, w) => acc + (w.balance + (w.starting_balance || 0)), 0);
+    const baseCurrency = allWallets[0]?.currency || "₹";
 
     const filteredWallets = wallets.filter(wallet => {
         const matchesSearch = wallet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,8 +152,8 @@ export default function AccountsPageClient() {
         return matchesSearch && matchesType && matchesBank;
     });
 
-    const uniqueTypes = Array.from(new Set(wallets.map(w => w.wallet_type?.name).filter(Boolean))) as string[];
-    const uniqueBanks = Array.from(new Set(wallets.map(w => w.wallet_issuer_name).filter(Boolean))) as string[];
+    const uniqueTypes = Array.from(new Set(allWallets.map(w => w.wallet_type?.name).filter(Boolean))) as string[];
+    const uniqueBanks = Array.from(new Set(allWallets.map(w => w.wallet_issuer_name).filter(Boolean))) as string[];
 
     const clearFilters = () => {
         setSearchTerm("");
@@ -274,6 +318,42 @@ export default function AccountsPageClient() {
                 </div>
               )}
            </div>
+
+           {/* Pagination */}
+           {totalCount > pageSize && (
+             <div className="flex items-center justify-between bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm mt-6">
+                <div className="text-sm font-bold text-gray-500 ml-2">
+                   Showing <span className="text-gray-900 dark:text-white">{(currentPage - 1) * pageSize + 1}</span> to <span className="text-gray-900 dark:text-white">{Math.min(currentPage * pageSize, totalCount)}</span> of <span className="text-gray-900 dark:text-white">{totalCount}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <button 
+                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                     disabled={currentPage === 1}
+                     className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-100 dark:border-gray-700"
+                   >
+                     Previous
+                   </button>
+                   <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.ceil(totalCount / pageSize) }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === page ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-800'}`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                   </div>
+                   <button 
+                     onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCount / pageSize), prev + 1))}
+                     disabled={currentPage === Math.ceil(totalCount / pageSize)}
+                     className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-100 dark:border-gray-700"
+                   >
+                     Next
+                   </button>
+                </div>
+             </div>
+           )}
         </div>
 
         {/* Right: Transfer History & Stats (4/12) */}
@@ -343,7 +423,7 @@ export default function AccountsPageClient() {
          <InternalTransferForm 
             onSuccess={handleTransferSuccess} 
             onCancel={() => setIsTransferModalOpen(false)} 
-            wallets={wallets} 
+            wallets={allWallets} 
             familyId={familyDetails?.id || ""} 
          />
       </Modal>

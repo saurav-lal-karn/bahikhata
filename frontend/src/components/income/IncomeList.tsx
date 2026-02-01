@@ -21,12 +21,13 @@ import {
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
-import { Income } from "@/types";
+import { transactionService } from "@/services/transactionService";
+import { Transaction } from "@/types";
 
 interface IncomeListProps {
-  incomes: Income[];
+  incomes: Transaction[];
   isLoading: boolean;
-  onEdit: (income: Income) => void;
+  onEdit: (income: Transaction) => void;
   onDelete: (id: string) => void;
 }
 
@@ -38,13 +39,13 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
   // Extract unique filter options
-  const sources = Array.from(new Set(incomes.map(i => i.source?.name).filter(Boolean))) as string[];
+  const sources = Array.from(new Set(incomes.map(i => i.category?.name).filter(Boolean))) as string[];
   const wallets = Array.from(new Set(incomes.map(i => i.wallet?.name).filter(Boolean))) as string[];
 
   const filteredIncome = incomes.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.source?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSource = !selectedSource || item.source?.name === selectedSource;
+    const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSource = !selectedSource || item.category?.name === selectedSource;
     const matchesWallet = !selectedWallet || item.wallet?.name === selectedWallet;
     
     return matchesSearch && matchesSource && matchesWallet;
@@ -187,8 +188,8 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
               <tr key={item.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-4">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${getIconBgForSource(item.source?.name || '')} shadow-sm group-hover:rotate-12 transition-transform`}>
-                      {getIconForSource(item.source?.name || '')}
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${getIconBgForSource(item.category?.name || '')} shadow-sm group-hover:rotate-12 transition-transform`}>
+                      {getIconForSource(item.category?.name || '')}
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
@@ -205,14 +206,14 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
                 </td>
                 <td className="py-4 px-6">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30">
-                    {item.source?.name}
+                    {item.category?.name}
                   </span>
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400 italic">
                   {item.wallet?.name}
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
-                  {new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(item.date))}
+                  {new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(item.transaction_date))}
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-green-600 dark:text-green-400">
                   + ₹{item.amount.toLocaleString()}

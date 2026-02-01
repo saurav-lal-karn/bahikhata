@@ -13,5 +13,13 @@ export const debtService = {
     },
     delete: async (id: string) => {
         await apiClient.delete(`/debts/${id}`);
+    },
+    getRepayments: async (debtId: string) => {
+        const response = await apiClient.get(`/debts/${debtId}/repayments`);
+        return response.data.data;
+    },
+    addRepayment: async (debtId: string, payload: any) => {
+        const response = await apiClient.post(`/debts/${debtId}/repayments`, payload);
+        return response.data.data;
     }
 };

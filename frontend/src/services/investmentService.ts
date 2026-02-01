@@ -13,5 +13,13 @@ export const investmentService = {
     },
     delete: async (id: string) => {
         await apiClient.delete(`/investments/${id}`);
+    },
+    getTransactions: async (investmentId: string) => {
+        const response = await apiClient.get(`/investments/${investmentId}/transactions`);
+        return response.data.data;
+    },
+    addTransaction: async (investmentId: string, payload: any) => {
+        const response = await apiClient.post(`/investments/${investmentId}/transactions`, payload);
+        return response.data.data;
     }
 };

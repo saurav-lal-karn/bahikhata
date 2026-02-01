@@ -16,9 +16,9 @@ type CreateBudgetRequest struct {
 func (req *CreateBudgetRequest) ToBudget() (*model.Budget) {
 	return &model.Budget{
 		ID: uuid.New(),
-		CategoryID: &req.CategoryId,
+		CategoryID: req.CategoryId,
 		AmountLimit: req.AmountLimit,
-		FamilyID: &req.FamilyID,
+		FamilyID: req.FamilyID,
 		Period: req.Period,
 		AlertThreshold: req.AlertThreshold,
 	}

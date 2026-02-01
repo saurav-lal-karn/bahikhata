@@ -91,3 +91,43 @@ func (c *InvestmentController) Delete(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Investment deleted successfully", nil)
 }
+
+func (c *InvestmentController) AddTransaction(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	investmentID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.AddInvestmentTransactionRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	transaction := req.ToModel(investmentID)
+	if err := c.service.CreateTransaction(ctx, transaction); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add transaction")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Transaction added successfully", transaction)
+}
+
+func (c *InvestmentController) ListTransactions(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	investmentID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	transactions, err := c.service.ListTransactions(ctx, investmentID)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch transactions")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Transactions fetched successfully", transactions)
+}

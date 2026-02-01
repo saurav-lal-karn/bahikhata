@@ -15,6 +15,8 @@ type GoalService interface {
 	Get(ctx context.Context, goalID uuid.UUID) (model.Goal, error)
 	List(ctx context.Context, familyID uuid.UUID, created_by_id uuid.UUID) ([]model.Goal, error)
 	GetByName(ctx context.Context, goalName string) (model.Goal, error)
+	CreateContribution(ctx context.Context, contribution *model.GoalContribution) error
+	ListContributions(ctx context.Context, goalID uuid.UUID) ([]model.GoalContribution, error)
 }
 
 type goalService struct {
@@ -47,4 +49,12 @@ func (s *goalService) List(ctx context.Context, familyID uuid.UUID, created_by_i
 
 func (s *goalService) GetByName(ctx context.Context, goalName string) (model.Goal, error) {
 	return s.goalRepo.GetByName(ctx, goalName)
+}
+
+func (s *goalService) CreateContribution(ctx context.Context, contribution *model.GoalContribution) error {
+	return s.goalRepo.CreateContribution(ctx, contribution)
+}
+
+func (s *goalService) ListContributions(ctx context.Context, goalID uuid.UUID) ([]model.GoalContribution, error) {
+	return s.goalRepo.ListContributions(ctx, goalID)
 }
