@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
+	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
@@ -134,4 +135,53 @@ func (c *DebtController) ListRepayments(ctx *gin.Context) {
 	}
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Repayments fetched successfully", repayments)
+}
+
+func (c *DebtController) CreateSchedules(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	debtID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req []dto.CreateDebtScheduleRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	var schedules []model.DebtSchedule
+	for _, r := range req {
+		schedules = append(schedules, *r.ToModel(debtID))
+	}
+
+	if err := c.service.CreateSchedules(ctx, schedules); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create schedules")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Schedules created successfully", schedules)
+}
+
+func (c *DebtController) UpdateScheduleStatus(ctx *gin.Context) {
+	idParam := ctx.Param("schedule_id")
+	scheduleID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.UpdateDebtScheduleStatusRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	if err := c.service.UpdateScheduleStatus(ctx, scheduleID, req.Status); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to update schedule status")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Schedule status updated successfully", nil)
 }

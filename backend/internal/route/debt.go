@@ -18,4 +18,6 @@ func RegisterDebtRoutes(app *config.Application, router *gin.RouterGroup) {
 	router.DELETE("/:id", ctrl.Delete)
 	router.POST("/:id/repayments", ctrl.AddRepayment)
 	router.GET("/:id/repayments", ctrl.ListRepayments)
+	router.POST("/:id/schedules", ctrl.CreateSchedules)
+	router.PUT("/schedules/:schedule_id/status", ctrl.UpdateScheduleStatus)
 }

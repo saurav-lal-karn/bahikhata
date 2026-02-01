@@ -14,6 +14,7 @@ type InvestmentRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	CreateTransaction(ctx context.Context, transaction *model.InvestmentTransaction) error
 	ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error)
+	CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error
 }
 
 type investmentRepository struct {
@@ -56,4 +57,8 @@ func (r *investmentRepository) CreateTransaction(ctx context.Context, transactio
 func (r *investmentRepository) ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error) {
 	var transactions []model.InvestmentTransaction
 	return transactions, r.db.WithContext(ctx).Preload("Transaction").Where("investment_id = ?", investmentID).Order("transaction_date desc").Find(&transactions).Error
+}
+
+func (r *investmentRepository) CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error {
+	return r.db.WithContext(ctx).Create(valuation).Error
 }

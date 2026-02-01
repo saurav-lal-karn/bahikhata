@@ -18,7 +18,12 @@ import { Income, IncomeType, WalletInfoType, TransactionType, Transaction, Trans
 import toast from "react-hot-toast";
 import { transactionService } from "@/services/transactionService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
+import { contactService } from "@/services/contactService";
+import { organizationService } from "@/services/organizationService";
 import DatePicker from "../form/date-picker";
+import MultiSelect from "@/components/form/MultiSelect";
+import { Contact, Project, Tag } from "@/types";
+import { Package } from "lucide-react";
 
 interface IncomeFormProps {
   onSuccess?: () => void;
@@ -39,8 +44,33 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
     wallet_id: income?.wallet_id || "",
     date: income?.transaction_date ? new Date(income.transaction_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     description: income?.description || "",
+	contact_id: income?.contact_id || "",
+	project_id: income?.project_id || "",
+	tag_ids: income?.tags || [] as string[],
     family_id: familyId,
   });
+
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  React.useEffect(() => {
+	const fetchData = async () => {
+		try {
+			const [fetchedContacts, fetchedProjects, fetchedTags] = await Promise.all([
+				contactService.getContacts(familyId),
+				organizationService.getProjects(familyId),
+				organizationService.getTags(familyId)
+			]);
+			setContacts(fetchedContacts);
+			setProjects(fetchedProjects);
+			setTags(fetchedTags);
+		} catch (error) {
+			console.error("Failed to fetch organizational data", error);
+		}
+	};
+	fetchData();
+  }, [familyId]);
   
   const [isCustomSource, setIsCustomSource] = useState(false);
   const [customSourceName, setCustomSourceName] = useState("");
@@ -67,6 +97,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
             transaction_date: new Date(formData.date).toISOString(),
             wallet_id: formData.wallet_id,
             category_id: categoryId,
+			contact_id: formData.contact_id || undefined,
+			project_id: formData.project_id || undefined,
+			tags: formData.tag_ids,
             family_id: familyId,
         };
         
@@ -193,6 +226,47 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
             </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Payer / Employer</Label>
+            <Select 
+              value={formData.contact_id}
+              options={contacts.filter(c => c.type === 'EMPLOYER' || c.type === 'OTHER').map(c => ({value: c.id, label: c.name}))}
+              placeholder="Who paid you?"
+              onChange={(value: string) => setFormData({...formData, contact_id: value})}
+              className="rounded-2xl h-14"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Project / Event</Label>
+            <div className="relative group">
+				<Select 
+				value={formData.project_id}
+				options={projects.map(p => ({value: p.id, label: p.name}))}
+				onChange={(value: string) => {
+					setFormData({...formData, project_id: value});
+				}}
+				className="rounded-2xl h-14 pl-11"
+				placeholder="Link to project"
+				/>
+				<Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors z-10" />
+			</div>
+          </div>
+        </div>
+
+		<div className="space-y-2">
+			<Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Tags</Label>
+			<MultiSelect 
+				label=""
+				options={tags.map(t => ({
+					value: t.id, 
+					text: t.name, 
+					selected: formData.tag_ids.includes(t.id)
+				}))}
+				onChange={(selected) => setFormData({...formData, tag_ids: selected})}
+			/>
+		</div>
 
         {/* Conditional Custom Fields */}
         {(isCustomSource) && (

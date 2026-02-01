@@ -14,6 +14,8 @@ type DebtRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	CreateRepayment(ctx context.Context, repayment *model.DebtRepayment) error
 	ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error)
+	CreateSchedules(ctx context.Context, schedules []model.DebtSchedule) error
+	UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
 type debtRepository struct {
@@ -39,7 +41,7 @@ func (r *debtRepository) List(ctx context.Context, familyID *uuid.UUID, userID *
 		query = query.Where("user_id = ?", userID)
 	}
 
-	if err := query.Find(&debts).Error; err != nil {
+	if err := query.Preload("LenderContact").Find(&debts).Error; err != nil {
 		return nil, err
 	}
 	return debts, nil
@@ -56,4 +58,12 @@ func (r *debtRepository) CreateRepayment(ctx context.Context, repayment *model.D
 func (r *debtRepository) ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error) {
 	var repayments []model.DebtRepayment
 	return repayments, r.db.WithContext(ctx).Preload("Transaction").Where("debt_id = ?", debtID).Order("repayment_date desc").Find(&repayments).Error
+}
+
+func (r *debtRepository) CreateSchedules(ctx context.Context, schedules []model.DebtSchedule) error {
+	return r.db.WithContext(ctx).Create(&schedules).Error
+}
+
+func (r *debtRepository) UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error {
+	return r.db.WithContext(ctx).Model(&model.DebtSchedule{}).Where("id = ?", id).Update("status", status).Error
 }

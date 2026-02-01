@@ -18,6 +18,9 @@ type CreateTransactionRequest struct {
 	WalletID        string                        `json:"wallet_id" binding:"required,uuid"`
 	CategoryID      *string                       `json:"category_id" binding:"omitempty,uuid"`
 	PaymentMethodID *string                       `json:"payment_method_id" binding:"omitempty,uuid"`
+	ContactID       *string                       `json:"contact_id" binding:"omitempty,uuid"`
+	LocationID      *string                       `json:"location_id" binding:"omitempty,uuid"`
+	ProjectID       *string                       `json:"project_id" binding:"omitempty,uuid"`
 	TransactionDate time.Time                     `json:"transaction_date" binding:"required"`
 	FamilyID        string                        `json:"family_id" binding:"required,uuid"`
 	UserID          *string                       `json:"user_id" binding:"omitempty,uuid"`
@@ -58,6 +61,27 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		pmID, err := uuid.Parse(*r.PaymentMethodID)
 		if err == nil {
 			transaction.PaymentMethodID = &pmID
+		}
+	}
+
+	if r.ContactID != nil {
+		cID, err := uuid.Parse(*r.ContactID)
+		if err == nil {
+			transaction.ContactID = &cID
+		}
+	}
+
+	if r.LocationID != nil {
+		lID, err := uuid.Parse(*r.LocationID)
+		if err == nil {
+			transaction.LocationID = &lID
+		}
+	}
+
+	if r.ProjectID != nil {
+		pID, err := uuid.Parse(*r.ProjectID)
+		if err == nil {
+			transaction.ProjectID = &pID
 		}
 	}
 
@@ -104,6 +128,9 @@ type TransactionResponse struct {
 	WalletID          string                        `json:"wallet_id"`
 	CategoryID        *string                       `json:"category_id,omitempty"`
 	PaymentMethodID   *string                       `json:"payment_method_id,omitempty"`
+	ContactID         *string                       `json:"contact_id,omitempty"`
+	LocationID        *string                       `json:"location_id,omitempty"`
+	ProjectID         *string                       `json:"project_id,omitempty"`
 	TransactionDate   string                        `json:"transaction_date"`
 	FamilyID          string                        `json:"family_id"`
 	UserID            *string                       `json:"user_id,omitempty"`
@@ -117,6 +144,9 @@ type TransactionResponse struct {
 	Wallet        *WalletResponse             `json:"wallet,omitempty"`
 	Category      *TransactionCategoryResponse `json:"category,omitempty"`
 	PaymentMethod *PaymentMethodResponse      `json:"payment_method,omitempty"`
+	Contact       *ContactResponse            `json:"contact,omitempty"`
+	Location      *LocationResponse           `json:"location,omitempty"`
+	Project       *ProjectResponse            `json:"project,omitempty"`
 }
 
 // TransactionListResponse represents a paginated list of transactions.
@@ -168,6 +198,21 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 		resp.PaymentMethodID = &pmID
 	}
 
+	if m.ContactID != nil {
+		cID := m.ContactID.String()
+		resp.ContactID = &cID
+	}
+
+	if m.LocationID != nil {
+		lID := m.LocationID.String()
+		resp.LocationID = &lID
+	}
+
+	if m.ProjectID != nil {
+		pID := m.ProjectID.String()
+		resp.ProjectID = &pID
+	}
+
 	if m.UserID != nil {
 		userID := m.UserID.String()
 		resp.UserID = &userID
@@ -194,6 +239,18 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 
 	if m.PaymentMethod != nil {
 		resp.PaymentMethod = ToPaymentMethodResponse(m.PaymentMethod)
+	}
+
+	if m.Contact != nil {
+		resp.Contact = ToContactResponse(m.Contact)
+	}
+
+	if m.Location != nil {
+		resp.Location = ToLocationResponse(m.Location)
+	}
+
+	if m.Project != nil {
+		resp.Project = ToProjectResponse(m.Project)
 	}
 
 	return resp

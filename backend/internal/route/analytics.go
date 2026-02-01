@@ -15,7 +15,7 @@ func RegisterAnalyticsRoutes(app *config.Application, rg *gin.RouterGroup) {
 	investmentRepo := repository.NewInvestmentRepository(app.DB)
 	walletRepo := repository.NewWalletRepository(app.DB)
 
-	analyticsService := service.NewAnalyticsService(txRepo, goalRepo, debtRepo, investmentRepo, walletRepo)
+	analyticsService := service.NewAnalyticsService(app.DB, txRepo, goalRepo, debtRepo, investmentRepo, walletRepo)
 	analyticsController := controller.NewAnalyticsController(analyticsService)
 
 	rg.GET("/dashboard/:family_id", analyticsController.GetDashboardSummary)

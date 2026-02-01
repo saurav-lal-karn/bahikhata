@@ -8,14 +8,19 @@ import (
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type AnalyticsService interface {
 	GetDashboardSummary(ctx context.Context, familyID uuid.UUID, userID uuid.UUID) (*dto.DashboardSummaryResponse, error)
 	GetReportData(ctx context.Context, familyID uuid.UUID, userID uuid.UUID) (*dto.ReportResponse, error)
+	GenerateNetWorthSnapshot(ctx context.Context, familyId *uuid.UUID, userId *uuid.UUID) error
+	GenerateMonthlySummary(ctx context.Context, familyId *uuid.UUID, userId *uuid.UUID, month time.Time) error
 }
 
 type analyticsService struct {
+	db             *gorm.DB
 	txRepo         repository.TransactionRepository
 	goalRepo       repository.GoalRepository
 	debtRepo       repository.DebtRepository
@@ -24,6 +29,7 @@ type analyticsService struct {
 }
 
 func NewAnalyticsService(
+	db *gorm.DB,
 	txRepo repository.TransactionRepository,
 	goalRepo repository.GoalRepository,
 	debtRepo repository.DebtRepository,
@@ -31,6 +37,7 @@ func NewAnalyticsService(
 	walletRepo repository.WalletRepository,
 ) AnalyticsService {
 	return &analyticsService{
+		db:             db,
 		txRepo:         txRepo,
 		goalRepo:       goalRepo,
 		debtRepo:       debtRepo,
@@ -181,4 +188,91 @@ func (s *analyticsService) GetReportData(ctx context.Context, familyID uuid.UUID
 		},
 		HealthScore: 82,
 	}, nil
+}
+
+// GenerateNetWorthSnapshot creates a snapshot of the current net worth for a user/family.
+func (s *analyticsService) GenerateNetWorthSnapshot(ctx context.Context, familyId *uuid.UUID, userId *uuid.UUID) error {
+	var totalAssets, totalLiabilities float64
+
+	// Sum wallet balances as assets
+	query := s.db.WithContext(ctx).Model(&model.Wallet{})
+	if familyId != nil {
+		query = query.Where("family_id = ?", familyId)
+	} else if userId != nil {
+		query = query.Where("user_id = ?", userId)
+	}
+	query.Select("SUM(balance)").Scan(&totalAssets)
+
+	// Sum debts as liabilities
+	debtQuery := s.db.WithContext(ctx).Model(&model.Debt{})
+	if familyId != nil {
+		debtQuery = debtQuery.Where("family_id = ?", familyId)
+	} else if userId != nil {
+		debtQuery = debtQuery.Where("user_id = ?", userId)
+	}
+	debtQuery.Select("SUM(remaining_amount)").Scan(&totalLiabilities)
+
+	snapshot := model.NetWorthSnapshot{
+		FamilyID:         familyId,
+		UserID:           userId,
+		SnapshotDate:     time.Now(),
+		TotalAssets:      totalAssets,
+		TotalLiabilities: totalLiabilities,
+		NetWorth:         totalAssets - totalLiabilities,
+	}
+
+	return s.db.WithContext(ctx).Create(&snapshot).Error
+}
+
+// GenerateMonthlySummary creates or updates the summary for the given month.
+func (s *analyticsService) GenerateMonthlySummary(ctx context.Context, familyId *uuid.UUID, userId *uuid.UUID, month time.Time) error {
+	startOfMonth := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, month.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	var totalIncome, totalExpense float64
+
+	// Sum income
+	incomeQuery := s.db.WithContext(ctx).Model(&model.Transaction{}).Where("type = 'INCOME' AND transaction_date >= ? AND transaction_date < ?", startOfMonth, endOfMonth)
+	if familyId != nil {
+		incomeQuery = incomeQuery.Where("family_id = ?", familyId)
+	} else if userId != nil {
+		incomeQuery = incomeQuery.Where("user_id = ?", userId)
+	}
+	incomeQuery.Select("SUM(amount)").Scan(&totalIncome)
+
+	// Sum expense
+	expenseQuery := s.db.WithContext(ctx).Model(&model.Transaction{}).Where("type = 'EXPENSE' AND transaction_date >= ? AND transaction_date < ?", startOfMonth, endOfMonth)
+	if familyId != nil {
+		expenseQuery = expenseQuery.Where("family_id = ?", familyId)
+	} else if userId != nil {
+		expenseQuery = expenseQuery.Where("user_id = ?", userId)
+	}
+	expenseQuery.Select("SUM(amount)").Scan(&totalExpense)
+
+	// Find top expense category
+	var topCategoryID *uuid.UUID
+	topCategoryQuery := s.db.WithContext(ctx).Model(&model.Transaction{}).
+		Select("category_id, SUM(amount) as total").
+		Where("type = 'EXPENSE' AND transaction_date >= ? AND transaction_date < ?", startOfMonth, endOfMonth)
+	if familyId != nil {
+		topCategoryQuery = topCategoryQuery.Where("family_id = ?", familyId)
+	} else if userId != nil {
+		topCategoryQuery = topCategoryQuery.Where("user_id = ?", userId)
+	}
+	topCategoryQuery.Group("category_id").Order("total DESC").Limit(1).Scan(&topCategoryID)
+
+	summary := model.MonthlySummary{
+		FamilyID:             familyId,
+		UserID:               userId,
+		Month:                startOfMonth,
+		TotalIncome:          totalIncome,
+		TotalExpense:         totalExpense,
+		Savings:              totalIncome - totalExpense,
+		TopExpenseCategoryID: topCategoryID,
+	}
+
+	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "family_id"}, {Name: "user_id"}, {Name: "month"}},
+		DoUpdates: clause.AssignmentColumns([]string{"total_income", "total_expense", "savings", "top_expense_category_id", "updated_at"}),
+	}).Create(&summary).Error
 }

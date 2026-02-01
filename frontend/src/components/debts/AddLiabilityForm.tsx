@@ -14,7 +14,9 @@ import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
 
 import { debtService } from "@/services/debtService";
+import { contactService } from "@/services/contactService";
 import toast from "react-hot-toast";
+import { Contact } from "@/types";
 
 interface AddLiabilityFormProps {
   onSuccess?: () => void;
@@ -23,13 +25,21 @@ interface AddLiabilityFormProps {
 }
 
 export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, onCancel, familyId }) => {
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [formData, setFormData] = useState({
     lender: "",
+	lender_contact_id: "",
     totalAmount: "",
     remainingAmount: "",
     interestRate: "",
     dueDateDay: "5",
   });
+
+  React.useEffect(() => {
+	if (familyId) {
+		contactService.getContacts(familyId).then(setContacts).catch(console.error);
+	}
+  }, [familyId]);
 
   const liabilityTypes = [
     { value: "Loan", label: "Fixed Term Loan" },
@@ -56,6 +66,7 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
         await debtService.create({
             family_id: familyId,
             lender: formData.lender,
+			lender_contact_id: formData.lender_contact_id || undefined,
             total_amount: Number(formData.totalAmount),
             remaining_amount: Number(formData.remainingAmount || formData.totalAmount), // Default to total if not set
             interest_rate: Number(formData.interestRate),
@@ -76,7 +87,27 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
 
 
              <div className="space-y-2">
-               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Lender Name</Label>
+               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Lender Contact</Label>
+               <Select 
+                 options={[
+					{ value: "", label: "Informal / Individual" },
+					...contacts.filter(c => c.type === 'LENDER' || c.type === 'OTHER').map(c => ({value: c.id, label: c.name}))
+				 ]}
+                 placeholder="Select a contact"
+                 onChange={(value: string) => {
+					 const contact = contacts.find(c => c.id === value);
+					 setFormData({
+						 ...formData, 
+						 lender_contact_id: value,
+						 lender: contact ? contact.name : formData.lender
+					 });
+				 }}
+                 className="rounded-2xl h-12"
+               />
+             </div>
+
+			 <div className="space-y-2">
+               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Lender Name (Display)</Label>
                <Input 
                  required
                  placeholder="e.g. HDFC Bank, Chase"

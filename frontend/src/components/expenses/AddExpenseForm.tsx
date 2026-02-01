@@ -6,20 +6,27 @@ import {
   UploadCloud, 
   Camera, 
   Loader2, 
+  Loader,
+  Tag,
   CheckCircle2, 
   X,
   RefreshCcw,
-  Wallet
+  Wallet,
+  MapPin,
+  Package
 } from "lucide-react";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
+import MultiSelect from "@/components/form/MultiSelect";
 import Button from "@/components/ui/button/Button";
 import DatePicker from "@/components/form/date-picker";
 import { transactionService } from "@/services/transactionService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
+import { contactService } from "@/services/contactService";
+import { organizationService } from "@/services/organizationService";
 import toast from "react-hot-toast";
-import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType } from "@/types";
+import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType } from "@/types";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
@@ -38,6 +45,9 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   wallets = [],
   familyId
 }) => {
+    const [contacts, setContacts] = useState<Contact[]>([]);
+	const [projects, setProjects] = useState<Project[]>([]);
+	const [tags, setTags] = useState<TagType[]>([]);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -47,8 +57,29 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         category_id: "",
         payment_method_id: "",
         wallet_id: "",
+		contact_id: "",
+		project_id: "",
+		tag_ids: [] as string[],
         family_id: familyId
     });
+
+	React.useEffect(() => {
+		const fetchData = async () => {
+			try {
+				const [fetchedContacts, fetchedProjects, fetchedTags] = await Promise.all([
+					contactService.getContacts(familyId),
+					organizationService.getProjects(familyId),
+					organizationService.getTags(familyId)
+				]);
+				setContacts(fetchedContacts);
+				setProjects(fetchedProjects);
+				setTags(fetchedTags);
+			} catch (error) {
+				console.error("Failed to fetch organizational data", error);
+			}
+		};
+		fetchData();
+	}, [familyId]);
   
     const [isCustomCategory, setIsCustomCategory] = useState(false);
     const [customCategoryName, setCustomCategoryName] = useState("");
@@ -126,7 +157,10 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             transaction_date: new Date(formData.transaction_date).toISOString(),
             wallet_id: formData.wallet_id,
             category_id: categoryId,
-            payment_method_id: formData.payment_method_id, // Payment methods are currently simple lookups
+            payment_method_id: formData.payment_method_id,
+			contact_id: formData.contact_id || undefined,
+			project_id: formData.project_id || undefined,
+			tags: formData.tag_ids,
             family_id: familyId,
         };
 
@@ -288,6 +322,44 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               }}
               className="rounded-2xl h-14"
             />
+          </div>
+          <div className="col-span-1 space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Vendor / Recipient</Label>
+            <Select 
+              options={contacts.map(c => ({value: c.id, label: c.name}))}
+              placeholder="Who did you pay?"
+              onChange={(value: string) => setFormData({...formData, contact_id: value})}
+              className="rounded-2xl h-14"
+            />
+          </div>
+        </div>
+
+		<div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="col-span-1 space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Project / Event</Label>
+			<div className="relative group">
+				<Select 
+				options={projects.map(p => ({value: p.id, label: p.name}))}
+				placeholder="Link to a project"
+				onChange={(value: string) => setFormData({...formData, project_id: value})}
+				className="rounded-2xl h-14 pl-11"
+				/>
+				<Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
+			</div>
+          </div>
+		  <div className="col-span-1 space-y-2">
+			<Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Tags</Label>
+			<div className="relative group">
+				<MultiSelect 
+					label=""
+					options={tags.map(t => ({
+						value: t.id, 
+						text: t.name, 
+						selected: formData.tag_ids.includes(t.id)
+					}))}
+					onChange={(selected) => setFormData({...formData, tag_ids: selected})}
+				/>
+			</div>
           </div>
         </div>
 

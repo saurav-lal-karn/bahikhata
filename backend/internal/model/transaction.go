@@ -68,6 +68,9 @@ type Transaction struct {
 	ParentID          *uuid.UUID              `json:"parent_id,omitempty" gorm:"type:uuid;index"`
 	CreatedByID       uuid.UUID               `json:"created_by_id" gorm:"type:uuid;not null;index"`
 	TransferRefID     *uuid.UUID              `json:"transfer_ref_id,omitempty" gorm:"type:uuid;index"`
+	ContactID         *uuid.UUID              `json:"contact_id,omitempty" gorm:"type:uuid;index"`
+	LocationID        *uuid.UUID              `json:"location_id,omitempty" gorm:"type:uuid;index"`
+	ProjectID         *uuid.UUID              `json:"project_id,omitempty" gorm:"type:uuid;index"`
 	Tags              JSONB                   `json:"tags,omitempty" gorm:"type:jsonb"`
 	Attachments       JSONB                   `json:"attachments,omitempty" gorm:"type:jsonb"`
 	FileID            *uuid.UUID              `json:"file_id,omitempty" gorm:"type:uuid"`
@@ -83,6 +86,9 @@ type Transaction struct {
 	User          *User                `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	Parent        *Transaction         `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
 	CreatedBy     *User                `json:"created_by,omitempty" gorm:"foreignKey:CreatedByID"`
+	Contact       *Contact             `json:"contact,omitempty" gorm:"foreignKey:ContactID"`
+	Location      *Location            `json:"location,omitempty" gorm:"foreignKey:LocationID"`
+	Project       *Project             `json:"project,omitempty" gorm:"foreignKey:ProjectID"`
 }
 
 // TableName returns the table name for the Transaction model.

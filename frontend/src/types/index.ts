@@ -129,7 +129,6 @@ export interface TransactionCategory {
 export type ExpenseCategory = TransactionCategory;
 export type IncomeType = TransactionCategory;
 
-// Types for payment methods
 export interface PaymentMethod {
     id: string;
     name: string;
@@ -138,6 +137,71 @@ export interface PaymentMethod {
     is_system: boolean;
     family_id: string;
     created_by_id: string;
+}
+
+// Phase 4: Contacts & Organization Types
+export type ContactType = 'VENDOR' | 'LENDER' | 'EMPLOYER' | 'OTHER';
+
+export interface Contact {
+    id: string;
+    family_id: string;
+    user_id?: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    type: ContactType;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateContactPayload {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    type: ContactType;
+    family_id: string;
+}
+
+export interface FinancialInstitution {
+    id: string;
+    family_id: string;
+    name: string;
+    code?: string;
+    website?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Tag {
+    id: string;
+    family_id: string;
+    name: string;
+    color?: string;
+    created_at: string;
+}
+
+export interface Project {
+    id: string;
+    family_id: string;
+    name: string;
+    description?: string;
+    start_date?: string;
+    end_date?: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Location {
+    id: string;
+    name: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+    created_at: string;
 }
 
 export interface Transaction {
@@ -150,6 +214,9 @@ export interface Transaction {
     wallet_id: string;
     category_id?: string;
     payment_method_id?: string;
+    contact_id?: string;
+    location_id?: string;
+    project_id?: string;
     family_id: string;
     created_by_id: string;
     tags?: string[];
@@ -161,6 +228,9 @@ export interface Transaction {
     wallet?: WalletInfoType;
     category?: TransactionCategory;
     payment_method?: PaymentMethod;
+    contact?: Contact;
+    location?: Location;
+    project?: Project;
 }
 
 export interface CreateTransactionPayload {
@@ -172,6 +242,9 @@ export interface CreateTransactionPayload {
     wallet_id: string;
     category_id?: string;
     payment_method_id?: string;
+    contact_id?: string;
+    location_id?: string;
+    project_id?: string;
     family_id: string;
     tags?: string[];
     attachments?: string[];
@@ -352,6 +425,7 @@ export interface Debt {
     family_id: string;
     user_id: string;
     lender: string;
+    lender_contact_id?: string;
     total_amount: number;
     remaining_amount: number;
     interest_rate: number;
@@ -359,11 +433,13 @@ export interface Debt {
     created_at: string;
     updated_at: string;
     repayments?: DebtRepayment[];
+    lender_contact?: Contact;
 }
 
 export interface CreateDebtPayload {
     family_id?: string;
     lender: string;
+    lender_contact_id?: string;
     total_amount: number;
     remaining_amount: number;
     interest_rate: number;
@@ -444,6 +520,100 @@ export interface TaxDeduction {
     max_limit: number;
     category: string;
     year: string;
+}
+
+// Phase 5: Insurance & Subscriptions
+export type InsurancePolicyType = 'LIFE' | 'HEALTH' | 'MOTOR' | 'TRAVEL' | 'PROPERTY' | 'OTHER';
+export type InsurancePolicyStatus = 'ACTIVE' | 'EXPIRED' | 'LAPSED' | 'CANCELLED';
+export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+
+export interface InsurancePolicy {
+    id: string;
+    family_id: string;
+    contact_id?: string;
+    policy_name: string;
+    policy_number?: string;
+    type: InsurancePolicyType;
+    status: InsurancePolicyStatus;
+    premium_amount: number;
+    premium_frequency: RecurringFrequency;
+    sum_assured: number;
+    start_date: string;
+    end_date?: string;
+    next_due_date?: string;
+    provider?: Contact;
+}
+
+export interface CreateInsurancePolicyPayload {
+    policy_name: string;
+    policy_number?: string;
+    type: InsurancePolicyType;
+    premium_amount: number;
+    premium_frequency: RecurringFrequency;
+    sum_assured: number;
+    start_date: string;
+    end_date?: string;
+    contact_id?: string;
+}
+
+export type SubscriptionStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED';
+
+export interface Subscription {
+    id: string;
+    family_id: string;
+    name: string;
+    amount: number;
+    frequency: RecurringFrequency;
+    category_id?: string;
+    wallet_id?: string;
+    next_billing_date?: string;
+    start_date: string;
+    status: SubscriptionStatus;
+    category?: TransactionCategory;
+    wallet?: WalletInfoType;
+}
+
+export interface CreateSubscriptionPayload {
+    name: string;
+    amount: number;
+    frequency: RecurringFrequency;
+    category_id?: string;
+    wallet_id?: string;
+    start_date: string;
+    next_billing_date?: string;
+}
+
+// Phase 6: Split Expenses & Advanced Tracking
+export type SplitMethod = 'EQUAL' | 'PERCENTAGE' | 'EXACT';
+
+export interface ExpenseSplit {
+    id: string;
+    transaction_id: string;
+    total_amount: number;
+    split_method: SplitMethod;
+    participants: SplitParticipant[];
+}
+
+export interface SplitParticipant {
+    id: string;
+    user_id?: string;
+    contact_id?: string;
+    amount_owed: number;
+    amount_paid: number;
+    status: 'UNPAID' | 'PARTIAL' | 'SETTLED';
+    user?: FamilyMember;
+    contact?: Contact;
+}
+
+export interface Attachment {
+    id: string;
+    file_name: string;
+    file_path: string;
+    file_type: string;
+    file_size: number;
+    entity_type: string;
+    entity_id: string;
+    created_at: string;
 }
 
 export interface CreateTaxDeductionPayload {

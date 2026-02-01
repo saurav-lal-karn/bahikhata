@@ -42,9 +42,37 @@ type Budget struct {
 	DeletedAt 		gorm.DeletedAt 	`json:"-" gorm:"index"`
 
 	// Relationships (use pointers to allow nil values, exclude from direct JSON serialization)
-	Family 			*Family 		`json:"-" gorm:"foreignKey:FamilyID"`
-	User 			*User 			`json:"-" gorm:"foreignKey:UserID"`
-	Category 		*TransactionCategory 	`json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Family   *Family              `json:"-" gorm:"foreignKey:FamilyID"`
+	User     *User                `json:"-" gorm:"foreignKey:UserID"`
+	Category *TransactionCategory `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Periods  []BudgetPeriod       `json:"periods,omitempty" gorm:"foreignKey:BudgetID"`
+	Alerts   []BudgetAlert        `json:"alerts,omitempty" gorm:"foreignKey:BudgetID"`
+}
+
+type BudgetPeriod struct {
+	ID          uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BudgetID    uuid.UUID `json:"budget_id" gorm:"type:uuid;not null;index"`
+	StartDate   time.Time `json:"start_date" gorm:"type:date;not null"`
+	EndDate     time.Time `json:"end_date" gorm:"type:date;not null"`
+	SpentAmount float64   `json:"spent_amount" gorm:"type:numeric;not null;default:0"`
+	IsClosed    bool      `json:"is_closed" gorm:"type:boolean;not null;default:false"`
+	CreatedAt   time.Time `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"type:timestamp;not null;default:now()"`
+
+	Budget *Budget `json:"budget,omitempty" gorm:"foreignKey:BudgetID"`
+}
+
+type BudgetAlert struct {
+	ID                  uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BudgetID            uuid.UUID  `json:"budget_id" gorm:"type:uuid;not null;index"`
+	PeriodID            *uuid.UUID `json:"period_id,omitempty" gorm:"type:uuid;index"`
+	ThresholdPercentage float64    `json:"threshold_percentage" gorm:"type:numeric;not null"`
+	TriggeredAt         *time.Time `json:"triggered_at,omitempty" gorm:"type:timestamp"`
+	Message             string     `json:"message,omitempty" gorm:"type:text"`
+	CreatedAt           time.Time  `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
+
+	Budget *Budget       `json:"budget,omitempty" gorm:"foreignKey:BudgetID"`
+	Period *BudgetPeriod `json:"period,omitempty" gorm:"foreignKey:PeriodID"`
 }
 
 func(Budget) TableName() string {

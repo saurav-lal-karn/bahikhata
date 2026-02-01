@@ -23,6 +23,22 @@ type Investment struct {
 	Family       *Family                 `json:"family" gorm:"foreignKey:FamilyID"`
 	User         *User                   `json:"user" gorm:"foreignKey:UserID"`
 	Transactions []InvestmentTransaction `json:"transactions" gorm:"foreignKey:InvestmentID"`
+	Valuations   []InvestmentValuation `json:"valuations,omitempty" gorm:"foreignKey:InvestmentID"`
+}
+
+type InvestmentValuation struct {
+	ID            uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	InvestmentID  uuid.UUID `json:"investment_id" gorm:"type:uuid;not null;index"`
+	PricePerUnit  float64   `json:"price_per_unit" gorm:"type:numeric;not null"`
+	ValuationDate time.Time `json:"valuation_date" gorm:"type:date;not null"`
+	Source        string    `json:"source,omitempty" gorm:"type:text"`
+	CreatedAt     time.Time `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
+
+	Investment *Investment `json:"-" gorm:"foreignKey:InvestmentID"`
+}
+
+func (InvestmentValuation) TableName() string {
+	return "investment_valuations"
 }
 
 type InvestmentTransactionType string

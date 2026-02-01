@@ -37,6 +37,7 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	// Protected routes
 	protected := api.Group("/")
 	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware.AuditMiddleware(app.DB))
 
 	userRouter := protected.Group("/users")
 	RegisterUserRoutes(app, userRouter)
@@ -97,6 +98,13 @@ func SetupRouter(app *config.Application) *gin.Engine {
 
 	analyticsRouter := protected.Group("/analytics")
 	RegisterAnalyticsRoutes(app, analyticsRouter)
+
+	RegisterContactRoutes(app, protected)
+	RegisterOrganizationRoutes(app, protected)
+	RegisterInsuranceRoutes(protected, app.DB)
+	RegisterSubscriptionRoutes(protected, app.DB)
+	RegisterSplitRoutes(protected, app.DB)
+	RegisterAttachmentRoutes(protected, app.DB)
 
 	// Serve static files
 	router.Static("/uploads", "./uploads")

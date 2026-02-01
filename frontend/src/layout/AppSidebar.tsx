@@ -14,7 +14,7 @@ import {
   PieChartIcon,
   TableIcon,
 } from "../icons/index";
-import { TargetIcon, Users, Repeat as RepeatIcon, Wallet as WalletIcon } from "lucide-react";
+import { TargetIcon, Users, Repeat as RepeatIcon, Wallet as WalletIcon, ShieldAlert } from "lucide-react";
 
 
 type NavItem = {
@@ -63,6 +63,11 @@ const navigation: NavSection[] = [
         name: "Wallets",
         path: "/accounts",
       },
+      {
+        icon: <RepeatIcon className="w-5 h-5" />,
+        name: "Subscriptions",
+        path: "/subscriptions",
+      },
     ],
   },
   {
@@ -101,7 +106,7 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    title: "House & Tax",
+    title: "House, Tax & Safety",
     items: [
       {
         icon: <Users className="w-5 h-5" />,
@@ -112,6 +117,11 @@ const navigation: NavSection[] = [
         icon: <TableIcon />,
         name: "Tax Center",
         path: "/tax",
+      },
+      {
+        icon: <ShieldAlert className="w-5 h-5" />,
+        name: "Insurance",
+        path: "/insurance",
       },
     ],
   },

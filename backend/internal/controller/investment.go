@@ -131,3 +131,26 @@ func (c *InvestmentController) ListTransactions(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Transactions fetched successfully", transactions)
 }
+
+func (c *InvestmentController) AddValuation(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	investmentID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.CreateInvestmentValuationRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	valuation := req.ToModel(investmentID)
+	if err := c.service.CreateValuation(ctx, valuation); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add valuation")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Valuation added successfully", valuation)
+}

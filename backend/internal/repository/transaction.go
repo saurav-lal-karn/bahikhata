@@ -43,6 +43,9 @@ func (r *transactionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mod
 		Preload("Category").
 		Preload("PaymentMethod").
 		Preload("User").
+		Preload("Contact").
+		Preload("Location").
+		Preload("Project").
 		First(&tx, id).Error; err != nil {
 		return nil, fmt.Errorf("failed to get transaction %s: %w", id, err)
 	}
@@ -69,6 +72,12 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 	if categoryID, ok := filters["category_id"]; ok {
 		query = query.Where("category_id = ?", categoryID)
 	}
+	if projectID, ok := filters["project_id"]; ok {
+		query = query.Where("project_id = ?", projectID)
+	}
+	if contactID, ok := filters["contact_id"]; ok {
+		query = query.Where("contact_id = ?", contactID)
+	}
 
 	// Count total records
 	if err := query.Model(&model.Transaction{}).Count(&total).Error; err != nil {
@@ -90,6 +99,9 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 		Preload("Wallet").
 		Preload("Category").
 		Preload("PaymentMethod").
+		Preload("Contact").
+		Preload("Location").
+		Preload("Project").
 		Order("transaction_date DESC").
 		Limit(pageSize).
 		Offset(offset).
