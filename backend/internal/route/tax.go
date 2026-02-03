@@ -26,4 +26,10 @@ func RegisterTaxRoutes(app *config.Application, router *gin.RouterGroup) {
 		deds.GET("", ctrl.ListDeductions)
 		deds.DELETE("/:id", ctrl.DeleteDeduction)
 	}
+
+	summaries := router.Group("/summaries")
+	{
+		summaries.POST("", ctrl.CreateSummary)
+		summaries.GET("", ctrl.ListSummaries)
+	}
 }

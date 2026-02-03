@@ -8,38 +8,51 @@ import Button from "@/components/ui/button/Button";
 import { subscriptionService } from "@/services/subscriptionService";
 import { walletService } from "@/services/walletService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
+import { contactService } from "@/services/contactService";
 import { WalletInfoType, TransactionCategory, RecurringFrequency } from "@/types";
+import { Contact } from "@/types";
 import toast from "react-hot-toast";
 
 interface AddSubscriptionFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  familyId?: string;
 }
 
-export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSuccess, onCancel }) => {
+export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSuccess, onCancel, familyId }) => {
   const [wallets, setWallets] = useState<WalletInfoType[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     amount: "",
     frequency: "MONTHLY" as RecurringFrequency,
     category_id: "",
     wallet_id: "",
+    vendor_id: "",
     start_date: new Date().toISOString().split('T')[0],
     next_billing_date: "",
   });
 
   useEffect(() => {
-    walletService.getWallets("").then(data => setWallets(data.wallets)).catch(console.error);
-    transactionCategoryService.getCategories("").then(setCategories).catch(console.error);
-  }, []);
+    if (!familyId) return;
+    walletService.getWallets(familyId).then(data => setWallets(data.wallets)).catch(console.error);
+    transactionCategoryService.getCategories(familyId).then(setCategories).catch(console.error);
+    contactService.getContacts(familyId).then(setContacts).catch(console.error);
+  }, [familyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await subscriptionService.createSubscription({
-        ...formData,
+        name: formData.name,
         amount: Number(formData.amount),
+        frequency: formData.frequency,
+        category_id: formData.category_id || undefined,
+        wallet_id: formData.wallet_id || undefined,
+        vendor_id: formData.vendor_id || undefined,
+        start_date: formData.start_date,
+        next_billing_date: formData.next_billing_date || undefined,
       });
       toast.success("Subscription tracked");
       if (onSuccess) onSuccess();
@@ -112,6 +125,19 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
             ]}
             value={formData.wallet_id}
             onChange={(val: string) => setFormData({...formData, wallet_id: val})}
+            className="rounded-2xl h-12"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Vendor / Service Provider (optional)</Label>
+          <Select 
+            options={[
+                { value: "", label: "Select Vendor" },
+                ...contacts.filter(c => c.type === "VENDOR" || c.type === "OTHER").map(c => ({ value: c.id, label: c.name }))
+            ]}
+            value={formData.vendor_id}
+            onChange={(val: string) => setFormData({...formData, vendor_id: val})}
             className="rounded-2xl h-12"
           />
         </div>

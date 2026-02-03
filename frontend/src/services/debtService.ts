@@ -21,5 +21,9 @@ export const debtService = {
     addRepayment: async (debtId: string, payload: any) => {
         const response = await apiClient.post(`/debts/${debtId}/repayments`, payload);
         return response.data.data;
-    }
+    },
+    getAmortizationSchedule: async (debtId: string) => {
+        const response = await apiClient.get(`/debts/${debtId}/amortization`);
+        return response.data.data;
+    },
 };

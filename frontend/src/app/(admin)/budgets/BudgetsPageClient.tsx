@@ -21,7 +21,9 @@ import { PredictiveBudgetPanel } from "@/components/budgets/PredictiveBudgetPane
 import { useAuth } from "@/context/AuthContext";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { budgetService } from "@/services/budgetService";
+import type { BudgetAlert } from "@/services/budgetService";
 import { ExpenseCategory, Budget } from "@/types";
+import { AlertCircle, CheckCheck } from "lucide-react";
 
 export default function BudgetsPageClient() {
     const { user } = useAuth();
@@ -36,7 +38,8 @@ export default function BudgetsPageClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
-
+  const [alerts, setAlerts] = useState<BudgetAlert[]>([]);
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -64,12 +67,13 @@ export default function BudgetsPageClient() {
             setCategories(categoriesResponse);
             setBudgets(budgetsResponse);
           }
+          budgetService.getAlerts(familyDetails.id).then((data) => isMounted && setAlerts(data)).catch(() => isMounted && setAlerts([]));
         } catch (error) {
           if (isMounted) {
             console.error('Failed to fetch data:', error);
           }
         } finally {
-            if (isMounted) setIsLoading(false);
+          if (isMounted) setIsLoading(false);
         }
       };
   
@@ -79,6 +83,18 @@ export default function BudgetsPageClient() {
         isMounted = false;
       };
     }, [familyDetails]);
+
+  const handleAcknowledgeAlert = async (alertId: string) => {
+    try {
+      setAcknowledgingId(alertId);
+      await budgetService.acknowledgeAlert(alertId);
+      setAlerts(prev => prev.filter(a => a.id !== alertId));
+    } catch (e) {
+      console.error('Failed to acknowledge alert', e);
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -241,6 +257,34 @@ export default function BudgetsPageClient() {
             <p className="text-xs font-medium leading-relaxed opacity-90">
               You've used 65% of your total budget. Stay below ₹15,000 this week to meet your savings goal.
             </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+               <AlertCircle className="w-4 h-4 text-orange-500" />
+               <h4 className="text-sm font-black text-gray-800 dark:text-white uppercase tracking-wider">Budget Alerts</h4>
+            </div>
+            {alerts.length === 0 ? (
+              <p className="text-xs text-gray-500 font-medium">No alerts right now.</p>
+            ) : (
+              <div className="space-y-3">
+                {alerts.map((alert) => (
+                  <div key={alert.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 rounded-2xl">
+                    <p className="text-xs font-bold text-gray-800 dark:text-white mb-1">
+                      {alert.budget?.category?.name ?? "Budget"} – {alert.threshold_percentage}% threshold
+                    </p>
+                    {alert.message && <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-2">{alert.message}</p>}
+                    <button
+                      onClick={() => handleAcknowledgeAlert(alert.id)}
+                      disabled={acknowledgingId === alert.id}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" /> {acknowledgingId === alert.id ? "..." : "Acknowledge"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">

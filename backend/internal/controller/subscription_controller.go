@@ -101,3 +101,25 @@ func (c *SubscriptionController) DeleteSubscription(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Subscription deleted"})
 }
+
+func (c *SubscriptionController) UpdateSubscription(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	var req dto.UpdateSubscriptionRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := c.service.UpdateSubscription(id, req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}

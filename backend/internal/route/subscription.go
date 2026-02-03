@@ -2,23 +2,21 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sauravkarn541/bahikhata/internal/config"
 	"github.com/sauravkarn541/bahikhata/internal/controller"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
 	"github.com/sauravkarn541/bahikhata/internal/service"
-	"gorm.io/gorm"
 )
 
-func RegisterSubscriptionRoutes(rg *gin.RouterGroup, db *gorm.DB) {
-	repo := repository.NewSubscriptionRepository(db)
-	recurringRepo := repository.NewRecurringTransactionRepository(db)
+func RegisterSubscriptionRoutes(app *config.Application, router *gin.RouterGroup) {
+	repo := repository.NewSubscriptionRepository(app.DB)
+	recurringRepo := repository.NewRecurringTransactionRepository(app.DB)
 	svc := service.NewSubscriptionService(repo, recurringRepo)
 	ctrl := controller.NewSubscriptionController(svc)
 
-	subs := rg.Group("/subscriptions")
-	{
-		subs.POST("", ctrl.CreateSubscription)
-		subs.GET("", ctrl.GetSubscriptions)
-		subs.GET("/:id", ctrl.GetSubscription)
-		subs.DELETE("/:id", ctrl.DeleteSubscription)
-	}
+	router.POST("", ctrl.CreateSubscription)
+	router.GET("", ctrl.GetSubscriptions)
+	router.GET(":id", ctrl.GetSubscription)
+	router.PATCH(":id", ctrl.UpdateSubscription)
+	router.DELETE(":id", ctrl.DeleteSubscription)
 }

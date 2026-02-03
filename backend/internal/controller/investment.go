@@ -154,3 +154,20 @@ func (c *InvestmentController) AddValuation(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusCreated, "Valuation added successfully", valuation)
 }
+
+func (c *InvestmentController) ListValuations(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	investmentID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	valuations, err := c.service.ListValuations(ctx, investmentID)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch valuations")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Valuations fetched successfully", valuations)
+}

@@ -1,5 +1,5 @@
 import { Debt } from "@/types";
-import { Landmark, Calendar, Percent, MoreVertical, Pencil, Trash2, Plus, TrendingDown } from "lucide-react";
+import { Landmark, Calendar, Percent, MoreVertical, Pencil, Trash2, Plus, TrendingDown, ListOrdered } from "lucide-react";
 
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
@@ -8,6 +8,18 @@ import { AddRepaymentForm } from "./AddRepaymentForm";
 import { Modal } from "@/components/ui/modal";
 import { debtService } from "@/services/debtService";
 import { DebtRepayment } from "@/types";
+
+export interface DebtScheduleItem {
+  id: string;
+  debt_id: string;
+  installment_number: number;
+  due_date: string;
+  principal_amount: number;
+  interest_amount: number;
+  total_installment: number;
+  remaining_balance: number;
+  status?: string;
+}
 
 
 interface LiabilityListProps {
@@ -21,6 +33,9 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
   const [visibleHistoryId, setVisibleHistoryId] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<Record<string, DebtRepayment[]>>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState<Record<string, boolean>>({});
+  const [visibleScheduleId, setVisibleScheduleId] = useState<string | null>(null);
+  const [scheduleData, setScheduleData] = useState<Record<string, DebtScheduleItem[]>>({});
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState<Record<string, boolean>>({});
 
   const fetchRepayments = async (debtId: string) => {
     try {
@@ -41,6 +56,29 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
       setVisibleHistoryId(debtId);
       if (!historyData[debtId]) {
         fetchRepayments(debtId);
+      }
+    }
+  };
+
+  const fetchSchedule = async (debtId: string) => {
+    try {
+      setIsLoadingSchedule(prev => ({ ...prev, [debtId]: true }));
+      const data = await debtService.getAmortizationSchedule(debtId);
+      setScheduleData(prev => ({ ...prev, [debtId]: data }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSchedule(prev => ({ ...prev, [debtId]: false }));
+    }
+  };
+
+  const toggleSchedule = (debtId: string) => {
+    if (visibleScheduleId === debtId) {
+      setVisibleScheduleId(null);
+    } else {
+      setVisibleScheduleId(debtId);
+      if (!scheduleData[debtId]) {
+        fetchSchedule(debtId);
       }
     }
   };
@@ -115,6 +153,12 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
                        <span>{visibleHistoryId === debt.id ? 'Hide History' : 'View History'}</span>
                     </div>
                   </DropdownItem>
+                  <DropdownItem onClick={() => { setActiveMenu(null); toggleSchedule(debt.id); }}>
+                    <div className="flex items-center gap-2 text-gray-600">
+                       <ListOrdered className="w-4 h-4" />
+                       <span>{visibleScheduleId === debt.id ? 'Hide Schedule' : 'View Schedule'}</span>
+                    </div>
+                  </DropdownItem>
                   <div className="h-px bg-gray-50 dark:bg-gray-800 my-1" />
                   <DropdownItem onClick={() => setActiveMenu(null)}>
                     <div className="flex items-center gap-2">
@@ -162,6 +206,54 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
               </div>
            </div>
         )}
+
+        {visibleScheduleId === debt.id && (
+           <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
+              <div className="pt-6 border-t border-gray-50 dark:border-gray-800">
+                 <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Amortization Schedule</h5>
+                 {isLoadingSchedule[debt.id] ? (
+                    <div className="space-y-2">
+                       {[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-50 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+                    </div>
+                 ) : scheduleData[debt.id]?.length ? (
+                    <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800">
+                       <table className="w-full text-left text-xs">
+                          <thead className="bg-gray-50 dark:bg-gray-800/50">
+                             <tr>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider">#</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider">Due Date</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider text-right">Principal</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider text-right">Interest</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider text-right">Total</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider text-right">Balance</th>
+                                <th className="px-4 py-3 font-black text-gray-500 uppercase tracking-wider">Status</th>
+                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                             {scheduleData[debt.id].map((row) => (
+                                <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                                   <td className="px-4 py-2.5 font-bold text-gray-700 dark:text-gray-300">{row.installment_number}</td>
+                                   <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{new Date(row.due_date).toLocaleDateString()}</td>
+                                   <td className="px-4 py-2.5 text-right font-medium">₹{Number(row.principal_amount).toLocaleString()}</td>
+                                   <td className="px-4 py-2.5 text-right font-medium">₹{Number(row.interest_amount).toLocaleString()}</td>
+                                   <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-white">₹{Number(row.total_installment).toLocaleString()}</td>
+                                   <td className="px-4 py-2.5 text-right text-gray-500">₹{Number(row.remaining_balance).toLocaleString()}</td>
+                                   <td className="px-4 py-2.5">
+                                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${row.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20'}`}>
+                                         {row.status || 'PENDING'}
+                                      </span>
+                                   </td>
+                                </tr>
+                             ))}
+                          </tbody>
+                       </table>
+                    </div>
+                 ) : (
+                    <p className="text-[10px] text-gray-400 font-medium italic text-center py-2">No schedule available. Schedules are generated when you create them for this debt.</p>
+                 )}
+              </div>
+           </div>
+        )}
         </div>
       ))}
 
@@ -174,8 +266,9 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
           <AddRepaymentForm 
             debtId={repaymentModalId} 
             onSuccess={() => {
+              const id = repaymentModalId;
               setRepaymentModalId(null);
-              window.location.reload();
+              if (id) fetchRepayments(id);
             }} 
             onCancel={() => setRepaymentModalId(null)} 
           />

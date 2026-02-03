@@ -15,40 +15,77 @@ import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 import { transactionService } from "@/services/transactionService";
+import { organizationService } from "@/services/organizationService";
+import { contactService } from "@/services/contactService";
 import { Transaction } from "@/types";
+import { Contact } from "@/types";
+import { Project } from "@/types";
+import { Location } from "@/types";
 
 export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expenses, setExpenses] = useState<Transaction[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
 
-  // Extract unique filter options
+  // Extract unique filter options from data
   const categories = Array.from(new Set(expenses.map(e => e.category?.name).filter(Boolean))) as string[];
   const methods = Array.from(new Set(expenses.map(e => e.payment_method?.name).filter(Boolean))) as string[];
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         expense.category?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         expense.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         expense.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || expense.category?.name === selectedCategory;
     const matchesMethod = !selectedMethod || expense.payment_method?.name === selectedMethod;
-    
+
     return matchesSearch && matchesCategory && matchesMethod;
   });
 
   const clearFilters = () => {
     setSelectedCategory(null);
     setSelectedMethod(null);
+    setSelectedContactId(null);
+    setSelectedProjectId(null);
+    setSelectedLocationId(null);
     setSearchTerm("");
   };
 
+  useEffect(() => {
+    const fetchOptions = async () => {
+      if (!familyId) return;
+      try {
+        const [c, p, loc] = await Promise.all([
+          contactService.getContacts(familyId),
+          organizationService.getProjects(familyId),
+          organizationService.getLocations(familyId).catch(() => [])
+        ]);
+        setContacts(c);
+        setProjects(p);
+        setLocations(loc);
+      } catch (e) {
+        console.error("Failed to fetch filter options", e);
+      }
+    };
+    fetchOptions();
+  }, [familyId]);
 
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const response = await transactionService.getTransactions(familyId, { type: 'EXPENSE' });
+        const params: Record<string, string | number | boolean | undefined> = { type: 'EXPENSE' };
+        if (selectedContactId) params.contact_id = selectedContactId;
+        if (selectedProjectId) params.project_id = selectedProjectId;
+        if (selectedLocationId) params.location_id = selectedLocationId;
+        const response = await transactionService.getTransactions(familyId, params);
         setExpenses(response.transactions);
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
@@ -57,8 +94,7 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
     if (familyId && familyId !== "") {
       fetchExpenses();
     }
-    
-  }, [familyId, refreshKey]);
+  }, [familyId, refreshKey, selectedContactId, selectedProjectId, selectedLocationId]);
 
   return (
     <div className="rounded-3xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden shadow-sm">
@@ -84,7 +120,7 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
             className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all ${isFilterVisible ? 'bg-purple-50 border-purple-200 text-purple-600 shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 hover:bg-gray-50'}`}
           >
             <Filter className={`w-4 h-4 ${isFilterVisible ? 'fill-purple-600' : ''}`} /> Filters
-            {(selectedCategory || selectedMethod) && (
+            {(selectedCategory || selectedMethod || selectedContactId || selectedProjectId || selectedLocationId) && (
               <span className="flex h-2 w-2 rounded-full bg-purple-500" />
             )}
           </button>
@@ -97,7 +133,7 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
       {/* Filter Bar */}
       {isFilterVisible && (
         <div className="p-6 bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-100 dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 items-end">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</label>
               <div className="relative">
@@ -126,6 +162,57 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
                   <option value="">All Methods</option>
                   {methods.map(method => (
                     <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact / Vendor</label>
+              <div className="relative">
+                <select 
+                  value={selectedContactId || ""}
+                  onChange={(e) => setSelectedContactId(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all font-bold"
+                >
+                  <option value="">All Contacts</option>
+                  {contacts.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project</label>
+              <div className="relative">
+                <select 
+                  value={selectedProjectId || ""}
+                  onChange={(e) => setSelectedProjectId(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all font-bold"
+                >
+                  <option value="">All Projects</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location</label>
+              <div className="relative">
+                <select 
+                  value={selectedLocationId || ""}
+                  onChange={(e) => setSelectedLocationId(e.target.value || null)}
+                  className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-purple-500/20 transition-all font-bold"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -170,6 +257,25 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
                         {expense.name}
                       </h4>
+                        {(expense.contact?.name || expense.project?.name || expense.location?.name) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {expense.contact?.name && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                              {expense.contact.name}
+                            </span>
+                          )}
+                          {expense.project?.name && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                              {expense.project.name}
+                            </span>
+                          )}
+                          {expense.location?.name && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+                              {expense.location.name}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>

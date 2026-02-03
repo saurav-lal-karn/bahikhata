@@ -16,6 +16,10 @@ type BudgetService interface {
 	Update(ctx context.Context, budget *model.Budget) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error)
+
+	GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error)
+	GetAlerts(ctx context.Context, familyID *uuid.UUID) ([]model.BudgetAlert, error)
+	AcknowledgeAlert(ctx context.Context, alertID uuid.UUID) error
 }
 
 type budgetService struct {
@@ -52,4 +56,16 @@ func (bs *budgetService) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (bs *budgetService) List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error) {
 	return bs.repo.List(ctx, family_id, user_id)
+}
+
+func (bs *budgetService) GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error) {
+	return bs.repo.GetPeriods(ctx, budgetID)
+}
+
+func (bs *budgetService) GetAlerts(ctx context.Context, familyID *uuid.UUID) ([]model.BudgetAlert, error) {
+	return bs.repo.GetAlerts(ctx, familyID)
+}
+
+func (bs *budgetService) AcknowledgeAlert(ctx context.Context, alertID uuid.UUID) error {
+	return bs.repo.AcknowledgeAlert(ctx, alertID)
 }

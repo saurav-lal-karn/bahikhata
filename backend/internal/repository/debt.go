@@ -16,6 +16,7 @@ type DebtRepository interface {
 	ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error)
 	CreateSchedules(ctx context.Context, schedules []model.DebtSchedule) error
 	UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error
+	GetAmortizationSchedule(ctx context.Context, debtID uuid.UUID) ([]model.DebtSchedule, error)
 }
 
 type debtRepository struct {
@@ -66,4 +67,9 @@ func (r *debtRepository) CreateSchedules(ctx context.Context, schedules []model.
 
 func (r *debtRepository) UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error {
 	return r.db.WithContext(ctx).Model(&model.DebtSchedule{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *debtRepository) GetAmortizationSchedule(ctx context.Context, debtID uuid.UUID) ([]model.DebtSchedule, error) {
+	var schedules []model.DebtSchedule
+	return schedules, r.db.WithContext(ctx).Where("debt_id = ?", debtID).Order("installment_number ASC").Find(&schedules).Error
 }

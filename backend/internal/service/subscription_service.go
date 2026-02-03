@@ -14,6 +14,7 @@ type SubscriptionService interface {
 	CreateSubscription(req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error)
 	GetSubscriptions(familyID uuid.UUID) ([]dto.SubscriptionResponse, error)
 	GetSubscription(id uuid.UUID) (*dto.SubscriptionResponse, error)
+	UpdateSubscription(id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error)
 	DeleteSubscription(id uuid.UUID) error
 }
 
@@ -71,6 +72,7 @@ func (s *subscriptionService) CreateSubscription(req dto.CreateSubscriptionReque
 		Frequency:              model.RecurringFrequency(req.Frequency),
 		CategoryID:             req.CategoryID,
 		WalletID:               req.WalletID,
+		VendorID:               req.VendorID,
 		StartDate:              startDate,
 		NextBillingDate:        nextBilling,
 		Status:                 model.SubscriptionActive,
@@ -110,4 +112,45 @@ func (s *subscriptionService) GetSubscription(id uuid.UUID) (*dto.SubscriptionRe
 
 func (s *subscriptionService) DeleteSubscription(id uuid.UUID) error {
 	return s.repo.DeleteSubscription(id)
+}
+
+func (s *subscriptionService) UpdateSubscription(id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
+	sub, err := s.repo.GetSubscriptionByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Name != "" {
+		sub.Name = req.Name
+	}
+	if req.Amount > 0 {
+		sub.Amount = req.Amount
+	}
+	if req.Frequency != "" {
+		sub.Frequency = model.RecurringFrequency(req.Frequency)
+	}
+	if req.CategoryID != nil {
+		sub.CategoryID = req.CategoryID
+	}
+	if req.WalletID != nil {
+		sub.WalletID = req.WalletID
+	}
+	if req.VendorID != nil {
+		sub.VendorID = req.VendorID
+	}
+	if req.NextBillingDate != nil {
+		t, _ := time.Parse("2006-01-02", *req.NextBillingDate)
+		sub.NextBillingDate = &t
+	}
+	if req.Status != "" {
+		sub.Status = model.SubscriptionStatus(req.Status)
+	}
+
+	if err := s.repo.UpdateSubscription(sub); err != nil {
+		return nil, err
+	}
+
+	updated, _ := s.repo.GetSubscriptionByID(id)
+	res := dto.ToSubscriptionResponse(*updated)
+	return &res, nil
 }

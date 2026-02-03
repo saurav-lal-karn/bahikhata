@@ -14,6 +14,12 @@ type InsuranceService interface {
 	GetPolicies(familyID uuid.UUID) ([]dto.InsurancePolicyResponse, error)
 	GetPolicy(id uuid.UUID) (*dto.InsurancePolicyResponse, error)
 	DeletePolicy(id uuid.UUID) error
+
+	CreatePremium(req dto.CreatePremiumRequest) (*dto.PremiumResponse, error)
+	GetPremiums(policyID uuid.UUID) ([]dto.PremiumResponse, error)
+
+	CreateClaim(req dto.CreateClaimRequest) (*dto.ClaimResponse, error)
+	GetClaims(policyID uuid.UUID) ([]dto.ClaimResponse, error)
 }
 
 type insuranceService struct {
@@ -84,4 +90,84 @@ func (s *insuranceService) GetPolicy(id uuid.UUID) (*dto.InsurancePolicyResponse
 
 func (s *insuranceService) DeletePolicy(id uuid.UUID) error {
 	return s.repo.DeletePolicy(id)
+}
+
+func (s *insuranceService) CreatePremium(req dto.CreatePremiumRequest) (*dto.PremiumResponse, error) {
+	dueDate, err := time.Parse("2006-01-02", req.DueDate)
+	if err != nil {
+		return nil, err
+	}
+
+	var paymentDate *time.Time
+	if req.PaymentDate != nil {
+		t, _ := time.Parse("2006-01-02", *req.PaymentDate)
+		paymentDate = &t
+	}
+
+	premium := &model.Premium{
+		PolicyID:    req.PolicyID,
+		Amount:      req.Amount,
+		DueDate:     dueDate,
+		PaymentDate: paymentDate,
+		Status:      "PENDING",
+	}
+
+	if paymentDate != nil {
+		premium.Status = "PAID"
+	}
+
+	if err := s.repo.CreatePremium(premium); err != nil {
+		return nil, err
+	}
+
+	res := dto.ToPremiumResponse(*premium)
+	return &res, nil
+}
+
+func (s *insuranceService) GetPremiums(policyID uuid.UUID) ([]dto.PremiumResponse, error) {
+	premiums, err := s.repo.GetPremiumsByPolicy(policyID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.PremiumResponse, len(premiums))
+	for i, p := range premiums {
+		res[i] = dto.ToPremiumResponse(p)
+	}
+	return res, nil
+}
+
+func (s *insuranceService) CreateClaim(req dto.CreateClaimRequest) (*dto.ClaimResponse, error) {
+	claimDate, err := time.Parse("2006-01-02", req.ClaimDate)
+	if err != nil {
+		return nil, err
+	}
+
+	claim := &model.Claim{
+		PolicyID:      req.PolicyID,
+		AmountClaimed: req.AmountClaimed,
+		ClaimDate:     claimDate,
+		Description:   req.Description,
+		Status:        "SUBMITTED",
+	}
+
+	if err := s.repo.CreateClaim(claim); err != nil {
+		return nil, err
+	}
+
+	res := dto.ToClaimResponse(*claim)
+	return &res, nil
+}
+
+func (s *insuranceService) GetClaims(policyID uuid.UUID) ([]dto.ClaimResponse, error) {
+	claims, err := s.repo.GetClaimsByPolicy(policyID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.ClaimResponse, len(claims))
+	for i, c := range claims {
+		res[i] = dto.ToClaimResponse(c)
+	}
+	return res, nil
 }

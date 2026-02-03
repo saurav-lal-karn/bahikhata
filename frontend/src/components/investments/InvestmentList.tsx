@@ -1,14 +1,24 @@
 "use client";
 import React from "react";
 import { Investment, InvestmentTransaction } from "@/types";
-import { TrendingUp, Coins, MoreVertical, Pencil, Trash2, Plus, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
+import { TrendingUp, Coins, MoreVertical, Pencil, Trash2, Plus, ArrowUpRight, ArrowDownRight, Calendar, BarChart3, LineChart } from "lucide-react";
 
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { AddInvestmentTransactionForm } from "./AddInvestmentTransactionForm";
+import { AddValuationForm } from "./AddValuationForm";
 import { Modal } from "@/components/ui/modal";
 import { investmentService } from "@/services/investmentService";
+
+export interface InvestmentValuation {
+  id: string;
+  investment_id: string;
+  price_per_unit: number;
+  valuation_date: string;
+  source?: string;
+  created_at: string;
+}
 
 
 interface InvestmentListProps {
@@ -19,9 +29,13 @@ interface InvestmentListProps {
 export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = [], isLoading = false }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [transactionModalId, setTransactionModalId] = useState<string | null>(null);
+  const [valuationModalId, setValuationModalId] = useState<string | null>(null);
   const [visibleHistoryId, setVisibleHistoryId] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<Record<string, InvestmentTransaction[]>>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState<Record<string, boolean>>({});
+  const [visibleValuationsId, setVisibleValuationsId] = useState<string | null>(null);
+  const [valuationsData, setValuationsData] = useState<Record<string, InvestmentValuation[]>>({});
+  const [isLoadingValuations, setIsLoadingValuations] = useState<Record<string, boolean>>({});
 
   const fetchHistory = async (investmentId: string) => {
     try {
@@ -42,6 +56,29 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
       setVisibleHistoryId(investmentId);
       if (!historyData[investmentId]) {
         fetchHistory(investmentId);
+      }
+    }
+  };
+
+  const fetchValuations = async (investmentId: string) => {
+    try {
+      setIsLoadingValuations(prev => ({ ...prev, [investmentId]: true }));
+      const data = await investmentService.getValuations(investmentId);
+      setValuationsData(prev => ({ ...prev, [investmentId]: data }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingValuations(prev => ({ ...prev, [investmentId]: false }));
+    }
+  };
+
+  const toggleValuations = (investmentId: string) => {
+    if (visibleValuationsId === investmentId) {
+      setVisibleValuationsId(null);
+    } else {
+      setVisibleValuationsId(investmentId);
+      if (!valuationsData[investmentId]) {
+        fetchValuations(investmentId);
       }
     }
   };
@@ -117,6 +154,18 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                                <span className="font-bold">Record Transaction</span>
                             </div>
                           </DropdownItem>
+                          <DropdownItem onClick={() => { setActiveMenu(null); setValuationModalId(inv.id); }}>
+                            <div className="flex items-center gap-2">
+                               <BarChart3 className="w-4 h-4 text-purple-500" />
+                               <span className="font-bold">Add Valuation</span>
+                            </div>
+                          </DropdownItem>
+                          <DropdownItem onClick={() => { setActiveMenu(null); toggleValuations(inv.id); }}>
+                            <div className="flex items-center gap-2 text-gray-600">
+                               <LineChart className="w-4 h-4" />
+                               <span>{visibleValuationsId === inv.id ? 'Hide Valuations' : 'View Valuations'}</span>
+                            </div>
+                          </DropdownItem>
                           <DropdownItem onClick={() => { setActiveMenu(null); toggleHistory(inv.id); }}>
                             <div className="flex items-center gap-2 text-gray-600">
                                <Calendar className="w-4 h-4" />
@@ -175,6 +224,35 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                   </div>
                </div>
             )}
+
+            {visibleValuationsId === inv.id && (
+               <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
+                  <div className="pt-6 border-t border-gray-50 dark:border-gray-800">
+                     <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Valuation History</h5>
+                     {isLoadingValuations[inv.id] ? (
+                        <div className="space-y-2">
+                           {[1, 2].map(i => <div key={i} className="h-10 bg-gray-50 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+                        </div>
+                     ) : valuationsData[inv.id]?.length ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                           {valuationsData[inv.id].map((v) => (
+                              <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all">
+                                 <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600">
+                                       <LineChart className="w-3 h-3" />
+                                    </div>
+                                    <span className="text-[10px] font-medium text-gray-400">{new Date(v.valuation_date).toLocaleDateString()}</span>
+                                 </div>
+                                 <span className="text-xs font-black text-gray-800 dark:text-white">₹{Number(v.price_per_unit).toLocaleString()}/unit</span>
+                              </div>
+                           ))}
+                        </div>
+                     ) : (
+                        <p className="text-[10px] text-gray-400 font-medium italic text-center py-2">No valuations recorded yet. Add one from the menu.</p>
+                     )}
+                  </div>
+               </div>
+            )}
             </div>
 
         );
@@ -189,10 +267,29 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
           <AddInvestmentTransactionForm 
             investmentId={transactionModalId} 
             onSuccess={() => {
+              const id = transactionModalId;
               setTransactionModalId(null);
-              window.location.reload();
+              if (id) fetchHistory(id);
             }} 
             onCancel={() => setTransactionModalId(null)} 
+          />
+        )}
+      </Modal>
+
+      <Modal isOpen={!!valuationModalId} onClose={() => setValuationModalId(null)} className="max-w-md p-8">
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-gray-800 dark:text-white mb-1">Add Valuation</h3>
+          <p className="text-xs text-gray-500 font-medium">Record price per unit on a date for this investment.</p>
+        </div>
+        {valuationModalId && (
+          <AddValuationForm
+            investmentId={valuationModalId}
+            onSuccess={() => {
+              const id = valuationModalId;
+              setValuationModalId(null);
+              if (id) fetchValuations(id);
+            }}
+            onCancel={() => setValuationModalId(null)}
           />
         )}
       </Modal>

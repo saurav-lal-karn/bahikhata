@@ -77,3 +77,67 @@ func (c *InsuranceController) DeletePolicy(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Policy deleted"})
 }
+
+func (c *InsuranceController) CreatePremium(ctx *gin.Context) {
+	var req dto.CreatePremiumRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := c.service.CreatePremium(req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, res)
+}
+
+func (c *InsuranceController) GetPremiums(ctx *gin.Context) {
+	policyID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid policy ID"})
+		return
+	}
+
+	premiums, err := c.service.GetPremiums(policyID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, premiums)
+}
+
+func (c *InsuranceController) CreateClaim(ctx *gin.Context) {
+	var req dto.CreateClaimRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := c.service.CreateClaim(req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, res)
+}
+
+func (c *InsuranceController) GetClaims(ctx *gin.Context) {
+	policyID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid policy ID"})
+		return
+	}
+
+	claims, err := c.service.GetClaims(policyID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, claims)
+}

@@ -6,8 +6,6 @@ import {
   UploadCloud, 
   Camera, 
   Loader2, 
-  Loader,
-  Tag,
   CheckCircle2, 
   X,
   RefreshCcw,
@@ -27,6 +25,7 @@ import { contactService } from "@/services/contactService";
 import { organizationService } from "@/services/organizationService";
 import toast from "react-hot-toast";
 import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType } from "@/types";
+import type { Location } from "@/services/organizationService";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
@@ -48,6 +47,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     const [contacts, setContacts] = useState<Contact[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [tags, setTags] = useState<TagType[]>([]);
+	const [locations, setLocations] = useState<Location[]>([]);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -59,6 +59,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         wallet_id: "",
 		contact_id: "",
 		project_id: "",
+		location_id: "",
 		tag_ids: [] as string[],
         family_id: familyId
     });
@@ -66,14 +67,16 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 	React.useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const [fetchedContacts, fetchedProjects, fetchedTags] = await Promise.all([
+				const [fetchedContacts, fetchedProjects, fetchedTags, fetchedLocations] = await Promise.all([
 					contactService.getContacts(familyId),
 					organizationService.getProjects(familyId),
-					organizationService.getTags(familyId)
+					organizationService.getTags(familyId),
+					organizationService.getLocations(familyId).catch(() => [])
 				]);
 				setContacts(fetchedContacts);
 				setProjects(fetchedProjects);
 				setTags(fetchedTags);
+				setLocations(fetchedLocations);
 			} catch (error) {
 				console.error("Failed to fetch organizational data", error);
 			}
@@ -160,6 +163,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             payment_method_id: formData.payment_method_id,
 			contact_id: formData.contact_id || undefined,
 			project_id: formData.project_id || undefined,
+			location_id: formData.location_id || undefined,
 			tags: formData.tag_ids,
             family_id: familyId,
         };
@@ -347,7 +351,20 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 				<Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
 			</div>
           </div>
-		  <div className="col-span-1 space-y-2">
+          <div className="col-span-1 space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Location</Label>
+			<div className="relative group">
+				<Select 
+				options={locations.map(l => ({value: l.id, label: l.name}))}
+				placeholder="Where did you spend?"
+				onChange={(value: string) => setFormData({...formData, location_id: value})}
+				className="rounded-2xl h-14 pl-11"
+				/>
+				<MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
+			</div>
+          </div>
+        </div>
+		<div className="space-y-2">
 			<Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Tags</Label>
 			<div className="relative group">
 				<MultiSelect 
@@ -360,8 +377,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 					onChange={(selected) => setFormData({...formData, tag_ids: selected})}
 				/>
 			</div>
-          </div>
-        </div>
+		</div>
 
         {/* Conditional Custom Fields */}
         {(isCustomCategory || isCustomPaymentMethod) && (

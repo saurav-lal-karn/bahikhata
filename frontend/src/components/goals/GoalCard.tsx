@@ -21,20 +21,22 @@ interface GoalCardProps {
   id?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onContributionSuccess?: () => void;
 }
 
 
-export const GoalCard: React.FC<GoalCardProps> = ({ 
-  title, 
-  target, 
-  current, 
-  deadline, 
-  icon, 
-  color, 
+export const GoalCard: React.FC<GoalCardProps> = ({
+  title,
+  target,
+  current,
+  deadline,
+  icon,
+  color,
   barColor,
   id,
   onEdit,
-  onDelete
+  onDelete,
+  onContributionSuccess,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
@@ -186,7 +188,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
           onSuccess={() => {
             setIsContributionModalOpen(false);
             fetchHistory();
-            window.location.reload();
+            onContributionSuccess?.();
           }} 
           onCancel={() => setIsContributionModalOpen(false)} 
         />

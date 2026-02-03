@@ -16,6 +16,9 @@ type TaxService interface {
 	CreateDeduction(ctx context.Context, ded *model.TaxDeduction) error
 	ListDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error)
 	DeleteDeduction(ctx context.Context, id uuid.UUID) error
+
+	CreateSummary(ctx context.Context, summary *model.TaxSummary) error
+	ListSummaries(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxSummary, error)
 }
 
 type taxService struct {
@@ -48,4 +51,12 @@ func (s *taxService) ListDeductions(ctx context.Context, familyID *uuid.UUID, ye
 
 func (s *taxService) DeleteDeduction(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteDeduction(ctx, id)
+}
+
+func (s *taxService) CreateSummary(ctx context.Context, summary *model.TaxSummary) error {
+	return s.repo.CreateSummary(ctx, summary)
+}
+
+func (s *taxService) ListSummaries(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxSummary, error) {
+	return s.repo.ListSummaries(ctx, familyID, year)
 }

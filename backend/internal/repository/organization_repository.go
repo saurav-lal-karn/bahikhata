@@ -13,16 +13,23 @@ type OrganizationRepository interface {
 	CreateTag(ctx context.Context, tag *model.Tag) error
 	ListTags(ctx context.Context, familyID uuid.UUID) ([]model.Tag, error)
 	GetTagByID(ctx context.Context, id uuid.UUID) (*model.Tag, error)
+	UpdateTag(ctx context.Context, tag *model.Tag) error
+	DeleteTag(ctx context.Context, id uuid.UUID) error
 
 	// Projects
 	CreateProject(ctx context.Context, project *model.Project) error
 	ListProjects(ctx context.Context, familyID uuid.UUID) ([]model.Project, error)
 	GetProjectByID(ctx context.Context, id uuid.UUID) (*model.Project, error)
+	UpdateProject(ctx context.Context, project *model.Project) error
+	DeleteProject(ctx context.Context, id uuid.UUID) error
 
 	// Locations
 	CreateLocation(ctx context.Context, location *model.Location) error
 	ListLocations(ctx context.Context) ([]model.Location, error)
+	ListLocationsByFamily(ctx context.Context, familyID uuid.UUID) ([]model.Location, error)
 	GetLocationByID(ctx context.Context, id uuid.UUID) (*model.Location, error)
+	UpdateLocation(ctx context.Context, location *model.Location) error
+	DeleteLocation(ctx context.Context, id uuid.UUID) error
 
 	// Entity Tags
 	AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tagIDs []uuid.UUID) error
@@ -57,6 +64,14 @@ func (r *orgRepo) GetTagByID(ctx context.Context, id uuid.UUID) (*model.Tag, err
 	return &tag, nil
 }
 
+func (r *orgRepo) UpdateTag(ctx context.Context, tag *model.Tag) error {
+	return r.db.WithContext(ctx).Save(tag).Error
+}
+
+func (r *orgRepo) DeleteTag(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Tag{}, "id = ?", id).Error
+}
+
 func (r *orgRepo) CreateProject(ctx context.Context, project *model.Project) error {
 	return r.db.WithContext(ctx).Create(project).Error
 }
@@ -77,6 +92,14 @@ func (r *orgRepo) GetProjectByID(ctx context.Context, id uuid.UUID) (*model.Proj
 	return &project, nil
 }
 
+func (r *orgRepo) UpdateProject(ctx context.Context, project *model.Project) error {
+	return r.db.WithContext(ctx).Save(project).Error
+}
+
+func (r *orgRepo) DeleteProject(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Project{}, "id = ?", id).Error
+}
+
 func (r *orgRepo) CreateLocation(ctx context.Context, location *model.Location) error {
 	return r.db.WithContext(ctx).Create(location).Error
 }
@@ -89,12 +112,28 @@ func (r *orgRepo) ListLocations(ctx context.Context) ([]model.Location, error) {
 	return locations, nil
 }
 
+func (r *orgRepo) ListLocationsByFamily(ctx context.Context, familyID uuid.UUID) ([]model.Location, error) {
+	var locations []model.Location
+	if err := r.db.WithContext(ctx).Where("family_id = ?", familyID).Find(&locations).Error; err != nil {
+		return nil, err
+	}
+	return locations, nil
+}
+
 func (r *orgRepo) GetLocationByID(ctx context.Context, id uuid.UUID) (*model.Location, error) {
 	var location model.Location
 	if err := r.db.WithContext(ctx).First(&location, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &location, nil
+}
+
+func (r *orgRepo) UpdateLocation(ctx context.Context, location *model.Location) error {
+	return r.db.WithContext(ctx).Save(location).Error
+}
+
+func (r *orgRepo) DeleteLocation(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Location{}, "id = ?", id).Error
 }
 
 func (r *orgRepo) AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tagIDs []uuid.UUID) error {

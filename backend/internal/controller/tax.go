@@ -159,3 +159,41 @@ func (c *TaxController) DeleteDeduction(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Tax deduction deleted successfully", nil)
 }
+
+// Summaries
+func (c *TaxController) CreateSummary(ctx *gin.Context) {
+	var req dto.CreateTaxSummaryRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	summary := req.ToModel()
+
+	if err := c.service.CreateSummary(ctx, summary); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create tax summary")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusCreated, "Tax summary created successfully", summary)
+}
+
+func (c *TaxController) ListSummaries(ctx *gin.Context) {
+	var familyID *uuid.UUID
+	familyIdParam := ctx.Query("family_id")
+	if familyIdParam != "" {
+		if fid, err := uuid.Parse(familyIdParam); err == nil {
+			familyID = &fid
+		}
+	}
+
+	year := ctx.Query("year")
+
+	summaries, err := c.service.ListSummaries(ctx, familyID, year)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch tax summaries")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Tax summaries fetched successfully", summaries)
+}

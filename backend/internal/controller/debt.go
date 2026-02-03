@@ -185,3 +185,20 @@ func (c *DebtController) UpdateScheduleStatus(ctx *gin.Context) {
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Schedule status updated successfully", nil)
 }
+
+func (c *DebtController) GetAmortizationSchedule(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	debtID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	schedules, err := c.service.GetAmortizationSchedule(ctx, debtID)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch amortization schedule")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Amortization schedule fetched successfully", schedules)
+}

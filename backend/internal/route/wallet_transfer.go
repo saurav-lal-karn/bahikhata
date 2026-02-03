@@ -8,10 +8,11 @@ import (
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
-func RegisterWalletTransferRoutes(app *config.Application, router *gin.RouterGroup){
+func RegisterWalletTransferRoutes(app *config.Application, router *gin.RouterGroup) {
 	walletTransferRepo := repository.NewWalletTransferRepository(app.DB)
 	walletRepo := repository.NewWalletRepository(app.DB)
-	walletTransferService := service.NewWalletTransferService(walletTransferRepo, walletRepo)
+	txRepo := repository.NewTransactionRepository(app.DB)
+	walletTransferService := service.NewWalletTransferService(app.DB, walletTransferRepo, walletRepo, txRepo)
 	walletTransferController := controller.NewWalletTransferController(walletTransferService)
 
 	router.POST("", walletTransferController.Create)

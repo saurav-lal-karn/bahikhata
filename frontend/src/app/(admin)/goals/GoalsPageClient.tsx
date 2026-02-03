@@ -197,6 +197,7 @@ export default function GoalsPageClient() {
                  return (
                   <GoalCard 
                     key={goal.id}
+                    id={goal.id}
                     title={goal.name} 
                     target={goal.target_amount} 
                     current={goal.current_amount} 
@@ -204,6 +205,7 @@ export default function GoalsPageClient() {
                     icon={getGoalIcon(goal.icon_name)}
                     color={color}
                     barColor={barColor}
+                    onContributionSuccess={fetchGoals}
                   />
                  );
                })

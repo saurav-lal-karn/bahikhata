@@ -11,7 +11,10 @@ import (
 
 type ContactService interface {
 	CreateContact(ctx context.Context, req dto.CreateContactRequest) (*dto.ContactResponse, error)
+	GetContact(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error)
 	GetContacts(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error)
+	UpdateContact(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error)
+	DeleteContact(ctx context.Context, id uuid.UUID) error
 }
 
 type contactService struct {
@@ -44,6 +47,14 @@ func (s *contactService) CreateContact(ctx context.Context, req dto.CreateContac
 	return dto.ToContactResponse(contact), nil
 }
 
+func (s *contactService) GetContact(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error) {
+	contact, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return dto.ToContactResponse(contact), nil
+}
+
 func (s *contactService) GetContacts(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error) {
 	contacts, err := s.repo.ListByFamily(ctx, familyID)
 	if err != nil {
@@ -55,4 +66,40 @@ func (s *contactService) GetContacts(ctx context.Context, familyID uuid.UUID) ([
 		resp[i] = *dto.ToContactResponse(&c)
 	}
 	return resp, nil
+}
+
+func (s *contactService) UpdateContact(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error) {
+	contact, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Name != "" {
+		contact.Name = req.Name
+	}
+	if req.Email != "" {
+		contact.Email = req.Email
+	}
+	if req.Phone != "" {
+		contact.Phone = req.Phone
+	}
+	if req.Address != "" {
+		contact.Address = req.Address
+	}
+	if req.Type != "" {
+		contact.Type = model.ContactType(req.Type)
+	}
+	if req.IsActive != nil {
+		contact.IsActive = *req.IsActive
+	}
+
+	if err := s.repo.Update(ctx, contact); err != nil {
+		return nil, err
+	}
+
+	return dto.ToContactResponse(contact), nil
+}
+
+func (s *contactService) DeleteContact(ctx context.Context, id uuid.UUID) error {
+	return s.repo.Delete(ctx, id)
 }

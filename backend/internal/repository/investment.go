@@ -15,6 +15,7 @@ type InvestmentRepository interface {
 	CreateTransaction(ctx context.Context, transaction *model.InvestmentTransaction) error
 	ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error)
 	CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error
+	ListValuations(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentValuation, error)
 }
 
 type investmentRepository struct {
@@ -61,4 +62,12 @@ func (r *investmentRepository) ListTransactions(ctx context.Context, investmentI
 
 func (r *investmentRepository) CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error {
 	return r.db.WithContext(ctx).Create(valuation).Error
+}
+
+func (r *investmentRepository) ListValuations(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentValuation, error) {
+	var valuations []model.InvestmentValuation
+	err := r.db.WithContext(ctx).Where("investment_id = ?", investmentID).
+		Order("valuation_date desc, created_at desc").
+		Find(&valuations).Error
+	return valuations, err
 }

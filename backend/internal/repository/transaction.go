@@ -13,6 +13,7 @@ import (
 // TransactionRepository defines the operations for unified transaction data access.
 type TransactionRepository interface {
 	Create(ctx context.Context, tx *model.Transaction) (*model.Transaction, error)
+	CreateWithTx(ctx context.Context, dbTx *gorm.DB, tx *model.Transaction) (*model.Transaction, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
 	List(ctx context.Context, familyID uuid.UUID, userID *uuid.UUID, filters map[string]interface{}) ([]model.Transaction, int64, error)
 	Update(ctx context.Context, id uuid.UUID, tx *model.Transaction) (*model.Transaction, error)
@@ -31,6 +32,13 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 
 func (r *transactionRepository) Create(ctx context.Context, tx *model.Transaction) (*model.Transaction, error) {
 	if err := r.db.WithContext(ctx).Create(tx).Error; err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+	return tx, nil
+}
+
+func (r *transactionRepository) CreateWithTx(ctx context.Context, dbTx *gorm.DB, tx *model.Transaction) (*model.Transaction, error) {
+	if err := dbTx.WithContext(ctx).Create(tx).Error; err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 	return tx, nil
@@ -77,6 +85,9 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 	}
 	if contactID, ok := filters["contact_id"]; ok {
 		query = query.Where("contact_id = ?", contactID)
+	}
+	if locationID, ok := filters["location_id"]; ok {
+		query = query.Where("location_id = ?", locationID)
 	}
 
 	// Count total records

@@ -79,6 +79,15 @@ func (ctrl *TransactionController) List(c *gin.Context) {
 	if categoryID := c.Query("category_id"); categoryID != "" {
 		filters["category_id"] = categoryID
 	}
+	if projectID := c.Query("project_id"); projectID != "" {
+		filters["project_id"] = projectID
+	}
+	if contactID := c.Query("contact_id"); contactID != "" {
+		filters["contact_id"] = contactID
+	}
+	if locationID := c.Query("location_id"); locationID != "" {
+		filters["location_id"] = locationID
+	}
 	if page := c.Query("page"); page != "" {
 		if p, err := strconv.Atoi(page); err == nil {
 			filters["page"] = p

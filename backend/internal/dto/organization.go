@@ -22,10 +22,31 @@ type CreateProjectRequest struct {
 }
 
 type CreateLocationRequest struct {
-	Name      string  `json:"name" binding:"required"`
+	Name      string   `json:"name" binding:"required"`
+	FamilyID  string   `json:"family_id"`
 	Latitude  *float64 `json:"latitude"`
 	Longitude *float64 `json:"longitude"`
-	Address   string  `json:"address"`
+	Address   string   `json:"address"`
+}
+
+type UpdateTagRequest struct {
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
+type UpdateProjectRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	StartDate   string `json:"start_date"`
+	EndDate     string `json:"end_date"`
+	IsActive    *bool  `json:"is_active"`
+}
+
+type UpdateLocationRequest struct {
+	Name      string   `json:"name"`
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+	Address   string   `json:"address"`
 }
 
 type TagResponse struct {

@@ -22,6 +22,7 @@ type Subscription struct {
 	Frequency              RecurringFrequency `json:"frequency" gorm:"type:public.enum_recurring_frequency;default:'MONTHLY'"`
 	CategoryID             *uuid.UUID         `json:"category_id,omitempty" gorm:"type:uuid;index"`
 	WalletID               *uuid.UUID         `json:"wallet_id,omitempty" gorm:"type:uuid;index"`
+	VendorID               *uuid.UUID         `json:"vendor_id,omitempty" gorm:"type:uuid;index"`
 	NextBillingDate        *time.Time         `json:"next_billing_date,omitempty" gorm:"type:date"`
 	StartDate              time.Time          `json:"start_date" gorm:"type:date;not null"`
 	Status                 SubscriptionStatus `json:"status" gorm:"type:text;not null;default:'ACTIVE'"`
@@ -31,8 +32,9 @@ type Subscription struct {
 
 	// Associations
 	Family               Family                `json:"-" gorm:"foreignKey:FamilyID"`
-	Category             *TransactionCategory `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
-	Wallet               *Wallet              `json:"wallet,omitempty" gorm:"foreignKey:WalletID"`
+	Category             *TransactionCategory  `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Wallet               *Wallet               `json:"wallet,omitempty" gorm:"foreignKey:WalletID"`
+	Vendor               *Contact              `json:"vendor,omitempty" gorm:"foreignKey:VendorID"`
 	RecurringTransaction *RecurringTransaction `json:"recurring_transaction,omitempty" gorm:"foreignKey:RecurringTransactionID"`
 	Payments             []SubscriptionPayment `json:"payments,omitempty" gorm:"foreignKey:SubscriptionID"`
 }

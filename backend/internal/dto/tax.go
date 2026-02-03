@@ -46,3 +46,26 @@ func (req *CreateTaxDeductionRequest) ToModel() *model.TaxDeduction {
 		Year:     req.Year,
 	}
 }
+
+type CreateTaxSummaryRequest struct {
+	FamilyID        uuid.UUID `json:"family_id" binding:"required"`
+	FiscalYear      int       `json:"fiscal_year" binding:"required"`
+	TotalIncome     float64   `json:"total_income" binding:"required"`
+	TotalDeductions float64   `json:"total_deductions"`
+	TaxableIncome   float64   `json:"taxable_income"`
+	TaxLiability    float64   `json:"tax_liability"`
+	TaxPaid         float64   `json:"tax_paid"`
+}
+
+func (req *CreateTaxSummaryRequest) ToModel() *model.TaxSummary {
+	return &model.TaxSummary{
+		ID:              uuid.New(),
+		FamilyID:        req.FamilyID,
+		FiscalYear:      req.FiscalYear,
+		TotalIncome:     req.TotalIncome,
+		TotalDeductions: req.TotalDeductions,
+		TaxableIncome:   req.TaxableIncome,
+		TaxLiability:    req.TaxLiability,
+		TaxPaid:         req.TaxPaid,
+	}
+}

@@ -48,3 +48,23 @@ func (TaxDocument) TableName() string {
 func (TaxDeduction) TableName() string {
 	return "tax_deductions"
 }
+
+type TaxSummary struct {
+	ID              uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	FamilyID        uuid.UUID `json:"family_id" gorm:"type:uuid;not null;uniqueIndex:idx_tax_summary_family_year"`
+	FiscalYear      int       `json:"fiscal_year" gorm:"type:int;not null;uniqueIndex:idx_tax_summary_family_year"`
+	TotalIncome     float64   `json:"total_income" gorm:"type:numeric;not null;default:0"`
+	TaxableIncome   float64   `json:"taxable_income" gorm:"type:numeric;not null;default:0"`
+	TotalDeductions float64   `json:"total_deductions" gorm:"type:numeric;not null;default:0"`
+	TaxLiability    float64   `json:"tax_liability" gorm:"type:numeric;not null;default:0"`
+	TaxPaid         float64   `json:"tax_paid" gorm:"type:numeric;not null;default:0"`
+	Breakdown       JSONB     `json:"breakdown,omitempty" gorm:"type:jsonb"`
+	CreatedAt       time.Time `json:"created_at" gorm:"type:timestamp;default:now()"`
+	UpdatedAt       time.Time `json:"updated_at" gorm:"type:timestamp;default:now()"`
+
+	Family *Family `json:"family,omitempty" gorm:"foreignKey:FamilyID"`
+}
+
+func (TaxSummary) TableName() string {
+	return "tax_summaries"
+}

@@ -150,6 +150,7 @@ export interface Contact {
     email?: string;
     phone?: string;
     address?: string;
+    notes?: string;
     type: ContactType;
     is_active: boolean;
     created_at: string;
@@ -579,6 +580,7 @@ export interface CreateSubscriptionPayload {
     frequency: RecurringFrequency;
     category_id?: string;
     wallet_id?: string;
+    vendor_id?: string;
     start_date: string;
     next_billing_date?: string;
 }

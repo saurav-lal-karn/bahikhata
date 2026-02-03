@@ -1,6 +1,11 @@
 import React from "react";
 import WalletDetailsClient from "./WalletDetailsClient";
 
-export default function WalletDetailsPage({ params }: { params: { id: string } }) {
-  return <WalletDetailsClient walletId={params.id} />;
+export default async function WalletDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <WalletDetailsClient walletId={id} />;
 }

@@ -54,3 +54,67 @@ func ToInsurancePolicyResponse(p model.InsurancePolicy) InsurancePolicyResponse 
 	}
 	return res
 }
+
+// Premium DTOs
+type CreatePremiumRequest struct {
+	PolicyID    uuid.UUID `json:"policy_id" binding:"required"`
+	Amount      float64   `json:"amount" binding:"required"`
+	DueDate     string    `json:"due_date" binding:"required"`
+	PaymentDate *string   `json:"payment_date"`
+}
+
+type PremiumResponse struct {
+	ID          uuid.UUID  `json:"id"`
+	PolicyID    uuid.UUID  `json:"policy_id"`
+	Amount      float64    `json:"amount"`
+	DueDate     time.Time  `json:"due_date"`
+	PaymentDate *time.Time `json:"payment_date"`
+	Status      string     `json:"status"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+func ToPremiumResponse(p model.Premium) PremiumResponse {
+	return PremiumResponse{
+		ID:          p.ID,
+		PolicyID:    p.PolicyID,
+		Amount:      p.Amount,
+		DueDate:     p.DueDate,
+		PaymentDate: p.PaymentDate,
+		Status:      p.Status,
+		CreatedAt:   p.CreatedAt,
+	}
+}
+
+// Claim DTOs
+type CreateClaimRequest struct {
+	PolicyID      uuid.UUID `json:"policy_id" binding:"required"`
+	AmountClaimed float64   `json:"amount_claimed" binding:"required"`
+	ClaimDate     string    `json:"claim_date" binding:"required"`
+	Description   string    `json:"description"`
+}
+
+type ClaimResponse struct {
+	ID             uuid.UUID  `json:"id"`
+	PolicyID       uuid.UUID  `json:"policy_id"`
+	ClaimNumber    string     `json:"claim_number"`
+	AmountClaimed  float64    `json:"amount_claimed"`
+	AmountReceived *float64   `json:"amount_received"`
+	ClaimDate      time.Time  `json:"claim_date"`
+	Status         string     `json:"status"`
+	Description    string     `json:"description"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
+func ToClaimResponse(c model.Claim) ClaimResponse {
+	return ClaimResponse{
+		ID:             c.ID,
+		PolicyID:       c.PolicyID,
+		ClaimNumber:    c.ClaimNumber,
+		AmountClaimed:  c.AmountClaimed,
+		AmountReceived: c.AmountReceived,
+		ClaimDate:      c.ClaimDate,
+		Status:         c.Status,
+		Description:    c.Description,
+		CreatedAt:      c.CreatedAt,
+	}
+}

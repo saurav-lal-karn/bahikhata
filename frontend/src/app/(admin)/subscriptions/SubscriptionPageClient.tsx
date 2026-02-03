@@ -29,7 +29,6 @@ export default function SubscriptionPageClient() {
       // Assuming 'user' object has 'familyId' or similar property based on context
       // If user type definition is loose, we might need to cast or check
       const familyId = (user as any)?.family.id;
-      console.log(familyId);
       const data = await subscriptionService.getSubscriptions(familyId);
       setSubscriptions(data);
     } catch (error) {
@@ -166,7 +165,7 @@ export default function SubscriptionPageClient() {
               <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Add Subscription</h2>
               <p className="text-gray-500 text-sm font-medium italic">Keep track of your digital recurrences and never get surprised by a bill.</p>
           </div>
-          <AddSubscriptionForm onSuccess={() => { setIsModalOpen(false); fetchSubscriptions(); }} onCancel={() => setIsModalOpen(false)} />
+          <AddSubscriptionForm onSuccess={() => { setIsModalOpen(false); fetchSubscriptions(); }} onCancel={() => setIsModalOpen(false)} familyId={user?.family?.id} />
       </Modal>
     </div>
   );

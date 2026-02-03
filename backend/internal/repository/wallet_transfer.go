@@ -10,6 +10,7 @@ import (
 
 type WalletTransferRepository interface {
 	Create(ctx context.Context, walletTransfer *model.WalletTransfer) error
+	CreateWithTx(ctx context.Context, dbTx *gorm.DB, walletTransfer *model.WalletTransfer) error
 	List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error)
 }
 
@@ -23,6 +24,10 @@ func NewWalletTransferRepository(db *gorm.DB) WalletTransferRepository {
 
 func (w *walletTransferRepository) Create(ctx context.Context, walletTransfer *model.WalletTransfer) error {
 	return w.db.WithContext(ctx).Create(walletTransfer).Error
+}
+
+func (w *walletTransferRepository) CreateWithTx(ctx context.Context, dbTx *gorm.DB, walletTransfer *model.WalletTransfer) error {
+	return dbTx.WithContext(ctx).Create(walletTransfer).Error
 }
 
 func (w *walletTransferRepository) List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error) {

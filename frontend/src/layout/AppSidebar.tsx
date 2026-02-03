@@ -14,7 +14,7 @@ import {
   PieChartIcon,
   TableIcon,
 } from "../icons/index";
-import { TargetIcon, Users, Repeat as RepeatIcon, Wallet as WalletIcon, ShieldAlert } from "lucide-react";
+import { TargetIcon, Users, Repeat as RepeatIcon, Wallet as WalletIcon, ShieldAlert, ContactRound, Tags } from "lucide-react";
 
 
 type NavItem = {
@@ -67,6 +67,21 @@ const navigation: NavSection[] = [
         icon: <RepeatIcon className="w-5 h-5" />,
         name: "Subscriptions",
         path: "/subscriptions",
+      },
+      {
+        icon: <ContactRound className="w-5 h-5" />,
+        name: "Contacts",
+        path: "/contacts",
+      },
+    ],
+  },
+  {
+    title: "Organization",
+    items: [
+      {
+        icon: <Tags className="w-5 h-5" />,
+        name: "Tags & Projects",
+        path: "/organization",
       },
     ],
   },

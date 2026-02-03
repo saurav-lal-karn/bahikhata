@@ -16,6 +16,9 @@ type TaxRepository interface {
 	CreateDeduction(ctx context.Context, ded *model.TaxDeduction) error
 	ListDeductions(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxDeduction, error)
 	DeleteDeduction(ctx context.Context, id uuid.UUID) error
+
+	CreateSummary(ctx context.Context, summary *model.TaxSummary) error
+	ListSummaries(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxSummary, error)
 }
 
 type taxRepository struct {
@@ -66,4 +69,21 @@ func (r *taxRepository) ListDeductions(ctx context.Context, familyID *uuid.UUID,
 
 func (r *taxRepository) DeleteDeduction(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.TaxDeduction{}, id).Error
+}
+
+// Summaries
+func (r *taxRepository) CreateSummary(ctx context.Context, summary *model.TaxSummary) error {
+	return r.db.WithContext(ctx).Create(summary).Error
+}
+
+func (r *taxRepository) ListSummaries(ctx context.Context, familyID *uuid.UUID, year string) ([]model.TaxSummary, error) {
+	var summaries []model.TaxSummary
+	query := r.db.WithContext(ctx).Where("family_id = ?", familyID)
+	if year != "" {
+		query = query.Where("fiscal_year = ?", year)
+	}
+	if err := query.Find(&summaries).Error; err != nil {
+		return nil, err
+	}
+	return summaries, nil
 }

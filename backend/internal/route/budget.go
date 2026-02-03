@@ -15,5 +15,8 @@ func RegisterBudgetRoutes(app *config.Application, router *gin.RouterGroup) {
 
 
 	router.POST("", budgetController.Create)
-	router.GET(":family_id", budgetController.List)
+	router.GET("family/:family_id", budgetController.List)
+	router.GET("alerts", budgetController.GetAlerts)
+	router.GET(":id/periods", budgetController.GetPeriods)
+	router.POST("alerts/:id/ack", budgetController.AcknowledgeAlert)
 }

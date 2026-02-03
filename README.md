@@ -12,15 +12,22 @@ Bahikhata is a comprehensive web application designed to help users manage their
 - **Family Management**: Create family groups and invite members to join.
 - **Admin Dashboard**: Aggregated view of family finances.
 - **Data Visualization**: Charts and graphs to analyze financial health.
-- **AI-Powered Automation**:
-  - **Smart OCR & LLM Integration**: Automatically extracts detailed financial data from uploaded documents and bills, converting them into structured JSON for seamless record-keeping.
-  - **Document Chatbot**: Interact with your uploaded documents using an AI assistant to get insights and answers directly from your files.
 - **Advanced Financial Tools**:
   - **Smart Budgeting**: Set monthly budgets for specific categories and receive alerts when you're close to exceeding them.
   - **Subscription & Recurring Payments**: Automatic tracking of monthly subscriptions and recurring bills to ensure you never miss a payment.
   - **Multi-Currency Support**: Seamlessly manage finances in multiple currencies with real-time exchange rate updates.
   - **Export & Tax Reporting**: Generate comprehensive CSV and PDF reports for tax purposes or external analysis.
   - **Investment Portfolio Analytics**: detailed tracking of stock and crypto investments with ROI calculations and real-time performance metrics.
+
+## AI Component (Coming Soon)
+
+Bahikhata is designed to evolve with AI-powered capabilities. An **AI component is planned for future releases** and will enhance the platform with:
+
+- **Smart OCR & LLM integration**: Automatically extract financial data from uploaded documents and bill photos into structured records.
+- **Document chatbot**: Interact with your uploaded documents using an AI assistant for insights and answers.
+- **Predictive insights**: Budget forecasting, anomaly detection, and personalized financial tips.
+
+See **[AI & Advanced Features Roadmap](ai_advanced_roadmap.md)** for the detailed phased plan (intelligent data entry, predictive analytics, conversational assistant, and more).
 
 ## Technology Stack
 

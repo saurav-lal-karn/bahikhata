@@ -16,6 +16,7 @@ type DebtService interface {
 	ListRepayments(ctx context.Context, debtID uuid.UUID) ([]model.DebtRepayment, error)
 	CreateSchedules(ctx context.Context, schedules []model.DebtSchedule) error
 	UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error
+	GetAmortizationSchedule(ctx context.Context, debtID uuid.UUID) ([]model.DebtSchedule, error)
 }
 
 type debtService struct {
@@ -52,4 +53,8 @@ func (s *debtService) CreateSchedules(ctx context.Context, schedules []model.Deb
 
 func (s *debtService) UpdateScheduleStatus(ctx context.Context, id uuid.UUID, status string) error {
 	return s.repo.UpdateScheduleStatus(ctx, id, status)
+}
+
+func (s *debtService) GetAmortizationSchedule(ctx context.Context, debtID uuid.UUID) ([]model.DebtSchedule, error) {
+	return s.repo.GetAmortizationSchedule(ctx, debtID)
 }

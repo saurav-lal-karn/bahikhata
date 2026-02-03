@@ -16,6 +16,13 @@ type BudgetRepository interface {
 	Update(ctx context.Context, budget *model.Budget) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error)
+
+	// Budget Periods
+	GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error)
+
+	// Budget Alerts
+	GetAlerts(ctx context.Context, familyID *uuid.UUID) ([]model.BudgetAlert, error)
+	AcknowledgeAlert(ctx context.Context, alertID uuid.UUID) error
 }
 
 type budgetRepository struct {
@@ -68,4 +75,30 @@ func (br *budgetRepository) List(ctx context.Context, family_id *uuid.UUID, user
 		return nil, err
 	}
 	return budgets, nil
+}
+
+func (br *budgetRepository) GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error) {
+	var periods []model.BudgetPeriod
+	if err := br.db.WithContext(ctx).Where("budget_id = ?", budgetID).Order("start_date DESC").Find(&periods).Error; err != nil {
+		return nil, err
+	}
+	return periods, nil
+}
+
+func (br *budgetRepository) GetAlerts(ctx context.Context, familyID *uuid.UUID) ([]model.BudgetAlert, error) {
+	var alerts []model.BudgetAlert
+	query := br.db.WithContext(ctx).Joins("JOIN budgets ON budgets.id = budget_alerts.budget_id")
+	if familyID != nil {
+		query = query.Where("budgets.family_id = ?", familyID)
+	}
+	if err := query.Where("budget_alerts.triggered_at IS NOT NULL").Order("budget_alerts.triggered_at DESC").Preload("Budget").Preload("Period").Find(&alerts).Error; err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+func (br *budgetRepository) AcknowledgeAlert(ctx context.Context, alertID uuid.UUID) error {
+	// Mark alert as acknowledged by setting triggered_at to nil or add an acknowledged_at field
+	// For now, we'll delete the alert as acknowledgment
+	return br.db.WithContext(ctx).Delete(&model.BudgetAlert{}, "id = ?", alertID).Error
 }

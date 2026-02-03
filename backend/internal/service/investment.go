@@ -15,6 +15,7 @@ type InvestmentService interface {
 	CreateTransaction(ctx context.Context, transaction *model.InvestmentTransaction) error
 	ListTransactions(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentTransaction, error)
 	CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error
+	ListValuations(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentValuation, error)
 }
 
 type investmentService struct {
@@ -47,4 +48,8 @@ func (s *investmentService) ListTransactions(ctx context.Context, investmentID u
 
 func (s *investmentService) CreateValuation(ctx context.Context, valuation *model.InvestmentValuation) error {
 	return s.repo.CreateValuation(ctx, valuation)
+}
+
+func (s *investmentService) ListValuations(ctx context.Context, investmentID uuid.UUID) ([]model.InvestmentValuation, error) {
+	return s.repo.ListValuations(ctx, investmentID)
 }
