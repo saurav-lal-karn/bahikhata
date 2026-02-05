@@ -2,6 +2,7 @@
 import React from "react";
 import { BellRing, Calendar, Clock, ArrowRight } from "lucide-react";
 import { RecurringTransaction } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface UpcomingBillRemindersProps {
   transactions?: RecurringTransaction[];
@@ -19,7 +20,7 @@ export const UpcomingBillReminders: React.FC<UpcomingBillRemindersProps> = ({ tr
   const totalUpcoming = upcoming.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm border-l-8 border-l-blue-500">
+    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-lg font-black text-gray-800 dark:text-white flex items-center gap-2">
           <BellRing className="w-5 h-5 text-blue-500" /> Bill Alerts
@@ -43,7 +44,7 @@ export const UpcomingBillReminders: React.FC<UpcomingBillRemindersProps> = ({ tr
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{bill.type}</p>
                </div>
                <div className="text-right">
-                  <p className="text-sm font-black text-gray-900 dark:text-white">₹{bill.amount.toLocaleString()}</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-white">{formatCurrency(bill.amount)}</p>
                </div>
             </div>
             
@@ -60,7 +61,7 @@ export const UpcomingBillReminders: React.FC<UpcomingBillRemindersProps> = ({ tr
 
       <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Upcoming Inflow</p>
-         <h4 className="text-xl font-black text-gray-900 dark:text-white">₹{totalUpcoming.toLocaleString()}</h4>
+         <h4 className="text-xl font-black text-gray-900 dark:text-white">{formatCurrency(totalUpcoming)}</h4>
       </div>
     </div>
   );

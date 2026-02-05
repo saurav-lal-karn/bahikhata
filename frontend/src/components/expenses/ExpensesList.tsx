@@ -21,6 +21,7 @@ import { Transaction } from "@/types";
 import { Contact } from "@/types";
 import { Project } from "@/types";
 import { Location } from "@/types";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -288,10 +289,10 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
                   {expense.payment_method?.name}
                 </td>
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
-                  {expense.transaction_date}
+                  {formatDateTime(expense.transaction_date)}
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-gray-900 dark:text-white">
-                  ₹{expense.amount.toLocaleString()}
+                  - {formatCurrency(expense.amount, 'en-IN', 'INR')}
                 </td>
                 <td className="py-4 px-6 text-center">
                   <div className="relative">

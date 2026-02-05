@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowUpRight, ArrowDownRight, IndianRupee, TrendingUp, Briefcase, Wallet } from "lucide-react";
 import { transactionService } from "@/services/transactionService";
+import { formatCurrency } from "@/lib/utils";
 
 interface StatItem {
   title: string;
@@ -16,14 +17,6 @@ interface StatItem {
 
 export const IncomeStats = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [stats, setStats] = useState<StatItem[]>([]);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   useEffect(() => {
     const fetchStats = async () => {

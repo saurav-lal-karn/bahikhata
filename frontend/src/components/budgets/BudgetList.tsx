@@ -20,6 +20,7 @@ import { BudgetSkeleton } from "./BudgetSkeleton";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 
 interface BudgetListProps {
@@ -112,8 +113,8 @@ export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading 
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Spent</p>
                             <p className="text-lg font-black text-gray-900 dark:text-white">
-                                ₹{spent.toLocaleString()}
-                                <span className="text-xs text-gray-400 font-bold ml-1">/ ₹{limit.toLocaleString()}</span>
+                                {formatCurrency(spent)}
+                                <span className="text-xs text-gray-400 font-bold ml-1">/ {formatCurrency(limit)}</span>
                             </p>
                         </div>
                         
@@ -164,7 +165,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading 
                 <div className="flex justify-between mt-2">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{percentage}% Utilized</span>
                     <span className={`text-[10px] font-black uppercase tracking-widest ${isOver ? 'text-red-500' : 'text-emerald-500'}`}>
-                    {isOver ? `Over by ₹${(spent - limit).toLocaleString()}` : `₹${(limit - spent).toLocaleString()} Left`}
+                    {isOver ? `Over by ${formatCurrency(spent - limit)}` : `${formatCurrency(limit - spent)} Left`}
                     </span>
                 </div>
                 </div>

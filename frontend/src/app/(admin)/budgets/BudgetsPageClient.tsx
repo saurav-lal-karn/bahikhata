@@ -24,6 +24,7 @@ import { budgetService } from "@/services/budgetService";
 import type { BudgetAlert } from "@/services/budgetService";
 import { ExpenseCategory, Budget } from "@/types";
 import { AlertCircle, CheckCheck } from "lucide-react";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 
 export default function BudgetsPageClient() {
     const { user } = useAuth();
@@ -31,7 +32,21 @@ export default function BudgetsPageClient() {
     
   const [activeTab, setActiveTab] = useState<"active" | "suggestions" | "archives">("active");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState("May 2026");
+  const [activeDate, setActiveDate] = useState(new Date());
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setActiveDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
+  const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(activeDate);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +64,28 @@ export default function BudgetsPageClient() {
         budgetService.getBudgets(familyDetails.id).then(setBudgets);
     }
   };
+
+  // Month Picker Logic
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    setPickerYear(activeDate.getFullYear());
+  }, [activeDate]);
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const handleMonthSelect = (monthIndex: number) => {
+    const newDate = new Date(activeDate);
+    newDate.setFullYear(pickerYear);
+    newDate.setMonth(monthIndex);
+    setActiveDate(newDate);
+    setIsMonthPickerOpen(false);
+  };
+
 
   useEffect(() => {
       let isMounted = true;
@@ -110,14 +147,68 @@ export default function BudgetsPageClient() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-1 shadow-sm">
-            <button className="p-2 text-gray-400 hover:text-blue-500 transition-colors">
+            <button 
+              onClick={() => navigateMonth('prev')}
+              className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+            >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="px-4 py-2 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-black text-gray-800 dark:text-white min-w-[100px] text-center">{currentMonth}</span>
+            <div className="relative">
+              <div 
+                className="px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+              >
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-black text-gray-800 dark:text-white min-w-[100px] text-center">
+                  {formattedDate}
+                </span>
+              </div>
+              
+              <Dropdown 
+                isOpen={isMonthPickerOpen} 
+                onClose={() => setIsMonthPickerOpen(false)}
+                className="w-72 p-4 top-full mt-2 left-1/2 -translate-x-1/2"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <button 
+                      onClick={() => setPickerYear(prev => prev - 1)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <span className="font-bold text-gray-900 dark:text-white">{pickerYear}</span>
+                    <button 
+                      onClick={() => setPickerYear(prev => prev + 1)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {monthNames.map((month, index) => (
+                      <button
+                        key={month}
+                        onClick={() => handleMonthSelect(index)}
+                        className={`
+                          p-2 text-xs font-medium rounded-lg transition-colors
+                          ${activeDate.getMonth() === index && activeDate.getFullYear() === pickerYear
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                          }
+                        `}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </Dropdown>
             </div>
-            <button className="p-2 text-gray-400 hover:text-blue-500 transition-colors">
+            <button 
+              onClick={() => navigateMonth('next')}
+              className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+            >
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>

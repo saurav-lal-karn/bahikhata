@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { recurringService } from "@/services/recurringService";
+import { formatCurrency } from "@/lib/utils";
 
 
 interface SubscriptionManagerProps {
@@ -92,7 +93,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transa
               <div className="text-right flex items-center gap-5">
                  <div className="flex flex-col items-end">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Monthly</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">₹{sub.amount.toLocaleString()}</p>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(sub.amount)}</p>
                     <span className="text-[10px] font-black text-blue-500 uppercase bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full mt-1">{sub.frequency}</span>
                  </div>
 

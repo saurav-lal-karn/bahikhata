@@ -8,6 +8,7 @@ import { AddRepaymentForm } from "./AddRepaymentForm";
 import { Modal } from "@/components/ui/modal";
 import { debtService } from "@/services/debtService";
 import { DebtRepayment } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 export interface DebtScheduleItem {
   id: string;
@@ -121,8 +122,8 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
           <div className="text-right flex items-center gap-6">
              <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Outstanding</p>
-                <p className="text-2xl font-black text-gray-900 dark:text-white">₹{debt.remaining_amount.toLocaleString()}</p>
-                <p className="text-xs font-medium text-red-500 mt-1">Total: ₹{debt.total_amount.toLocaleString()}</p>
+                <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(debt.remaining_amount)}</p>
+                <p className="text-xs font-medium text-red-500 mt-1">Total: {formatCurrency(debt.total_amount)}</p>
              </div>
 
              <div className="relative">

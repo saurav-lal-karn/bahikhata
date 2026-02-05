@@ -23,6 +23,7 @@ import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 import { transactionService } from "@/services/transactionService";
 import { Transaction } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface IncomeListProps {
   incomes: Transaction[];
@@ -212,11 +213,11 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
                 <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400 italic">
                   {item.wallet?.name}
                 </td>
-                <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
+                <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400"> 
                   {new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(item.transaction_date))}
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-green-600 dark:text-green-400">
-                  + ₹{item.amount.toLocaleString()}
+                  + {formatCurrency(item.amount, 'en-IN', 'INR')}
                 </td>
                 <td className="py-4 px-6 text-center">
                   <div className="relative">

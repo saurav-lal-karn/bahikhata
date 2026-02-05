@@ -16,3 +16,10 @@ export function formatDateTime(dateString: string) {
     second: "2-digit",
   });
 }
+
+export function formatCurrency(amount: number, locale = 'en-US', currency = 'USD') {
+  return amount.toLocaleString(locale, {
+    style: "currency",
+    currency: currency,
+  });
+}

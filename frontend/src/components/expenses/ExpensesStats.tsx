@@ -3,18 +3,11 @@ import React, { useEffect, useState } from "react";
 import { ArrowUpRight, ArrowDownRight, IndianRupee, PieChart, CreditCard, TrendingUp } from "lucide-react";
 import { transactionService } from "@/services/transactionService";
 import { ExpenseStats } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 export const ExpensesStats = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
   const [stats, setStats] = useState<ExpenseStats[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatPercentage = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? "+100%" : "0%";

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
+import { formatCurrency } from "@/lib/utils";
 
 interface WalletCardProps {
   id: string; // Add id prop
@@ -106,7 +107,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
 
          <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Available Balance</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{getCurrencySymbol(currency)}{balance.toLocaleString()}</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(balance)}</h3>
          </div>
          <button 
            onClick={() => router.push(`/accounts/${id}`)}

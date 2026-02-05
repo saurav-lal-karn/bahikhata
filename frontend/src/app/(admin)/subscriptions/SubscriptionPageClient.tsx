@@ -16,6 +16,7 @@ import { Subscription } from "@/types";
 import Button from "@/components/ui/button/Button";
 import { AddSubscriptionForm } from "@/components/subscriptions/AddSubscriptionForm";
 import toast from "react-hot-toast";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export default function SubscriptionPageClient() {
   const { user } = useAuth();
@@ -87,7 +88,7 @@ export default function SubscriptionPageClient() {
                 <Zap className="w-16 h-16" />
             </div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Monthly Burn Rate</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{Math.round(monthlyBurn).toLocaleString()}</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(monthlyBurn)}</h3>
             <p className="text-xs text-purple-500 font-bold mt-2">Active Recurrences</p>
         </div>
 
@@ -96,7 +97,7 @@ export default function SubscriptionPageClient() {
                 <TrendingUp className="w-16 h-16" />
             </div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Annual Projection</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{Math.round(monthlyBurn * 12).toLocaleString()}</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(monthlyBurn * 12)}</h3>
             <p className="text-xs text-indigo-500 font-bold mt-2">Estimated yearly cost</p>
         </div>
 
@@ -138,13 +139,13 @@ export default function SubscriptionPageClient() {
                           </div>
                           <div className="flex items-end justify-between">
                               <div>
-                                  <p className="text-2xl font-black text-purple-600 italic">₹{sub.amount.toLocaleString()}</p>
+                                  <p className="text-2xl font-black text-purple-600 italic">{formatCurrency(sub.amount)}</p>
                                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">per {sub.frequency.toLowerCase()}</p>
                               </div>
                               <div className="text-right">
                                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Next Bill</p>
                                   <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-                                      {sub.next_billing_date ? new Date(sub.next_billing_date).toLocaleDateString() : 'N/A'}
+                                      {sub.next_billing_date ? formatDateTime(sub.next_billing_date) : 'N/A'}
                                   </p>
                               </div>
                           </div>

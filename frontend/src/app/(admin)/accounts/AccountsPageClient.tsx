@@ -28,6 +28,7 @@ import { WalletInfoType, WalletType, WalletTransfer } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import {walletTypeService} from "@/services/walletTypeService";
 import {walletService} from "@/services/walletService";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AccountsPageClient() {
     const {user} = useAuth();
@@ -376,7 +377,7 @@ export default function AccountsPageClient() {
                             </div>
                          </div>
                          <span className="text-xs font-black text-gray-900 dark:text-white">
-                           {transfer.to_wallet?.currency} {transfer.amount.toLocaleString()}
+                           {formatCurrency(transfer.amount)}
                          </span>
                       </div>
                    ))

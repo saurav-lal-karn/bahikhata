@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { investmentService } from "@/services/investmentService";
 import { Investment } from "@/types";
 import { InvestmentList } from "@/components/investments/InvestmentList";
+import { formatCurrency } from "@/lib/utils";
 
 export default function InvestmentsPageClient() {
   const { user } = useAuth();
@@ -118,7 +119,7 @@ export default function InvestmentsPageClient() {
             <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Total Invested</p>
           </div>
           <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-1">
-            ₹{(totalInvested / 100000).toFixed(2)}L
+            {formatCurrency(totalInvested)}
           </h2>
           <p className="text-xs text-gray-400 font-medium">Principal amount across all assets</p>
         </div>
@@ -131,7 +132,7 @@ export default function InvestmentsPageClient() {
             <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Current Value</p>
           </div>
           <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-1">
-            ₹{(totalCurrent / 100000).toFixed(2)}L
+            {formatCurrency(totalCurrent)}
           </h2>
           <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
             <ArrowUpRight className="w-4 h-4" /> +{totalGain.toFixed(1)}% Overall Return
@@ -146,7 +147,7 @@ export default function InvestmentsPageClient() {
             <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Net Gain</p>
           </div>
           <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-1">
-            ₹{(totalCurrent - totalInvested).toLocaleString()}
+            {formatCurrency(totalCurrent - totalInvested)}
           </h2>
           <p className="text-xs text-emerald-500 font-bold uppercase tracking-wider">Unrealized Profits</p>
         </div>

@@ -6,6 +6,7 @@ import {
   Info,
   ChevronRight
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 export const EmergencyFundCalculator = () => {
   const [months, setMonths] = useState(6);
@@ -49,11 +50,11 @@ export const EmergencyFundCalculator = () => {
         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl space-y-2">
            <div className="flex justify-between items-baseline">
               <span className="text-[10px] font-bold text-gray-500 uppercase">Recommended</span>
-              <span className="text-lg font-black text-gray-900 dark:text-white">₹{(recommended / 100000).toFixed(2)}L</span>
+              <span className="text-lg font-black text-gray-900 dark:text-white">{formatCurrency(recommended, 'en-IN', 'INR')}</span>
            </div>
            <div className="flex justify-between items-baseline">
               <span className="text-[10px] font-bold text-gray-500 uppercase">Current Savings</span>
-              <span className="text-sm font-black text-emerald-500">₹{(currentSaved / 100000).toFixed(2)}L</span>
+              <span className="text-sm font-black text-emerald-500">{formatCurrency(currentSaved, 'en-IN', 'INR')}</span>
            </div>
            
            <div className="pt-2">

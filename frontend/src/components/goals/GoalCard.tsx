@@ -8,6 +8,7 @@ import { AddContributionForm } from "./AddContributionForm";
 import { Modal } from "@/components/ui/modal";
 import { goalService } from "@/services/goalService";
 import { GoalContribution } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 
 interface GoalCardProps {
@@ -129,10 +130,10 @@ export const GoalCard: React.FC<GoalCardProps> = ({
         <h4 className="text-lg font-black text-gray-800 dark:text-white mb-4 line-clamp-1">{title}</h4>
         <div className="flex justify-between items-baseline mb-2">
            <span className="text-2xl font-black text-gray-900 dark:text-white">
-             ₹{(current / 100000).toFixed(1)}L
+             {formatCurrency(current, 'en-IN', 'INR')}
            </span>
            <span className="text-xs font-bold text-gray-400">
-             Target: ₹{(target / 100000).toFixed(1)}L
+             Target: {formatCurrency(target, 'en-IN', 'INR')}
            </span>
         </div>
         
@@ -149,7 +150,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
            {percentage}% Complete
          </div>
          <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">
-           ₹{(remaining / 100000).toFixed(1)}L to go
+           {formatCurrency(remaining, 'en-IN', 'INR')} to go
          </div>
       </div>
 
@@ -165,7 +166,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
                 {history.map((item) => (
                   <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all">
                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-gray-900 dark:text-white">₹{item.amount.toLocaleString()}</span>
+                        <span className="text-xs font-black text-gray-900 dark:text-white">{formatCurrency(item.amount, 'en-IN', 'INR')}</span>
                         <span className="text-[10px] font-medium text-gray-400">{new Date(item.contribution_date).toLocaleDateString()}</span>
                      </div>
                      <Plus className="w-3 h-3 text-emerald-500" />

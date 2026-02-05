@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Transaction } from "@/types";
 import { transactionService } from "@/services/transactionService";
+import { formatCurrency } from "@/lib/utils";
 
 interface WalletStatementProps {
   walletId: string;
@@ -127,7 +128,7 @@ export const WalletStatement = ({ walletId, familyId }: WalletStatementProps) =>
                   <td className={`py-5 px-8 text-sm font-black text-right ${
                     tx.type === 'INCOME' ? 'text-green-600' : 'text-gray-900 dark:text-white'
                   }`}>
-                    {tx.type === 'INCOME' ? '+' : '-'}₹{tx.amount.toLocaleString()}
+                    {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(tx.amount)}
                   </td>
                   <td className="py-5 px-8 text-right">
                     <button className="p-2 opacity-0 group-hover:opacity-100 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">

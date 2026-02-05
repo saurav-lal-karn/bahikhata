@@ -10,6 +10,7 @@ import { AddInvestmentTransactionForm } from "./AddInvestmentTransactionForm";
 import { AddValuationForm } from "./AddValuationForm";
 import { Modal } from "@/components/ui/modal";
 import { investmentService } from "@/services/investmentService";
+import { formatCurrency } from "@/lib/utils";
 
 export interface InvestmentValuation {
   id: string;
@@ -114,7 +115,7 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                     <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800">
                         <Coins className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{inv.quantity} Units @ ₹{inv.avg_buy_price}</span>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{inv.quantity} Units @ {formatCurrency(inv.avg_buy_price)}</span>
                         </div>
                         <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">{inv.type}</span>
                     </div>
@@ -124,9 +125,9 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                 <div className="text-right flex items-center gap-6">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Current Value</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">₹{currentValue.toLocaleString()}</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(currentValue)}</p>
                         <p className={`text-xs font-bold mt-1 ${isProfit ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {isProfit ? '+' : ''}₹{profit.toLocaleString()} ({((profit/investedValue)*100).toFixed(1)}%)
+                            {isProfit ? '+' : ''}{formatCurrency(profit)} ({((profit/investedValue)*100).toFixed(1)}%)
                         </p>
                     </div>
 

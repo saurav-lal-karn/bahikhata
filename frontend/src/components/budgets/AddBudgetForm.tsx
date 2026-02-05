@@ -25,7 +25,7 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
   const [formData, setFormData] = useState({
     category: "",
     amount: "",
-    period: "monthly",
+    period: "Weekly",
     alertThreshold: "80",
     rollover: false
   });
@@ -87,7 +87,7 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
                         { value: "Monthly", label: "Monthly" },
                         { value: "Yearly", label: "Yearly" }
                     ]}
-                    defaultValue="monthly"
+                    defaultValue="Weekly"
                     onChange={(value: string) => setFormData({...formData, period: value})}
                     className="rounded-2xl h-14"
                 />
