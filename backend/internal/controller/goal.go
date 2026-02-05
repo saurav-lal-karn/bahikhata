@@ -19,15 +19,9 @@ func NewGoalController(goalService service.GoalService) *GoalController {
 }
 
 func (c *GoalController) Create(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -37,20 +31,13 @@ func (c *GoalController) Create(ctx *gin.Context) {
 		return
 	}
 
-	goal, err := req.ToGoal()
+	goal, err := c.goalService.Create(ctx.Request.Context(), &req, uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
-		return
-	}
-	goal.UserID = &uid
-
-	err = c.goalService.Create(ctx.Request.Context(), goal)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create goal"})
+		handleServiceError(ctx, err)
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusCreated, "Goal created successfully", nil)
+	helper.SuccessResponse(ctx, http.StatusCreated, "Goal created successfully", goal)
 }
 
 func (c *GoalController) List(ctx *gin.Context) {
@@ -124,4 +111,55 @@ func (c *GoalController) ListContributions(ctx *gin.Context) {
 	}
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Contributions fetched successfully", contributions)
+}
+
+func (c *GoalController) Update(ctx *gin.Context) {
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	idParam := ctx.Param("id")
+	goalID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	var req dto.UpdateGoalRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	goal, err := c.goalService.Update(ctx.Request.Context(), goalID, &req, uid)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to update goal")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Goal updated successfully", goal)
+}
+
+func (c *GoalController) Delete(ctx *gin.Context) {
+	_, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	idParam := ctx.Param("id")
+	goalID, err := uuid.Parse(idParam)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		return
+	}
+
+	if err := c.goalService.Delete(ctx.Request.Context(), goalID); err != nil {
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to delete goal")
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Goal deleted successfully", nil)
 }

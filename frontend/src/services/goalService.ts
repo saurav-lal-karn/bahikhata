@@ -17,5 +17,13 @@ export const goalService = {
     addContribution: async (goalId: string, payload: any) => {
         const response = await apiClient.post(`/goals/${goalId}/contributions`, payload);
         return response.data.data;
+    },
+    updateGoal: async (goalId: string, goal: CreateGoalPayload) => {
+        const response = await apiClient.put(`/goals/${goalId}`, goal);
+        return response.data.data;
+    },
+    deleteGoal: async (goalId: string) => {
+        const response = await apiClient.delete(`/goals/${goalId}`);
+        return response.data.data;
     }
 }

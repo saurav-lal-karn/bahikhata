@@ -93,8 +93,14 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	contactRouter := protected.Group("/contacts")
 	RegisterContactRoutes(app, contactRouter)
 
-	organizationRouter := protected.Group("/org")
-	RegisterOrganizationRoutes(app, organizationRouter)
+	locationRouter := protected.Group("/locations")
+	RegisterLocationRoutes(app, locationRouter)
+
+	tagRouter := protected.Group("/tags")
+	RegisterTagRoutes(app, tagRouter)
+
+	projectRouter := protected.Group("/projects")
+	RegisterProjectRoutes(app, projectRouter)
 
 	insuranceRouter := protected.Group("/insurance")
 	RegisterInsuranceRoutes(app, insuranceRouter)

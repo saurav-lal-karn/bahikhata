@@ -10,11 +10,11 @@ import (
 )
 
 type ContactService interface {
-	CreateContact(ctx context.Context, req dto.CreateContactRequest) (*dto.ContactResponse, error)
-	GetContact(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error)
-	GetContacts(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error)
-	UpdateContact(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error)
-	DeleteContact(ctx context.Context, id uuid.UUID) error
+	Create(ctx context.Context, req dto.CreateContactRequest) (*dto.ContactResponse, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error)
+	ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error)
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type contactService struct {
@@ -25,7 +25,7 @@ func NewContactService(repo repository.ContactRepository) ContactService {
 	return &contactService{repo: repo}
 }
 
-func (s *contactService) CreateContact(ctx context.Context, req dto.CreateContactRequest) (*dto.ContactResponse, error) {
+func (s *contactService) Create(ctx context.Context, req dto.CreateContactRequest) (*dto.ContactResponse, error) {
 	familyID, err := uuid.Parse(req.FamilyID)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (s *contactService) CreateContact(ctx context.Context, req dto.CreateContac
 	return dto.ToContactResponse(contact), nil
 }
 
-func (s *contactService) GetContact(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error) {
+func (s *contactService) GetByID(ctx context.Context, id uuid.UUID) (*dto.ContactResponse, error) {
 	contact, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (s *contactService) GetContact(ctx context.Context, id uuid.UUID) (*dto.Con
 	return dto.ToContactResponse(contact), nil
 }
 
-func (s *contactService) GetContacts(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error) {
-	contacts, err := s.repo.ListByFamily(ctx, familyID)
+func (s *contactService) ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]dto.ContactResponse, error) {
+	contacts, err := s.repo.ListByFamilyID(ctx, familyID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *contactService) GetContacts(ctx context.Context, familyID uuid.UUID) ([
 	return resp, nil
 }
 
-func (s *contactService) UpdateContact(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error) {
+func (s *contactService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateContactRequest) (*dto.ContactResponse, error) {
 	contact, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -100,6 +100,6 @@ func (s *contactService) UpdateContact(ctx context.Context, id uuid.UUID, req dt
 	return dto.ToContactResponse(contact), nil
 }
 
-func (s *contactService) DeleteContact(ctx context.Context, id uuid.UUID) error {
+func (s *contactService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
 }

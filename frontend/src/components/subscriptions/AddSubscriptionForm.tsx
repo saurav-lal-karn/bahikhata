@@ -12,6 +12,7 @@ import { contactService } from "@/services/contactService";
 import { WalletInfoType, TransactionCategory, RecurringFrequency } from "@/types";
 import { Contact } from "@/types";
 import toast from "react-hot-toast";
+import DatePicker from "../form/date-picker";
 
 interface AddSubscriptionFormProps {
   onSuccess?: () => void;
@@ -32,6 +33,7 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
     vendor_id: "",
     start_date: new Date().toISOString().split('T')[0],
     next_billing_date: "",
+    family_id: familyId,
   });
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
         vendor_id: formData.vendor_id || undefined,
         start_date: formData.start_date,
         next_billing_date: formData.next_billing_date || undefined,
+        family_id: familyId || "",
       });
       toast.success("Subscription tracked");
       if (onSuccess) onSuccess();
@@ -144,23 +147,32 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
 
         <div className="space-y-2">
           <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Start Date</Label>
-          <Input 
-            required
-            type="date"
-            value={formData.start_date}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, start_date: e.target.value})}
-            className="rounded-2xl h-12"
-          />
+          <DatePicker
+            id="start-date-picker"
+            mode="single"
+            defaultDate={formData.start_date}
+            placeholder="Select start date"
+            onChange={(selectedDates, dateStr) => {
+                if (dateStr) {
+                    setFormData({...formData, start_date: dateStr});
+                }
+            }}
+        />
         </div>
 
         <div className="space-y-2">
           <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Next Billing Date</Label>
-          <Input 
-            type="date"
-            value={formData.next_billing_date}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, next_billing_date: e.target.value})}
-            className="rounded-2xl h-12"
-          />
+          <DatePicker
+            id="next-billing-date-picker"
+            mode="single"
+            defaultDate={formData.next_billing_date}
+            placeholder="Select next billing date"
+            onChange={(selectedDates, dateStr) => {
+                if (dateStr) {
+                    setFormData({...formData, next_billing_date: dateStr});
+                }
+            }}
+        />
         </div>
       </div>
 

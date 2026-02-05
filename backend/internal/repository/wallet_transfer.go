@@ -32,7 +32,7 @@ func (w *walletTransferRepository) CreateWithTx(ctx context.Context, dbTx *gorm.
 
 func (w *walletTransferRepository) List(ctx context.Context, familyId uuid.UUID, userId uuid.UUID) ([]model.WalletTransfer, error) {
 	var walletTransfers []model.WalletTransfer
-	err := w.db.WithContext(ctx).Where("family_id = ? OR user_id = ?", familyId, userId).Preload("FromWallet").Preload("ToWallet").Preload("User").Find(&walletTransfers).Error
+	err := w.db.WithContext(ctx).Where("family_id = ? OR user_id = ?", familyId, userId).Order("created_at DESC").Preload("FromWallet").Preload("ToWallet").Preload("User").Find(&walletTransfers).Error
 	return walletTransfers, err
 }
 

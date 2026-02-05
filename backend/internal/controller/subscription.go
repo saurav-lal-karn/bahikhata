@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
+	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
@@ -18,26 +19,25 @@ func NewSubscriptionController(service service.SubscriptionService) *Subscriptio
 }
 
 func (c *SubscriptionController) CreateSubscription(ctx *gin.Context) {
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	var req dto.CreateSubscriptionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	familyID, exists := ctx.Get("family_id")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Family ID not found in context"})
-		return
-	}
-	req.FamilyID = familyID.(uuid.UUID)
-
-	res, err := c.service.CreateSubscription(req)
+	res, err := c.service.CreateSubscription(ctx, req, uid)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		helper.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, res)
+	helper.SuccessResponse(ctx, http.StatusCreated, "Subscription created successfully", res)
 }
 
 func (c *SubscriptionController) GetSubscriptions(ctx *gin.Context) {
@@ -62,7 +62,7 @@ func (c *SubscriptionController) GetSubscriptions(ctx *gin.Context) {
 		familyID = ctxFamilyID.(uuid.UUID)
 	}
 	
-	subs, err := c.service.GetSubscriptions(familyID)
+	subs, err := c.service.GetSubscriptions(ctx, familyID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -78,7 +78,7 @@ func (c *SubscriptionController) GetSubscription(ctx *gin.Context) {
 		return
 	}
 
-	res, err := c.service.GetSubscription(id)
+	res, err := c.service.GetSubscription(ctx, id)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found"})
 		return
@@ -94,7 +94,7 @@ func (c *SubscriptionController) DeleteSubscription(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.service.DeleteSubscription(id); err != nil {
+	if err := c.service.DeleteSubscription(ctx, id); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -115,7 +115,7 @@ func (c *SubscriptionController) UpdateSubscription(ctx *gin.Context) {
 		return
 	}
 
-	res, err := c.service.UpdateSubscription(id, req)
+	res, err := c.service.UpdateSubscription(ctx, id, req)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

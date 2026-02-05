@@ -15,7 +15,7 @@ export const EmergencyFundCalculator = () => {
   const progress = Math.min(Math.round((currentSaved / recommended) * 100), 100);
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm overflow-hidden border-l-8 border-l-emerald-500">
+    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-black text-gray-800 dark:text-white flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-emerald-500" /> Emergency Fund

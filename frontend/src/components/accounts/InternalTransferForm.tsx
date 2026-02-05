@@ -7,6 +7,7 @@ import Select from "@/components/form/Select";
 import { WalletInfoType } from "@/types";
 import { toast } from "react-hot-toast";
 import { walletService } from "@/services/walletService";
+import DatePicker from "../form/date-picker";
 
 interface InternalTransferFormProps {
   onSuccess?: () => void;
@@ -52,7 +53,7 @@ export const InternalTransferForm: React.FC<InternalTransferFormProps> = ({ onSu
 
   const walletOptions = wallets.map(w => ({
     value: w.id,
-    label: `${w.name} (${w.currency} ${(w.balance + (w.starting_balance || 0)).toLocaleString()})`
+    label: `${w.name} (${w.currency} ${(w.balance).toLocaleString()})`
   }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,12 +147,17 @@ export const InternalTransferForm: React.FC<InternalTransferFormProps> = ({ onSu
          <div className="space-y-6">
             <div className="space-y-2">
               <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Date</Label>
-              <Input 
-                type="date"
-                required
-                value={formData.date}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, date: e.target.value})}
+              <DatePicker
+                id="transaction-date-picker"
+                mode="single"
+                defaultDate={formData.date}
+                placeholder="Select transaction date"
                 className="rounded-2xl h-14"
+                onChange={(selectedDates, dateStr) => {
+                  if (dateStr) {
+                    setFormData({...formData, date: dateStr});
+                  }
+                }}
               />
             </div>
          </div>

@@ -76,66 +76,66 @@ export interface UpdateLocationRequest {
 export const organizationService = {
     // Tags
     getTags: async (familyId: string): Promise<Tag[]> => {
-        const response = await apiClient.get(`/org/tags/family/${familyId}`);
+        const response = await apiClient.get(`/tags/family/${familyId}`);
         return response.data.data;
     },
 
     createTag: async (data: CreateTagRequest): Promise<Tag> => {
-        const response = await apiClient.post('/org/tags', data);
+        const response = await apiClient.post('/tags', data);
         return response.data.data;
     },
 
     updateTag: async (id: string, data: UpdateTagRequest): Promise<Tag> => {
-        const response = await apiClient.patch(`/org/tags/${id}`, data);
+        const response = await apiClient.patch(`/tags/${id}`, data);
         return response.data.data;
     },
 
     deleteTag: async (id: string): Promise<void> => {
-        await apiClient.delete(`/org/tags/${id}`);
+        await apiClient.delete(`/tags/${id}`);
     },
 
     // Projects
     getProjects: async (familyId: string): Promise<Project[]> => {
-        const response = await apiClient.get(`/org/projects/family/${familyId}`);
+        const response = await apiClient.get(`/projects/family/${familyId}`);
         return response.data.data;
     },
 
     createProject: async (data: CreateProjectRequest): Promise<Project> => {
-        const response = await apiClient.post('/org/projects', data);
+        const response = await apiClient.post('/projects', data);
         return response.data.data;
     },
 
     updateProject: async (id: string, data: UpdateProjectRequest): Promise<Project> => {
-        const response = await apiClient.patch(`/org/projects/${id}`, data);
+        const response = await apiClient.patch(`/projects/${id}`, data);
         return response.data.data;
     },
 
     deleteProject: async (id: string): Promise<void> => {
-        await apiClient.delete(`/org/projects/${id}`);
+        await apiClient.delete(`/projects/${id}`);
     },
 
     // Locations
     getLocations: async (familyId: string): Promise<Location[]> => {
-        const response = await apiClient.get(`/org/locations/family/${familyId}`);
+        const response = await apiClient.get(`/locations/family/${familyId}`);
         return response.data.data;
     },
 
     getLocation: async (id: string): Promise<Location> => {
-        const response = await apiClient.get(`/org/locations/${id}`);
+        const response = await apiClient.get(`/locations/${id}`);
         return response.data.data;
     },
 
     createLocation: async (data: CreateLocationRequest): Promise<Location> => {
-        const response = await apiClient.post('/org/locations', data);
+        const response = await apiClient.post('/locations', data);
         return response.data.data;
     },
 
     updateLocation: async (id: string, data: UpdateLocationRequest): Promise<Location> => {
-        const response = await apiClient.patch(`/org/locations/${id}`, data);
+        const response = await apiClient.patch(`/locations/${id}`, data);
         return response.data.data;
     },
 
     deleteLocation: async (id: string): Promise<void> => {
-        await apiClient.delete(`/org/locations/${id}`);
+        await apiClient.delete(`/locations/${id}`);
     },
 };

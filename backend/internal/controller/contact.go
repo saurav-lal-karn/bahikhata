@@ -18,14 +18,14 @@ func NewContactController(service service.ContactService) *ContactController {
 	return &ContactController{service: service}
 }
 
-func (ctrl *ContactController) CreateContact(c *gin.Context) {
+func (ctrl *ContactController) Create(c *gin.Context) {
 	var req dto.CreateContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := ctrl.service.CreateContact(c.Request.Context(), req)
+	resp, err := ctrl.service.Create(c.Request.Context(), req)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -34,7 +34,7 @@ func (ctrl *ContactController) CreateContact(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "Contact created successfully", resp)
 }
 
-func (ctrl *ContactController) GetContact(c *gin.Context) {
+func (ctrl *ContactController) GetByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -42,7 +42,7 @@ func (ctrl *ContactController) GetContact(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.GetContact(c.Request.Context(), id)
+	resp, err := ctrl.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -51,7 +51,7 @@ func (ctrl *ContactController) GetContact(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Contact retrieved successfully", resp)
 }
 
-func (ctrl *ContactController) GetContacts(c *gin.Context) {
+func (ctrl *ContactController) ListByFamilyID(c *gin.Context) {
 	familyIDStr := c.Param("family_id")
 	familyID, err := uuid.Parse(familyIDStr)
 	if err != nil {
@@ -59,7 +59,7 @@ func (ctrl *ContactController) GetContacts(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.GetContacts(c.Request.Context(), familyID)
+	resp, err := ctrl.service.ListByFamilyID(c.Request.Context(), familyID)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -68,7 +68,7 @@ func (ctrl *ContactController) GetContacts(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Contacts retrieved successfully", resp)
 }
 
-func (ctrl *ContactController) UpdateContact(c *gin.Context) {
+func (ctrl *ContactController) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -82,7 +82,7 @@ func (ctrl *ContactController) UpdateContact(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.UpdateContact(c.Request.Context(), id, req)
+	resp, err := ctrl.service.Update(c.Request.Context(), id, req)
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -91,7 +91,7 @@ func (ctrl *ContactController) UpdateContact(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "Contact updated successfully", resp)
 }
 
-func (ctrl *ContactController) DeleteContact(c *gin.Context) {
+func (ctrl *ContactController) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -99,7 +99,7 @@ func (ctrl *ContactController) DeleteContact(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.service.DeleteContact(c.Request.Context(), id); err != nil {
+	if err := ctrl.service.Delete(c.Request.Context(), id); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

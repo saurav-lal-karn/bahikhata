@@ -10,8 +10,12 @@ import {
   ArrowRight,
   Filter,
   Search,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle,
+  RotateCw
 } from "lucide-react";
+
+import toast from "react-hot-toast";
 
 import { Modal } from "@/components/ui/modal";
 import { GoalCard } from "@/components/goals/GoalCard";
@@ -58,6 +62,12 @@ export default function GoalsPageClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  
+  // Edit & Delete State
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [deletingGoal, setDeletingGoal] = useState<Goal | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Extract unique goal icons as categories for now
   const goalCategories = Array.from(new Set(goals.map(g => g.icon_name).filter(Boolean))) as string[];
@@ -89,7 +99,35 @@ export default function GoalsPageClient() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
+    setEditingGoal(null);
     fetchGoals(); // Refresh list after adding
+  };
+  
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteGoal = (goal: Goal) => {
+    setDeletingGoal(goal);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingGoal) return;
+    try {
+      setIsDeleting(true);
+      await goalService.deleteGoal(deletingGoal.id);
+      toast.success("Goal deleted successfully");
+      setIsDeleteModalOpen(false);
+      fetchGoals();
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      toast.error("Failed to delete goal");
+    } finally {
+      setIsDeleting(false);
+      setDeletingGoal(null);
+    }
   };
 
   return (
@@ -206,6 +244,8 @@ export default function GoalsPageClient() {
                     color={color}
                     barColor={barColor}
                     onContributionSuccess={fetchGoals}
+                    onEdit={() => handleEditGoal(goal)}
+                    onDelete={() => handleDeleteGoal(goal)}
                   />
                  );
                })
@@ -248,10 +288,49 @@ export default function GoalsPageClient() {
       {/* Modals */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-4xl p-10">
         <div className="mb-10">
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Create Savings Goal</h3>
-          <p className="text-sm text-gray-500 font-medium">Set a target for your next big milestone and track progress monthly.</p>
+          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingGoal ? 'Edit Savings Goal' : 'Create Savings Goal'}</h3>
+          <p className="text-sm text-gray-500 font-medium">{editingGoal ? 'Update your goal details below.' : 'Set a target for your next big milestone and track progress monthly.'}</p>
         </div>
-        <AddGoalForm onSuccess={closeModal} onCancel={closeModal} familyId={familyId} />
+        <AddGoalForm 
+          onSuccess={closeModal} 
+          onCancel={closeModal} 
+          familyId={familyId} 
+          initialData={editingGoal}
+        />
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="max-w-md p-8">
+        <div className="flex flex-col items-center text-center space-y-6">
+           <div className="p-4 bg-red-50 text-red-500 rounded-full">
+             <AlertTriangle className="w-8 h-8" />
+           </div>
+           
+           <div className="space-y-2">
+             <h3 className="text-xl font-black text-gray-900 dark:text-white">Delete Goal?</h3>
+             <p className="text-sm text-gray-500 font-medium">
+               Are you sure you want to delete <span className="font-bold text-gray-800 dark:text-white">"{deletingGoal?.name}"</span>? 
+               This action cannot be undone and all associated contributions history will be lost.
+             </p>
+           </div>
+
+           <div className="flex items-center gap-3 w-full">
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-colors flex items-center justify-center gap-2"
+              >
+                {isDeleting ? <RotateCw className="w-4 h-4 animate-spin" /> : null}
+                {isDeleting ? 'Deleting...' : 'Delete Goal'}
+              </button>
+           </div>
+        </div>
       </Modal>
     </div>
   );

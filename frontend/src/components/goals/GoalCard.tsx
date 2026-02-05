@@ -180,7 +180,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
       <Modal isOpen={isContributionModalOpen} onClose={() => setIsContributionModalOpen(false)} className="max-w-md p-8">
         <div className="mb-6">
-          <h3 className="text-xl font-black text-gray-800 dark:text-white mb-1">Add Contribution</h3>
+          <h3 className="text-xl font-black text-gray-800 dark:text-white mb-1">Add Contribution here</h3>
           <p className="text-xs text-gray-500 font-medium">Record a new payment towards your goal: <span className="text-emerald-600 font-bold">{title}</span></p>
         </div>
         <AddContributionForm 

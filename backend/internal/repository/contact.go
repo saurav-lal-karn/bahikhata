@@ -11,7 +11,7 @@ import (
 type ContactRepository interface {
 	Create(ctx context.Context, contact *model.Contact) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Contact, error)
-	ListByFamily(ctx context.Context, familyID uuid.UUID) ([]model.Contact, error)
+	ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Contact, error)
 	Update(ctx context.Context, contact *model.Contact) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -36,7 +36,7 @@ func (r *contactRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Contact
 	return &contact, nil
 }
 
-func (r *contactRepo) ListByFamily(ctx context.Context, familyID uuid.UUID) ([]model.Contact, error) {
+func (r *contactRepo) ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Contact, error) {
 	var contacts []model.Contact
 	if err := r.db.WithContext(ctx).Where("family_id = ?", familyID).Find(&contacts).Error; err != nil {
 		return nil, err

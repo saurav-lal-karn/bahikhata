@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Target, 
   Landmark, 
@@ -16,10 +16,13 @@ import { goalService } from "@/services/goalService";
 import toast from "react-hot-toast";
 import DatePicker from "../form/date-picker";
 
+import { Goal } from "@/types";
+
 interface AddGoalFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   familyId: string;
+  initialData?: Goal | null;
 }
 
 const icons = [
@@ -31,7 +34,7 @@ const icons = [
   { id: 'asset', icon: <Landmark className="w-5 h-5" />, label: 'Asset' },
 ];
 
-export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, familyId }) => {
+export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, familyId, initialData }) => {
   const [formData, setFormData] = useState({
     name: "",
     target: "",
@@ -40,6 +43,19 @@ export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, f
     description: "",
     icon: "wealth"
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name,
+        target: initialData.target_amount.toString(),
+        current: initialData.current_amount.toString(),
+        deadline: new Date(initialData.deadline).toISOString(),
+        description: initialData.description || "",
+        icon: initialData.icon_name || "wealth"
+      });
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,12 +70,17 @@ export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, f
         family_id: familyId
       };
 
-      await goalService.createGoal(payload);
-      toast.success("Goal created successfully");
+      if (initialData) {
+        await goalService.updateGoal(initialData.id, payload);
+        toast.success("Goal updated successfully");
+      } else {
+        await goalService.createGoal(payload);
+        toast.success("Goal created successfully");
+      }
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Failed to create goal:", error);
-      toast.error("Failed to create goal");
+      console.error("Failed to save goal:", error);
+      toast.error(initialData ? "Failed to update goal" : "Failed to create goal");
     }
   };
 
@@ -165,7 +186,7 @@ export const AddGoalForm: React.FC<AddGoalFormProps> = ({ onSuccess, onCancel, f
           type="submit" 
           className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
         >
-          <Check className="w-5 h-5" /> Start Saving
+          <Check className="w-5 h-5" /> {initialData ? 'Update Goal' : 'Start Saving'}
         </Button>
       </div>
     </form>

@@ -347,8 +347,21 @@ function TagForm({
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Groceries" className="rounded-2xl h-12" required />
       </div>
       <div className="space-y-2">
-        <Label className="text-[10px] font-black uppercase tracking-widest">Color (hex)</Label>
-        <Input value={color} onChange={(e) => setColor(e.target.value)} placeholder="#3B82F6" className="rounded-2xl h-12" />
+        <Label className="text-[10px] font-black uppercase tracking-widest">Color</Label>
+        <div className="flex gap-3 items-center">
+          <input
+            type="color"
+            value={/^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#3B82F6"}
+            onChange={(e) => setColor(e.target.value)}
+            className="w-12 h-12 rounded-2xl cursor-pointer border border-gray-200 dark:border-gray-700 bg-transparent p-0.5"
+          />
+          <Input
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            placeholder="#3B82F6"
+            className="rounded-2xl h-12 flex-1"
+          />
+        </div>
       </div>
       <div className="space-y-2">
         <Label className="text-[10px] font-black uppercase tracking-widest">Description</Label>

@@ -13,31 +13,45 @@ func RegisterContactRoutes(app *config.Application, router *gin.RouterGroup) {
 	contactService := service.NewContactService(contactRepo)
 	contactController := controller.NewContactController(contactService)
 
-	router.POST("", contactController.CreateContact)
-	router.GET("family/:family_id", contactController.GetContacts)
-	router.GET(":id", contactController.GetContact)
-	router.PATCH(":id", contactController.UpdateContact)
-	router.DELETE(":id", contactController.DeleteContact)
+	router.POST("", contactController.Create)
+	router.GET("family/:family_id", contactController.ListByFamilyID)
+	router.GET(":id", contactController.GetByID)
+	router.PATCH(":id", contactController.Update)
+	router.DELETE(":id", contactController.Delete)
 }
 
-func RegisterOrganizationRoutes(app *config.Application, router *gin.RouterGroup) {
-	orgRepo := repository.NewOrganizationRepository(app.DB)
-	orgService := service.NewOrganizationService(orgRepo)
-	orgController := controller.NewOrganizationController(orgService)
+func RegisterLocationRoutes(app *config.Application, router *gin.RouterGroup) {
+	locationRepo := repository.NewLocationRepository(app.DB)
+	locationService := service.NewLocationService(locationRepo)
+	locationController := controller.NewLocationController(locationService)
 
-	router.POST("/tags", orgController.CreateTag)
-	router.GET("/tags/family/:family_id", orgController.GetTags)
-	router.PATCH("/tags/:id", orgController.UpdateTag)
-	router.DELETE("/tags/:id", orgController.DeleteTag)
+	router.POST("", locationController.Create)
+	router.GET("family/:family_id", locationController.List)
+	router.GET(":id", locationController.GetByID)
+	router.PATCH(":id", locationController.Update)
+	router.DELETE(":id", locationController.Delete)
+}
+	
+func RegisterTagRoutes(app *config.Application, router *gin.RouterGroup) {
+	tagRepo := repository.NewTagRepository(app.DB)
+	tagService := service.NewTagService(tagRepo)
+	tagController := controller.NewTagController(tagService)
 
-	router.POST("/projects", orgController.CreateProject)
-	router.GET("/projects/family/:family_id", orgController.GetProjects)
-	router.PATCH("/projects/:id", orgController.UpdateProject)
-	router.DELETE("/projects/:id", orgController.DeleteProject)
+	router.POST("", tagController.Create)
+	router.GET("family/:family_id", tagController.List)
+	router.GET(":id", tagController.GetByID)
+	router.PATCH(":id", tagController.Update)
+	router.DELETE(":id", tagController.Delete)
+}
 
-	router.POST("/locations", orgController.CreateLocation)
-	router.GET("/locations/family/:family_id", orgController.GetLocations)
-	router.GET("/locations/:id", orgController.GetLocation)
-	router.PATCH("/locations/:id", orgController.UpdateLocation)
-	router.DELETE("/locations/:id", orgController.DeleteLocation)
+func RegisterProjectRoutes(app *config.Application, router *gin.RouterGroup) {
+	projectRepo := repository.NewProjectRepository(app.DB)
+	projectService := service.NewProjectService(projectRepo)
+	projectController := controller.NewProjectController(projectService)
+
+	router.POST("", projectController.Create)
+	router.GET("family/:family_id", projectController.List)
+	router.GET(":id", projectController.GetByID)
+	router.PATCH(":id", projectController.Update)
+	router.DELETE(":id", projectController.Delete)
 }

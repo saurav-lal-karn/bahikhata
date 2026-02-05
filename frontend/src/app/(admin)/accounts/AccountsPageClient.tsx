@@ -116,7 +116,7 @@ export default function AccountsPageClient() {
 
     const handleTransferSuccess = () => {
         setIsTransferModalOpen(false);
-        fetchData();
+        fetchData(true);
     };
 
     const handleDelete = async () => {
@@ -291,7 +291,7 @@ export default function AccountsPageClient() {
                       id={wallet.id}
                       name={wallet.name}
                       type={wallet.wallet_type?.name || "Other"}
-                      balance={wallet.balance + (wallet.starting_balance || 0)}
+                      balance={wallet.balance}
                       currency={wallet.currency}
                       accountNo={wallet.wallet_type?.name || "N/A"}
                       bank={wallet.wallet_issuer_name || "N/A"}

@@ -11,11 +11,11 @@ import (
 )
 
 type SubscriptionService interface {
-	CreateSubscription(req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error)
-	GetSubscriptions(familyID uuid.UUID) ([]dto.SubscriptionResponse, error)
-	GetSubscription(id uuid.UUID) (*dto.SubscriptionResponse, error)
-	UpdateSubscription(id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error)
-	DeleteSubscription(id uuid.UUID) error
+	CreateSubscription(ctx context.Context, req dto.CreateSubscriptionRequest, uid uuid.UUID) (*dto.SubscriptionResponse, error)
+	GetSubscriptions(ctx context.Context, familyID uuid.UUID) ([]dto.SubscriptionResponse, error)
+	GetSubscription(ctx context.Context, id uuid.UUID) (*dto.SubscriptionResponse, error)
+	UpdateSubscription(ctx context.Context, id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error)
+	DeleteSubscription(ctx context.Context, id uuid.UUID) error
 }
 
 type subscriptionService struct {
@@ -30,7 +30,7 @@ func NewSubscriptionService(repo repository.SubscriptionRepository, recurringRep
 	}
 }
 
-func (s *subscriptionService) CreateSubscription(req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
+func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.CreateSubscriptionRequest, uid uuid.UUID) (*dto.SubscriptionResponse, error) {
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
 		startDate, _ = time.Parse("2006-01-02", req.StartDate)
@@ -54,12 +54,8 @@ func (s *subscriptionService) CreateSubscription(req dto.CreateSubscriptionReque
 		WalletID:    req.WalletID,   // Can be nil
 		IsActive:    true,
 		Type:        string(model.CategoryTypeExpense), // Cast to string as model.RecurringTransaction.Type is string
-		UserID:      nil,                               // Family level for now
+		UserID:      &uid,
 	}
-
-	// We use background context here as service methods in this project seem to not take context yet (refactor needed later)
-	// But actually, repositories in this project seem to vary. SubscriptionRepo doesn't take context, RecurringRepo does.
-	ctx := context.Background()
 
 	if err := s.recurringRepo.Create(ctx, rt); err != nil {
 		return nil, err
@@ -79,17 +75,17 @@ func (s *subscriptionService) CreateSubscription(req dto.CreateSubscriptionReque
 		RecurringTransactionID: &rt.ID,
 	}
 
-	if err := s.repo.CreateSubscription(sub); err != nil {
+	if err := s.repo.CreateSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
-	created, _ := s.repo.GetSubscriptionByID(sub.ID)
+	created, _ := s.repo.GetSubscriptionByID(ctx, sub.ID)
 	res := dto.ToSubscriptionResponse(*created)
 	return &res, nil
 }
 
-func (s *subscriptionService) GetSubscriptions(familyID uuid.UUID) ([]dto.SubscriptionResponse, error) {
-	subs, err := s.repo.GetSubscriptions(familyID)
+func (s *subscriptionService) GetSubscriptions(ctx context.Context, familyID uuid.UUID) ([]dto.SubscriptionResponse, error) {
+	subs, err := s.repo.GetSubscriptions(ctx, familyID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +97,8 @@ func (s *subscriptionService) GetSubscriptions(familyID uuid.UUID) ([]dto.Subscr
 	return res, nil
 }
 
-func (s *subscriptionService) GetSubscription(id uuid.UUID) (*dto.SubscriptionResponse, error) {
-	sub, err := s.repo.GetSubscriptionByID(id)
+func (s *subscriptionService) GetSubscription(ctx context.Context, id uuid.UUID) (*dto.SubscriptionResponse, error) {
+	sub, err := s.repo.GetSubscriptionByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +106,12 @@ func (s *subscriptionService) GetSubscription(id uuid.UUID) (*dto.SubscriptionRe
 	return &res, nil
 }
 
-func (s *subscriptionService) DeleteSubscription(id uuid.UUID) error {
-	return s.repo.DeleteSubscription(id)
+func (s *subscriptionService) DeleteSubscription(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteSubscription(ctx, id)
 }
 
-func (s *subscriptionService) UpdateSubscription(id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
-	sub, err := s.repo.GetSubscriptionByID(id)
+func (s *subscriptionService) UpdateSubscription(ctx context.Context, id uuid.UUID, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
+	sub, err := s.repo.GetSubscriptionByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -146,11 +142,11 @@ func (s *subscriptionService) UpdateSubscription(id uuid.UUID, req dto.UpdateSub
 		sub.Status = model.SubscriptionStatus(req.Status)
 	}
 
-	if err := s.repo.UpdateSubscription(sub); err != nil {
+	if err := s.repo.UpdateSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
-	updated, _ := s.repo.GetSubscriptionByID(id)
+	updated, _ := s.repo.GetSubscriptionByID(ctx, id)
 	res := dto.ToSubscriptionResponse(*updated)
 	return &res, nil
 }

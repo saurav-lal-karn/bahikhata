@@ -583,6 +583,7 @@ export interface CreateSubscriptionPayload {
     vendor_id?: string;
     start_date: string;
     next_billing_date?: string;
+    family_id: string;
 }
 
 // Phase 6: Split Expenses & Advanced Tracking
