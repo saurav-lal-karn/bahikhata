@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "bahikhata-ai-server"
+version = "0.1.0"
+description = "AI Server for Bahikhata using FastAPI"
+authors = ["Saurav Lal Karn <sauravlalkarn@gmail.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+pydantic = "^2.9.0"
+pydantic-settings = "^2.6.0"
+python-multipart = "^0.0.17"
+httpx = "^0.27.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+black = "^24.10.0"
+isort = "^5.13.0"
+flake8 = "^7.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
