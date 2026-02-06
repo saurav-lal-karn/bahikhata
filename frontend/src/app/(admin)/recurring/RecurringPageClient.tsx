@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { 
   Repeat, 
   Plus, 
@@ -8,7 +9,8 @@ import {
   CheckCircle2,
   Clock,
   Filter,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from "lucide-react";
 
 import { Modal } from "@/components/ui/modal";
@@ -28,6 +30,9 @@ export default function RecurringPageClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  
+  const [editingTransaction, setEditingTransaction] = useState<RecurringTransaction | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Extract unique transaction types
   const transactionTypes = Array.from(new Set(transactions.map(t => t.type).filter(Boolean))) as string[];
@@ -54,14 +59,41 @@ export default function RecurringPageClient() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchTransactions();
   }, [familyDetails?.id]);
 
-  const openModal = () => setIsModalOpen(true);
+  const openModal = () => {
+      setEditingTransaction(null);
+      setIsModalOpen(true);
+  };
+  
   const closeModal = () => {
       setIsModalOpen(false);
+      setEditingTransaction(null);
       fetchTransactions();
+  };
+
+  const handleEdit = (transaction: RecurringTransaction) => {
+      setEditingTransaction(transaction);
+      setIsModalOpen(true);
+  };
+
+  const handleDeleteInitiate = (id: string) => {
+      setDeletingId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+      if (!deletingId) return;
+      try {
+          await recurringService.delete(deletingId);
+          toast.success("Recurring transaction deleted");
+          setDeletingId(null);
+          fetchTransactions();
+      } catch (e) {
+          console.error(e);
+          toast.error("Failed to delete recurring transaction");
+      }
   };
 
   return (
@@ -148,7 +180,12 @@ export default function RecurringPageClient() {
              </div>
            )}
 
-           <SubscriptionManager transactions={filteredTransactions} isLoading={isLoading} />
+           <SubscriptionManager 
+             transactions={filteredTransactions} 
+             isLoading={isLoading} 
+             onEdit={(t) => handleEdit(t as RecurringTransaction)}
+             onDelete={handleDeleteInitiate}
+           />
 
         </div>
 
@@ -192,10 +229,41 @@ export default function RecurringPageClient() {
           <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-[2rem] mx-auto flex items-center justify-center border-2 border-blue-100 dark:border-blue-800 mb-4">
             <Repeat className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Automate Recurring Bill</h3>
-          <p className="text-sm text-gray-500 font-medium">Set up a tracking cycle for subscriptions, rent, or utilities.</p>
+          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingTransaction ? 'Edit Recurring Bill' : 'Automate Recurring Bill'}</h3>
+          <p className="text-sm text-gray-500 font-medium">{editingTransaction ? 'Update your tracking preferences.' : 'Set up a tracking cycle for subscriptions, rent, or utilities.'}</p>
         </div>
-        <AddRecurringForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
+        <AddRecurringForm 
+            onSuccess={closeModal} 
+            onCancel={closeModal} 
+            familyId={familyDetails?.id} 
+            initialData={editingTransaction}
+        />
+      </Modal>
+
+      <Modal isOpen={!!deletingId} onClose={() => setDeletingId(null)} className="max-w-md p-8">
+         <div className="text-center">
+            <div className="w-16 h-16 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
+               <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Delete Recurring Bill?</h3>
+            <p className="text-xs text-gray-500 font-medium mb-8">
+               This will stop tracking future payments. Past execution history will be preserved. This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+               <button 
+                 onClick={() => setDeletingId(null)}
+                 className="flex-1 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl font-bold text-xs transition-all"
+               >
+                  Cancel
+               </button>
+               <button 
+                 onClick={handleDeleteConfirm}
+                 className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-red-500/20"
+               >
+                  Delete
+               </button>
+            </div>
+         </div>
       </Modal>
     </div>
   );

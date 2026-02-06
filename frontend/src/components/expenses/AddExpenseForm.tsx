@@ -24,7 +24,7 @@ import { transactionCategoryService } from "@/services/transactionCategoryServic
 import { contactService } from "@/services/contactService";
 import { organizationService } from "@/services/organizationService";
 import toast from "react-hot-toast";
-import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType } from "@/types";
+import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType, Transaction } from "@/types";
 import type { Location } from "@/services/organizationService";
 
 interface AddExpenseFormProps {
@@ -34,6 +34,7 @@ interface AddExpenseFormProps {
   paymentMethods?: PaymentMethod[];
   wallets?: WalletInfoType[];
   familyId: string;
+  initialData?: Transaction | null;
 }
 
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ 
@@ -42,7 +43,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   categories = [],
   paymentMethods = [],
   wallets = [],
-  familyId
+  familyId,
+  initialData
 }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -50,17 +52,17 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 	const [locations, setLocations] = useState<Location[]>([]);
 
     const [formData, setFormData] = useState({
-        name: "",
-        amount: 0,
-        transaction_date: new Date().toISOString().split('T')[0],
-        description: "",
-        category_id: "",
-        payment_method_id: "",
-        wallet_id: "",
-		contact_id: "",
-		project_id: "",
-		location_id: "",
-		tag_ids: [] as string[],
+        name: initialData?.name || "",
+        amount: initialData?.amount || 0,
+        transaction_date: initialData ? new Date(initialData.transaction_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        description: initialData?.description || "",
+        category_id: initialData?.category_id || "",
+        payment_method_id: initialData?.payment_method_id || "",
+        wallet_id: initialData?.wallet_id || "",
+		contact_id: initialData?.contact_id || "",
+		project_id: initialData?.project_id || "",
+		location_id: initialData?.location_id || "",
+		tag_ids: initialData?.tags || [] as string[],
         family_id: familyId
     });
 
@@ -168,8 +170,13 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             family_id: familyId,
         };
 
-        await transactionService.createTransaction(payload);
-        toast.success("Expense added successfully");
+        if (initialData) {
+            await transactionService.updateTransaction(initialData.id, payload);
+            toast.success("Expense updated successfully");
+        } else {
+            await transactionService.createTransaction(payload);
+            toast.success("Expense added successfully");
+        }
         if (onSuccess) onSuccess();
     } catch (error) {
         toast.error("Failed to add expense");
@@ -453,7 +460,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             type="submit" 
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-purple-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            Record Expense
+            {initialData ? "Update Expense" : "Record Expense"}
           </Button>
         </div>
       </form>

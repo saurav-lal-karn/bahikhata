@@ -25,3 +25,23 @@ func (req *CreateInvestmentValuationRequest) ToModel(investmentID uuid.UUID) *mo
 		PricePerUnit:  req.PricePerUnit,
 	}
 }
+
+type InvestmentValuationResponse struct {
+	ID            uuid.UUID `json:"id"`
+	InvestmentID  uuid.UUID `json:"investment_id"`
+	ValuationDate time.Time `json:"valuation_date"`
+	PricePerUnit  float64   `json:"price_per_unit"`
+}
+
+func ToInvestmentValuationResponse(valuation *model.InvestmentValuation) *InvestmentValuationResponse {
+	if valuation == nil {
+		return nil
+	}
+	
+	return &InvestmentValuationResponse{
+		ID:            valuation.ID,
+		InvestmentID:  valuation.InvestmentID,
+		ValuationDate: valuation.ValuationDate,
+		PricePerUnit:  valuation.PricePerUnit,
+	}
+}

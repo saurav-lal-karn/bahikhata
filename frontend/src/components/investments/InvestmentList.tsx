@@ -25,9 +25,11 @@ export interface InvestmentValuation {
 interface InvestmentListProps {
   investments?: Investment[];
   isLoading?: boolean;
+  onEdit?: (investment: Investment) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = [], isLoading = false }) => {
+export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = [], isLoading = false, onEdit, onDelete }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [transactionModalId, setTransactionModalId] = useState<string | null>(null);
   const [valuationModalId, setValuationModalId] = useState<string | null>(null);
@@ -96,15 +98,16 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
 
   return (
     <div className="space-y-4">
-      {investments.map((inv) => {
+      {investments.map((inv, index) => {
         const currentValue = inv.current_price * inv.quantity;
         const investedValue = inv.avg_buy_price * inv.quantity;
         const profit = currentValue - investedValue;
         const isProfit = profit >= 0;
+        const isLastItem = index > investments.length - 3;
 
         return (
-            <div key={inv.id} className="flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl group hover:shadow-lg transition-all relative overflow-hidden">
-            <div className={`p-6 flex flex-col sm:flex-row items-center justify-between gap-6 ${activeMenu === inv.id ? 'z-50' : 'z-10'}`}>
+            <div key={inv.id} className={`flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl group hover:shadow-lg transition-all relative ${activeMenu === inv.id ? 'z-50' : ''}`}>
+            <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
 
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/10 text-blue-600 flex items-center justify-center">
@@ -147,7 +150,7 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                         <Dropdown 
                           isOpen={activeMenu === inv.id} 
                           onClose={() => setActiveMenu(null)} 
-                          className="w-48 text-left"
+                          className={`w-48 text-left ${isLastItem ? 'bottom-full mb-2 !mt-0 origin-bottom-right' : ''}`}
                         >
                           <DropdownItem onClick={() => { setActiveMenu(null); setTransactionModalId(inv.id); }}>
                             <div className="flex items-center gap-2">
@@ -174,14 +177,14 @@ export const InvestmentList: React.FC<InvestmentListProps> = ({ investments = []
                             </div>
                           </DropdownItem>
                           <div className="h-px bg-gray-50 dark:bg-gray-800 my-1" />
-                          <DropdownItem onClick={() => setActiveMenu(null)}>
+                          <DropdownItem onClick={() => { setActiveMenu(null); onEdit?.(inv); }}>
                             <div className="flex items-center gap-2">
                               <Pencil className="w-4 h-4 text-gray-500" />
                               <span>Edit Asset</span>
                             </div>
                           </DropdownItem>
                           <DropdownItem 
-                            onClick={() => setActiveMenu(null)}
+                            onClick={() => { setActiveMenu(null); onDelete?.(inv.id!); }}
                             className="text-red-500 hover:bg-red-50 hover:text-red-600 font-bold"
                           >
                             <div className="flex items-center gap-2">

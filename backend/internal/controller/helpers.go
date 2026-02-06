@@ -40,6 +40,21 @@ func parseUUIDParam(c *gin.Context, paramName string) (uuid.UUID, error) {
 	return id, nil
 }
 
+// parseUUIDQuery extracts and validates UUID from URL query parameter
+func parseUUIDQuery(c *gin.Context, paramName string) (uuid.UUID, error) {
+	paramValue := c.Query(paramName)
+	if paramValue == "" {
+		return uuid.Nil, errors.New(paramName + " is required")
+	}
+
+	id, err := uuid.Parse(paramValue)
+	if err != nil {
+		return uuid.Nil, errors.New("invalid " + paramName + " format")
+	}
+
+	return id, nil
+}
+
 // handleServiceError maps service errors to appropriate HTTP responses
 func handleServiceError(c *gin.Context, err error) {
 	var svcErr *service.ServiceError

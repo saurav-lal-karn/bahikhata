@@ -17,12 +17,17 @@ import Button from "@/components/ui/button/Button";
 import { AddSubscriptionForm } from "@/components/subscriptions/AddSubscriptionForm";
 import toast from "react-hot-toast";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import { SubscriptionManager } from "@/components/recurring/SubscriptionManager";
 
 export default function SubscriptionPageClient() {
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchSubscriptions = async () => {
     try {
@@ -44,14 +49,27 @@ export default function SubscriptionPageClient() {
     fetchSubscriptions();
   }, [user]);
 
-  const handleDelete = async (id: string) => {
-      if (!confirm("Are you sure you want to delete this subscription?")) return;
+  const handleEdit = (subscription: Subscription) => {
+    setEditingSubscription(subscription);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+      if (!deletingId) return;
       try {
-          await subscriptionService.deleteSubscription(id);
+          setIsDeleting(true);
+          await subscriptionService.deleteSubscription(deletingId);
           toast.success("Subscription removed");
           fetchSubscriptions();
+          setDeletingId(null);
       } catch (error) {
           toast.error("Failed to delete");
+      } finally {
+        setIsDeleting(false);
       }
   };
 
@@ -112,62 +130,36 @@ export default function SubscriptionPageClient() {
       </div>
 
       {/* Subscriptions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
-              Array(3).fill(0).map((_, i) => (
-                  <div key={i} className="h-48 bg-gray-50 dark:bg-gray-800/50 rounded-3xl animate-pulse" />
-              ))
-          ) : subscriptions.length > 0 ? (
-              subscriptions.map((sub) => (
-                  <div key={sub.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:border-purple-200 dark:hover:border-purple-900/50 transition-all group">
-                      <div className="flex items-start justify-between mb-6">
-                          <div className="p-3 bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400 rounded-2xl">
-                              <Repeat className="w-6 h-6" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                              <button onClick={() => handleDelete(sub.id)} className="p-2 text-gray-300 hover:text-rose-500 transition-colors">
-                                  <Trash2 className="w-4 h-4" />
-                              </button>
-                          </div>
-                      </div>
-                      <div>
-                          <h4 className="text-lg font-black text-gray-900 dark:text-white mb-1">{sub.name}</h4>
-                          <div className="flex items-center gap-2 mb-4">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-md">
-                                  {sub.category?.name || "Uncategorized"}
-                              </span>
-                          </div>
-                          <div className="flex items-end justify-between">
-                              <div>
-                                  <p className="text-2xl font-black text-purple-600 italic">{formatCurrency(sub.amount)}</p>
-                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">per {sub.frequency.toLowerCase()}</p>
-                              </div>
-                              <div className="text-right">
-                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Next Bill</p>
-                                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-                                      {sub.next_billing_date ? formatDateTime(sub.next_billing_date) : 'N/A'}
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              ))
-          ) : (
-              <div className="col-span-full py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 text-center">
-                  <Repeat className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                  <p className="text-gray-500 font-bold text-lg">No subscriptions tracked yet.</p>
-                  <Button onClick={() => setIsModalOpen(true)} className="mt-6 rounded-2xl">Track First Subscription</Button>
-              </div>
-          )}
+      <div className="mt-8">
+        <SubscriptionManager 
+           transactions={subscriptions} 
+           isLoading={isLoading} 
+           onEdit={handleEdit}
+           onDelete={handleDelete}
+        />
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="max-w-2xl p-8">
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingSubscription(null); }} className="max-w-2xl p-8">
           <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Add Subscription</h2>
-              <p className="text-gray-500 text-sm font-medium italic">Keep track of your digital recurrences and never get surprised by a bill.</p>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{editingSubscription ? "Edit Subscription" : "Add Subscription"}</h2>
+              <p className="text-gray-500 text-sm font-medium italic">{editingSubscription ? "Update subscription details." : "Keep track of your digital recurrences and never get surprised by a bill."}</p>
           </div>
-          <AddSubscriptionForm onSuccess={() => { setIsModalOpen(false); fetchSubscriptions(); }} onCancel={() => setIsModalOpen(false)} familyId={user?.family?.id} />
+          <AddSubscriptionForm 
+            onSuccess={() => { setIsModalOpen(false); setEditingSubscription(null); fetchSubscriptions(); }} 
+            onCancel={() => { setIsModalOpen(false); setEditingSubscription(null); }} 
+            familyId={user?.family?.id} 
+            initialData={editingSubscription}
+          />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Subscription"
+        description="Are you sure you want to stop tracking this subscription? This will remove it from your recurring expenses."
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

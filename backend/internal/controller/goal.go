@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
@@ -41,32 +40,21 @@ func (c *GoalController) Create(ctx *gin.Context) {
 }
 
 func (c *GoalController) List(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	uid, err := uuid.Parse(userId.(string))
+	familyID, err := parseUUIDQuery(ctx, "family_id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
-		return
-	}
-
-	familyId := ctx.Query("family_id")
-	if familyId == "" {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
-		return
-	}
-	familyID, err := uuid.Parse(familyId)
-	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid family_id format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	goals, err := c.goalService.List(ctx.Request.Context(), familyID, uid)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get goals"})
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -74,10 +62,9 @@ func (c *GoalController) List(ctx *gin.Context) {
 }
 
 func (c *GoalController) AddContribution(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	goalID, err := uuid.Parse(idParam)
+	goalID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -89,7 +76,7 @@ func (c *GoalController) AddContribution(ctx *gin.Context) {
 
 	contribution := req.ToModel(goalID)
 	if err := c.goalService.CreateContribution(ctx.Request.Context(), contribution); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add contribution")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -97,16 +84,15 @@ func (c *GoalController) AddContribution(ctx *gin.Context) {
 }
 
 func (c *GoalController) ListContributions(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	goalID, err := uuid.Parse(idParam)
+	goalID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	contributions, err := c.goalService.ListContributions(ctx.Request.Context(), goalID)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch contributions")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -120,10 +106,9 @@ func (c *GoalController) Update(ctx *gin.Context) {
 		return
 	}
 
-	idParam := ctx.Param("id")
-	goalID, err := uuid.Parse(idParam)
+	goalID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -135,7 +120,7 @@ func (c *GoalController) Update(ctx *gin.Context) {
 
 	goal, err := c.goalService.Update(ctx.Request.Context(), goalID, &req, uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to update goal")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -143,21 +128,14 @@ func (c *GoalController) Update(ctx *gin.Context) {
 }
 
 func (c *GoalController) Delete(ctx *gin.Context) {
-	_, err := getUserIDFromContext(ctx)
+	goalID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
-
-	idParam := ctx.Param("id")
-	goalID, err := uuid.Parse(idParam)
-	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := c.goalService.Delete(ctx.Request.Context(), goalID); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to delete goal")
+		handleServiceError(ctx, err)
 		return
 	}
 

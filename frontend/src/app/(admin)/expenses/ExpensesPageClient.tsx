@@ -8,10 +8,13 @@ import { AddExpenseForm } from "@/components/expenses/AddExpenseForm";
 import { BulkImportExpenses } from "@/components/expenses/BulkImportExpenses";
 import { FileSpreadsheet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { ExpenseCategory, PaymentMethod, WalletInfoType } from "@/types";
+import { WalletInfoType, Transaction, ExpenseCategory, PaymentMethod } from "@/types";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { paymentMethodService } from "@/services/paymentMethodService";
 import { walletService } from "@/services/walletService";
+import { transactionService } from "@/services/transactionService";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import toast from "react-hot-toast";
 
 export default function ExpensesPageClient() {
   const { user } = useAuth();
@@ -24,8 +27,12 @@ export default function ExpensesPageClient() {
   const [wallets, setWallets] = useState<WalletInfoType[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => { setIsModalOpen(false); setEditingExpense(null); };
   
   const openBulkModal = () => setIsBulkModalOpen(true);
   const closeBulkModal = () => setIsBulkModalOpen(false);
@@ -33,6 +40,30 @@ export default function ExpensesPageClient() {
   const handleExpenseAdded = () => {
     setRefreshKey(prev => prev + 1);
     closeModal();
+  };
+
+  const handleEditExpense = (expense: Transaction) => {
+    setEditingExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      setIsDeleting(true);
+      await transactionService.deleteTransaction(deletingId);
+      toast.success("Expense deleted");
+      setRefreshKey(prev => prev + 1);
+      setDeletingId(null);
+    } catch (error) {
+      toast.error("Failed to delete expense");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   useEffect(() => {
@@ -99,13 +130,18 @@ export default function ExpensesPageClient() {
       <ExpensesStats familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
 
       {/* Main Table / List Area */}
-      <ExpensesList familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
+      <ExpensesList 
+        familyId={familyDetails?.id || ""} 
+        refreshKey={refreshKey} 
+        onEdit={handleEditExpense} 
+        onDelete={handleDeleteExpense}
+      />
 
       {/* Add Expense Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
         <div className="mb-10">
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">New Transaction</h3>
-          <p className="text-sm text-gray-500 font-medium">Record a new expense or scan a receipt to auto-fill details.</p>
+          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingExpense ? "Edit Transaction" : "New Transaction"}</h3>
+          <p className="text-sm text-gray-500 font-medium">{editingExpense ? "Update transaction details." : "Record a new expense or scan a receipt to auto-fill details."}</p>
         </div>
         <AddExpenseForm 
           onSuccess={handleExpenseAdded} 
@@ -114,8 +150,18 @@ export default function ExpensesPageClient() {
           paymentMethods={paymentMethods}
           wallets={wallets}
           familyId={familyDetails?.id || ""}
+          initialData={editingExpense}
         />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Expense"
+        description="Are you sure you want to delete this expense? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
 
       {/* Bulk Import Modal */}
       <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className="max-w-4xl p-10">

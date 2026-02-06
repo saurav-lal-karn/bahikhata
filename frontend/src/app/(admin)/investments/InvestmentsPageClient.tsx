@@ -24,6 +24,8 @@ import { investmentService } from "@/services/investmentService";
 import { Investment } from "@/types";
 import { InvestmentList } from "@/components/investments/InvestmentList";
 import { formatCurrency } from "@/lib/utils";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import toast from "react-hot-toast";
 
 export default function InvestmentsPageClient() {
   const { user } = useAuth();
@@ -36,6 +38,11 @@ export default function InvestmentsPageClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  // Edit/Delete State
+  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Extract unique investment types
   const investmentTypes = Array.from(new Set(investments.map(inv => inv.type).filter(Boolean))) as string[];
@@ -62,7 +69,33 @@ export default function InvestmentsPageClient() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
       setIsModalOpen(false);
+      setEditingInvestment(null);
       fetchInvestments();
+  };
+  
+  const handleEditInvestment = (investment: Investment) => {
+    setEditingInvestment(investment);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteInvestment = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      setIsDeleting(true);
+      await investmentService.delete(deletingId);
+      setInvestments(prev => prev.filter(i => i.id !== deletingId));
+      toast.success("Investment deleted successfully");
+      setDeletingId(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete investment");
+    } finally {
+      setIsDeleting(false);
+    }
   };
   
   const openBulkModal = () => setIsBulkModalOpen(true);
@@ -213,6 +246,8 @@ export default function InvestmentsPageClient() {
             <InvestmentList 
                 investments={filteredInvestments} 
                 isLoading={isLoading} 
+                onEdit={handleEditInvestment}
+                onDelete={handleDeleteInvestment}
             />
         </div>
       </div>
@@ -221,12 +256,26 @@ export default function InvestmentsPageClient() {
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
         <div className="mb-10">
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-            <TrendingUp className="text-blue-500 w-8 h-8" /> New Investment
+            <TrendingUp className="text-blue-500 w-8 h-8" /> {editingInvestment ? 'Edit Investment' : 'New Investment'}
           </h3>
-          <p className="text-sm text-gray-500 font-medium">Add a new asset, stock, or fund to your portfolio.</p>
+          <p className="text-sm text-gray-500 font-medium">{editingInvestment ? 'Update details regarding this asset.' : 'Add a new asset, stock, or fund to your portfolio.'}</p>
         </div>
-        <AddInvestmentForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
+        <AddInvestmentForm 
+          onSuccess={closeModal} 
+          onCancel={closeModal} 
+          familyId={familyDetails?.id} 
+          initialData={editingInvestment}
+        />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Investment"
+        description="Are you sure you want to delete this investment? All transaction history and valuations associated with it will also be deleted."
+        isDeleting={isDeleting}
+      />
 
       {/* Bulk Import Modal */}
       <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className="max-w-4xl p-10">

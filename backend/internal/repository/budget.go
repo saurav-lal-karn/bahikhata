@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/model"
@@ -9,13 +10,13 @@ import (
 )
 
 type BudgetRepository interface {
-	Create(ctx context.Context, budget *model.Budget) error
-	GetByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error)
-	GetByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error)
-	Update(ctx context.Context, budget *model.Budget) error
+	Create(ctx context.Context, budget *model.Budget) (*model.Budget, error)
+	Update(ctx context.Context, id uuid.UUID, budget *model.Budget) (*model.Budget, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Budget, error)
+	GetByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]model.Budget, error)
 
 	// Budget Periods
 	GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error)
@@ -33,8 +34,34 @@ func NewBudgetRepository(db *gorm.DB) BudgetRepository {
 	return &budgetRepository{db: db}
 }
 
-func (br *budgetRepository) Create(ctx context.Context, budget *model.Budget) error {
-	return br.db.WithContext(ctx).Create(budget).Error
+func (br *budgetRepository) Create(ctx context.Context, budget *model.Budget) (*model.Budget, error) {
+	if err := br.db.WithContext(ctx).Create(budget).Error; err != nil {
+		return nil, err
+	}
+	return budget, nil
+}
+
+func (br *budgetRepository) Update(ctx context.Context, id uuid.UUID, budget *model.Budget) (*model.Budget, error) {
+	result := br.db.WithContext(ctx).Model(&model.Budget{}).Where("id = ?", id).Updates(budget)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to update budget %s: %w", id, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return br.GetByID(ctx, id)
+} 
+
+func (br *budgetRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return br.db.WithContext(ctx).Delete(&model.Budget{}, "id = ?", id).Error
+}
+
+func (br *budgetRepository) List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error) {
+	var budgets []model.Budget
+	if err := br.db.WithContext(ctx).Where("family_id = ? AND user_id = ?", family_id, user_id).Preload("Category").Find(&budgets).Error; err != nil {
+		return nil, err
+	}
+	return budgets, nil
 }
 
 func (br *budgetRepository) GetByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Budget, error) {
@@ -59,22 +86,6 @@ func (br *budgetRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.B
 		return nil, err
 	}
 	return &budget, nil
-}
-
-func (br *budgetRepository) Update(ctx context.Context, budget *model.Budget) error {
-	return br.db.WithContext(ctx).Save(budget).Error
-}
-
-func (br *budgetRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return br.db.WithContext(ctx).Delete(&model.Budget{}, id).Error
-}
-
-func (br *budgetRepository) List(ctx context.Context, family_id *uuid.UUID, user_id *uuid.UUID) ([]model.Budget, error) {
-	var budgets []model.Budget
-	if err := br.db.WithContext(ctx).Where("family_id = ? AND user_id = ?", family_id, user_id).Preload("Category").Find(&budgets).Error; err != nil {
-		return nil, err
-	}
-	return budgets, nil
 }
 
 func (br *budgetRepository) GetPeriods(ctx context.Context, budgetID uuid.UUID) ([]model.BudgetPeriod, error) {

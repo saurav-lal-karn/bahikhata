@@ -26,6 +26,13 @@ export const budgetService = {
         const response = await apiClient.post(`/budgets`, budget);
         return response.data.data;
     },
+    updateBudget: async (id: string, budget: any) => {
+        const response = await apiClient.put(`/budgets/${id}`, budget);
+        return response.data.data;
+    },
+    deleteBudget: async (id: string) => {
+        await apiClient.delete(`/budgets/${id}`);
+    },
     getBudgets: async (familyId: string) => {
         const response = await apiClient.get(`/budgets/family/${familyId}`);
         return response.data.data;

@@ -4,29 +4,23 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
 type InvestmentController struct {
-	service service.InvestmentService
+	investmentService service.InvestmentService
 }
 
-func NewInvestmentController(service service.InvestmentService) *InvestmentController {
-	return &InvestmentController{service: service}
+func NewInvestmentController(investmentService service.InvestmentService) *InvestmentController {
+	return &InvestmentController{investmentService: investmentService}
 }
 
 func (c *InvestmentController) Create(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
 		return
 	}
 
@@ -36,11 +30,9 @@ func (c *InvestmentController) Create(ctx *gin.Context) {
 		return
 	}
 
-	investment := req.ToModel()
-	investment.UserID = &uid
-
-	if err := c.service.Create(ctx, investment); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create investment")
+	investment, err := c.investmentService.Create(ctx, &req, uid)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -48,28 +40,21 @@ func (c *InvestmentController) Create(ctx *gin.Context) {
 }
 
 func (c *InvestmentController) List(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
 		return
 	}
-	uid, err := uuid.Parse(userId.(string))
+
+	familyID, err := parseUUIDQuery(ctx, "family_id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var familyID *uuid.UUID
-	familyIdParam := ctx.Query("family_id")
-	if familyIdParam != "" {
-		if fid, err := uuid.Parse(familyIdParam); err == nil {
-			familyID = &fid
-		}
-	}
-
-	investments, err := c.service.List(ctx, familyID, &uid)
+	investments, err := c.investmentService.List(ctx, &familyID, &uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch investments")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -77,26 +62,68 @@ func (c *InvestmentController) List(ctx *gin.Context) {
 }
 
 func (c *InvestmentController) Delete(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := uuid.Parse(idParam)
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := c.service.Delete(ctx, id); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to delete investment")
+	if err := c.investmentService.Delete(ctx, id); err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Investment deleted successfully", nil)
 }
 
-func (c *InvestmentController) AddTransaction(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	investmentID, err := uuid.Parse(idParam)
+func (c *InvestmentController) Update(ctx *gin.Context) {
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	id, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var req dto.UpdateInvestmentRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	investment, err := c.investmentService.Update(ctx, id, &req, uid)
+	if err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Investment updated successfully", investment)
+}
+
+func (c *InvestmentController) GetByID(ctx *gin.Context) {
+	id, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	investment, err := c.investmentService.GetByID(ctx, id)
+	if err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Investment fetched successfully", investment)
+}
+
+func (c *InvestmentController) AddTransaction(ctx *gin.Context) {
+	id, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -106,9 +133,9 @@ func (c *InvestmentController) AddTransaction(ctx *gin.Context) {
 		return
 	}
 
-	transaction := req.ToModel(investmentID)
-	if err := c.service.CreateTransaction(ctx, transaction); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add transaction")
+	transaction, err := c.investmentService.CreateTransaction(ctx, id, &req)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -116,16 +143,15 @@ func (c *InvestmentController) AddTransaction(ctx *gin.Context) {
 }
 
 func (c *InvestmentController) ListTransactions(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	investmentID, err := uuid.Parse(idParam)
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	transactions, err := c.service.ListTransactions(ctx, investmentID)
+	transactions, err := c.investmentService.ListTransactions(ctx, id)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch transactions")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -133,10 +159,9 @@ func (c *InvestmentController) ListTransactions(ctx *gin.Context) {
 }
 
 func (c *InvestmentController) AddValuation(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	investmentID, err := uuid.Parse(idParam)
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -146,9 +171,9 @@ func (c *InvestmentController) AddValuation(ctx *gin.Context) {
 		return
 	}
 
-	valuation := req.ToModel(investmentID)
-	if err := c.service.CreateValuation(ctx, valuation); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add valuation")
+	valuation , err := c.investmentService.CreateValuation(ctx, id, &req)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -156,16 +181,15 @@ func (c *InvestmentController) AddValuation(ctx *gin.Context) {
 }
 
 func (c *InvestmentController) ListValuations(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	investmentID, err := uuid.Parse(idParam)
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	valuations, err := c.service.ListValuations(ctx, investmentID)
+	valuations, err := c.investmentService.ListValuations(ctx, id)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch valuations")
+		handleServiceError(ctx, err)
 		return
 	}
 

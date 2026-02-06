@@ -19,15 +19,9 @@ func NewBudgetController(budgetService service.BudgetService) *BudgetController 
 }
 
 func (bc *BudgetController) Create(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 	
@@ -37,55 +31,86 @@ func (bc *BudgetController) Create(ctx *gin.Context) {
 		return
 	}
 
-	budget  := req.ToBudget()
-	budget.UserID = uid
-
-	if err := bc.budgetService.Create(ctx, budget); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create budget")
+	budget, err := bc.budgetService.Create(ctx, &req, uid)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
-	helper.SuccessResponse(ctx, http.StatusCreated, "Budget created successfully", nil)
+	helper.SuccessResponse(ctx, http.StatusCreated, "Budget created successfully", budget)
+}
+
+func (bc *BudgetController) Update(ctx *gin.Context) {
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	id, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var req dto.UpdateBudgetRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	budget, err := bc.budgetService.Update(ctx, id, &req, uid)
+	if err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+	helper.SuccessResponse(ctx, http.StatusOK, "Budget updated successfully", budget)
+}
+
+func (bc *BudgetController) Delete(ctx *gin.Context) {
+	id, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := bc.budgetService.Delete(ctx, id); err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+	helper.SuccessResponse(ctx, http.StatusOK, "Budget deleted successfully", nil)
 }
 
 func (bc *BudgetController) List(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	familyId := ctx.Param("family_id")
-    if familyId == "" {
-        helper.ErrorResponse(ctx, http.StatusBadRequest, "family_id is required")
-        return
-    }
-    familyID := uuid.MustParse(familyId)
+	familyID, err := parseUUIDParam(ctx, "family_id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	budgets, err := bc.budgetService.List(ctx, &familyID, &uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to get budgets")
+		handleServiceError(ctx, err)
 		return
 	}
 	helper.SuccessResponse(ctx, http.StatusOK, "Budgets retrieved successfully", budgets)
 }
 
 func (bc *BudgetController) GetPeriods(ctx *gin.Context) {
-	budgetIDStr := ctx.Param("id")
-	budgetID, err := uuid.Parse(budgetIDStr)
+	budgetID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid budget ID")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	periods, err := bc.budgetService.GetPeriods(ctx, budgetID)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to get budget periods")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -94,19 +119,14 @@ func (bc *BudgetController) GetPeriods(ctx *gin.Context) {
 
 func (bc *BudgetController) GetAlerts(ctx *gin.Context) {
 	var familyID *uuid.UUID
-	familyIDStr := ctx.Query("family_id")
-	if familyIDStr != "" {
-		fid, err := uuid.Parse(familyIDStr)
-		if err != nil {
-			helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid family ID")
-			return
-		}
+	fid, err := parseUUIDQuery(ctx, "family_id")
+	if err != nil {
 		familyID = &fid
 	}
 
 	alerts, err := bc.budgetService.GetAlerts(ctx, familyID)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to get budget alerts")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -114,15 +134,14 @@ func (bc *BudgetController) GetAlerts(ctx *gin.Context) {
 }
 
 func (bc *BudgetController) AcknowledgeAlert(ctx *gin.Context) {
-	alertIDStr := ctx.Param("id")
-	alertID, err := uuid.Parse(alertIDStr)
+	alertID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid alert ID")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := bc.budgetService.AcknowledgeAlert(ctx, alertID); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to acknowledge alert")
+		handleServiceError(ctx, err)
 		return
 	}
 

@@ -7,27 +7,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
-	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
 type DebtController struct {
-	service service.DebtService
+	debtService service.DebtService
 }
 
-func NewDebtController(service service.DebtService) *DebtController {
-	return &DebtController{service: service}
+func NewDebtController(debtService service.DebtService) *DebtController {
+	return &DebtController{debtService: debtService}
 }
 
 func (c *DebtController) Create(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -37,15 +31,9 @@ func (c *DebtController) Create(ctx *gin.Context) {
 		return
 	}
 
-	debt, err := req.ToModel()
+	debt, err := c.debtService.Create(ctx, &req, uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid due date format")
-		return
-	}
-	debt.UserID = uid
-
-	if err := c.service.Create(ctx, debt); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create debt")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -53,28 +41,21 @@ func (c *DebtController) Create(ctx *gin.Context) {
 }
 
 func (c *DebtController) List(ctx *gin.Context) {
-	userId, exists := ctx.Get("userId")
-	if !exists {
-		helper.ErrorResponse(ctx, http.StatusUnauthorized, "User ID not found in context")
-		return
-	}
-	uid, err := uuid.Parse(userId.(string))
+	uid, err := getUserIDFromContext(ctx)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Invalid user ID format in context")
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	var familyID *uuid.UUID
-	familyIdParam := ctx.Query("family_id")
-	if familyIdParam != "" {
-		if fid, err := uuid.Parse(familyIdParam); err == nil {
-			familyID = &fid
-		}
+	familyID, err := parseUUIDQuery(ctx, "family_id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	debts, err := c.service.List(ctx, familyID, &uid)
+	debts, err := c.debtService.List(ctx, &familyID, &uid)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch debts")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -82,38 +63,80 @@ func (c *DebtController) List(ctx *gin.Context) {
 }
 
 func (c *DebtController) Delete(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := uuid.Parse(idParam)
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := c.service.Delete(ctx, id); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to delete debt")
+	if err := c.debtService.Delete(ctx, id); err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
 	helper.SuccessResponse(ctx, http.StatusOK, "Debt deleted successfully", nil)
 }
 
-func (c *DebtController) AddRepayment(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	debtID, err := uuid.Parse(idParam)
+func (c *DebtController) GetByID(ctx *gin.Context) {
+	id, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var req dto.AddDebtRepaymentRequest
+	debt, err := c.debtService.GetByID(ctx, id)
+	if err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Debt fetched successfully", debt)
+}
+
+func (c *DebtController) Update(ctx *gin.Context) {
+	uid, err := getUserIDFromContext(ctx)
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	debtID, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var req dto.UpdateDebtRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
 	}
 
-	repayment := req.ToModel(debtID)
-	if err := c.service.CreateRepayment(ctx, repayment); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to add repayment")
+	debt, err := c.debtService.Update(ctx, debtID, &req, uid)
+	if err != nil {
+		handleServiceError(ctx, err)
+		return
+	}
+
+	helper.SuccessResponse(ctx, http.StatusOK, "Debt updated successfully", debt)
+}
+
+func (c *DebtController) AddRepayment(ctx *gin.Context) {
+	debtID, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var req dto.CreateDebtRepaymentRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	repayment, err := c.debtService.CreateRepayment(ctx, debtID, &req)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -121,16 +144,15 @@ func (c *DebtController) AddRepayment(ctx *gin.Context) {
 }
 
 func (c *DebtController) ListRepayments(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	debtID, err := uuid.Parse(idParam)
+	debtID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	repayments, err := c.service.ListRepayments(ctx, debtID)
+	repayments, err := c.debtService.ListRepayments(ctx, debtID)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch repayments")
+		handleServiceError(ctx, err)
 		return
 	}
 
@@ -138,25 +160,20 @@ func (c *DebtController) ListRepayments(ctx *gin.Context) {
 }
 
 func (c *DebtController) CreateSchedules(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	debtID, err := uuid.Parse(idParam)
+	debtID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var req []dto.CreateDebtScheduleRequest
+	var req []*dto.CreateDebtScheduleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(ctx, http.StatusBadRequest, helper.FormatValidationError(err))
 		return
 	}
 
-	var schedules []model.DebtSchedule
-	for _, r := range req {
-		schedules = append(schedules, *r.ToModel(debtID))
-	}
-
-	if err := c.service.CreateSchedules(ctx, schedules); err != nil {
+	schedules, err := c.debtService.CreateSchedules(ctx, debtID, req)
+	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to create schedules")
 		return
 	}
@@ -165,10 +182,9 @@ func (c *DebtController) CreateSchedules(ctx *gin.Context) {
 }
 
 func (c *DebtController) UpdateScheduleStatus(ctx *gin.Context) {
-	idParam := ctx.Param("schedule_id")
-	scheduleID, err := uuid.Parse(idParam)
+	scheduleID, err := parseUUIDParam(ctx, "schedule_id")
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "Invalid ID format")
+		helper.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -178,12 +194,13 @@ func (c *DebtController) UpdateScheduleStatus(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.service.UpdateScheduleStatus(ctx, scheduleID, req.Status); err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to update schedule status")
+	debtSchedule, err := c.debtService.UpdateScheduleStatus(ctx, scheduleID, req.Status)
+	if err != nil {
+		handleServiceError(ctx, err)
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusOK, "Schedule status updated successfully", nil)
+	helper.SuccessResponse(ctx, http.StatusOK, "Schedule status updated successfully", debtSchedule)
 }
 
 func (c *DebtController) GetAmortizationSchedule(ctx *gin.Context) {
@@ -194,7 +211,7 @@ func (c *DebtController) GetAmortizationSchedule(ctx *gin.Context) {
 		return
 	}
 
-	schedules, err := c.service.GetAmortizationSchedule(ctx, debtID)
+	schedules, err := c.debtService.GetAmortizationSchedule(ctx, debtID)
 	if err != nil {
 		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to fetch amortization schedule")
 		return

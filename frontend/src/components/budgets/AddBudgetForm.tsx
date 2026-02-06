@@ -14,19 +14,22 @@ import { ExpenseCategory } from "@/types";
 import { budgetService } from "@/services/budgetService";
 import toast from "react-hot-toast";
 
+import { Budget } from "@/types";
+
 interface AddBudgetFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   categories?: ExpenseCategory[];
   family_id?: string;
+  initialData?: Budget | null;
 }
 
-export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCancel, categories = [], family_id }) => {
+export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCancel, categories = [], family_id, initialData }) => {
   const [formData, setFormData] = useState({
-    category: "",
-    amount: "",
-    period: "Weekly",
-    alertThreshold: "80",
+    category: initialData?.category?.id || "",
+    amount: initialData?.amount_limit.toString() || "",
+    period: "Weekly", // Assuming default as Weekly based on existing code, or map from initialData if available
+    alertThreshold: "80", // Default
     rollover: false
   });
 
@@ -37,18 +40,32 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
         return;
     }
     try {
-        await budgetService.createBudget({
-            category_id: formData.category,
+        const category = categories.find(c => c.id === formData.category);
+        if (!category) throw new Error("Invalid Category");
+
+        const payload = {
+            category_id: category.id,
             amount_limit: Number(formData.amount),
             family_id: family_id,
             period: formData.period,
-            alert_threshold: Number(formData.alertThreshold)
-        });
-        toast.success("Budget set successfully");
+            alert_threshold: Number(formData.alertThreshold),
+            currency: "INR",
+            start_date: new Date().toISOString(),
+            end_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
+        };
+
+        if (initialData) {
+            await budgetService.updateBudget(initialData.id, payload);
+             toast.success("Budget updated successfully");
+        } else {
+            await budgetService.createBudget(payload);
+            toast.success("Budget set successfully");
+        }
+        
         if (onSuccess) onSuccess();
     } catch (error) {
         console.error("Failed to set budget:", error);
-        toast.error("Failed to set budget");
+        toast.error(initialData ? "Failed to update budget" : "Failed to set budget");
     }
   };
 
@@ -63,6 +80,7 @@ export const AddBudgetForm: React.FC<AddBudgetFormProps> = ({ onSuccess, onCance
               placeholder="Pick a category"
               onChange={(value: string) => setFormData({...formData, category: value})}
               className="rounded-2xl h-14"
+              value={formData.category}
             />
           </div>
 

@@ -18,6 +18,11 @@ export const subscriptionService = {
         return response.data;
     },
 
+    async updateSubscription(id: string, payload: any): Promise<Subscription> {
+        const response = await apiClient.put(`/subscriptions/${id}`, payload);
+        return response.data;
+    },
+
     async deleteSubscription(id: string): Promise<void> {
         await apiClient.delete(`/subscriptions/${id}`);
     }

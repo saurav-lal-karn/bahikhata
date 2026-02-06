@@ -16,8 +16,12 @@ func RegisterDebtRoutes(app *config.Application, router *gin.RouterGroup) {
 	router.POST("", ctrl.Create)
 	router.GET("", ctrl.List)
 	router.DELETE("/:id", ctrl.Delete)
+	router.GET("/:id", ctrl.GetByID)
+	router.PUT("/:id", ctrl.Update)
+
 	router.POST("/:id/repayments", ctrl.AddRepayment)
 	router.GET("/:id/repayments", ctrl.ListRepayments)
+
 	router.POST("/:id/schedules", ctrl.CreateSchedules)
 	router.PUT("/schedules/:schedule_id/status", ctrl.UpdateScheduleStatus)
 	router.GET("/:id/amortization", ctrl.GetAmortizationSchedule)

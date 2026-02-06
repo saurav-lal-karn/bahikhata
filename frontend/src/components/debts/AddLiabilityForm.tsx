@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   ShieldAlert, 
   Check, 
@@ -16,26 +16,29 @@ import Button from "@/components/ui/button/Button";
 import { debtService } from "@/services/debtService";
 import { contactService } from "@/services/contactService";
 import toast from "react-hot-toast";
-import { Contact } from "@/types";
+import { Contact, Debt } from "@/types";
 
 interface AddLiabilityFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   familyId?: string;
+  initialData?: Debt | null;
 }
 
-export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, onCancel, familyId }) => {
+export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, onCancel, familyId, initialData }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [formData, setFormData] = useState({
-    lender: "",
-	lender_contact_id: "",
-    totalAmount: "",
-    remainingAmount: "",
-    interestRate: "",
-    dueDateDay: "5",
+    lender: initialData?.lender || "",
+	lender_contact_id: initialData?.lender_contact_id || initialData?.lender_contact?.id || "",
+    totalAmount: initialData?.total_amount.toString() || "",
+    remainingAmount: initialData?.remaining_amount.toString() || "",
+    interestRate: initialData?.interest_rate.toString() || "",
+    dueDateDay: initialData ? new Date(initialData.due_date).getDate().toString() : "5",
   });
 
-  React.useEffect(() => {
+  console.log(initialData)
+
+  useEffect(() => {
 	if (familyId) {
 		contactService.getContacts(familyId).then(setContacts).catch(console.error);
 	}
@@ -63,20 +66,28 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
             due.setMonth(due.getMonth() + 1);
         }
 
-        await debtService.create({
+        const payload = {
             family_id: familyId,
             lender: formData.lender,
-			lender_contact_id: formData.lender_contact_id || undefined,
+            lender_contact_id: formData.lender_contact_id || undefined,
             total_amount: Number(formData.totalAmount),
-            remaining_amount: Number(formData.remainingAmount || formData.totalAmount), // Default to total if not set
+            remaining_amount: Number(formData.remainingAmount || formData.totalAmount),
             interest_rate: Number(formData.interestRate),
             due_date: due.toISOString()
-        });
-        toast.success("Liability recorded");
+        };
+
+        if (initialData) {
+            await debtService.update(initialData.id, payload);
+             toast.success("Liability updated");
+        } else {
+            await debtService.create(payload);
+            toast.success("Liability recorded");
+        }
+        
         if (onSuccess) onSuccess();
     } catch (error) {
         console.error("Failed to add liability", error);
-        toast.error("Failed to add liability");
+        toast.error(initialData ? "Failed to update liability" : "Failed to add liability");
     }
   };
 
@@ -99,9 +110,10 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
 					 setFormData({
 						 ...formData, 
 						 lender_contact_id: value,
-						 lender: contact ? contact.name : formData.lender
+						 lender: contact ? contact.name : ""
 					 });
 				 }}
+                 value={formData.lender_contact_id}
                  className="rounded-2xl h-12"
                />
              </div>
@@ -189,7 +201,7 @@ export const AddLiabilityForm: React.FC<AddLiabilityFormProps> = ({ onSuccess, o
           type="submit" 
           className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-red-500/20 transition-all flex items-center gap-2"
         >
-          <Check className="w-5 h-5" /> Record Liability
+          <Check className="w-5 h-5" /> {initialData ? "Update Liability" : "Record Liability"}
         </Button>
       </div>
     </form>

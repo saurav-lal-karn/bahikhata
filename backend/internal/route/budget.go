@@ -19,4 +19,6 @@ func RegisterBudgetRoutes(app *config.Application, router *gin.RouterGroup) {
 	router.GET("alerts", budgetController.GetAlerts)
 	router.GET(":id/periods", budgetController.GetPeriods)
 	router.POST("alerts/:id/ack", budgetController.AcknowledgeAlert)
+	router.PUT(":id", budgetController.Update)
+	router.DELETE(":id", budgetController.Delete)
 }

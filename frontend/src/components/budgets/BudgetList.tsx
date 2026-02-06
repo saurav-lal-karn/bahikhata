@@ -26,6 +26,8 @@ import { formatCurrency } from "@/lib/utils";
 interface BudgetListProps {
   budgets?: Budget[];
   isLoading?: boolean;
+  onEdit?: (budget: Budget) => void;
+  onDelete?: (id: string) => void;
 }
 
 const getCategoryIcon = (iconName: string = 'default') => {
@@ -57,7 +59,7 @@ const getCategoryColor = (name: string = '') => {
     return colors[name.length % colors.length];
 };
 
-export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading = false }) => {
+export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading = false, onEdit, onDelete }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   return (
@@ -134,14 +136,14 @@ export const BudgetList: React.FC<BudgetListProps> = ({ budgets = [], isLoading 
                                 onClose={() => setActiveMenu(null)} 
                                 className="w-32"
                             >
-                                <DropdownItem onClick={() => setActiveMenu(null)}>
+                                <DropdownItem onClick={() => { setActiveMenu(null); onEdit?.(budget); }}>
                                     <div className="flex items-center gap-2">
                                         <Pencil className="w-4 h-4 text-gray-500" />
                                         <span>Edit</span>
                                     </div>
                                 </DropdownItem>
                                 <DropdownItem 
-                                    onClick={() => setActiveMenu(null)}
+                                    onClick={() => { setActiveMenu(null); onDelete?.(budget.id); }}
                                     className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
                                 >
                                     <div className="flex items-center gap-2">

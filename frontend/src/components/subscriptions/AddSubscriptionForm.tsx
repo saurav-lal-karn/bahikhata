@@ -14,25 +14,28 @@ import { Contact } from "@/types";
 import toast from "react-hot-toast";
 import DatePicker from "../form/date-picker";
 
+import { Subscription } from "@/types";
+
 interface AddSubscriptionFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   familyId?: string;
+  initialData?: Subscription | null;
 }
 
-export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSuccess, onCancel, familyId }) => {
+export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSuccess, onCancel, familyId, initialData }) => {
   const [wallets, setWallets] = useState<WalletInfoType[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    frequency: "MONTHLY" as RecurringFrequency,
-    category_id: "",
-    wallet_id: "",
-    vendor_id: "",
-    start_date: new Date().toISOString().split('T')[0],
-    next_billing_date: "",
+    name: initialData?.name || "",
+    amount: initialData?.amount.toString() || "",
+    frequency: (initialData?.frequency as RecurringFrequency) || "MONTHLY",
+    category_id: initialData?.category_id || "",
+    wallet_id: initialData?.wallet_id || "",
+    vendor_id: initialData?.vendor_id || "",
+    start_date: initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    next_billing_date: initialData?.next_billing_date ? new Date(initialData.next_billing_date).toISOString().split('T')[0] : "",
     family_id: familyId,
   });
 
@@ -46,7 +49,7 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await subscriptionService.createSubscription({
+      const payload = {
         name: formData.name,
         amount: Number(formData.amount),
         frequency: formData.frequency,
@@ -56,12 +59,19 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
         start_date: formData.start_date,
         next_billing_date: formData.next_billing_date || undefined,
         family_id: familyId || "",
-      });
-      toast.success("Subscription tracked");
+      };
+
+      if (initialData) {
+        await subscriptionService.updateSubscription(initialData.id, payload);
+        toast.success("Subscription updated");
+      } else {
+        await subscriptionService.createSubscription(payload);
+        toast.success("Subscription tracked");
+      }
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Failed to add subscription", error);
-      toast.error("Failed to add subscription");
+      toast.error(initialData ? "Failed to update subscription" : "Failed to add subscription");
     }
   };
 
@@ -189,7 +199,7 @@ export const AddSubscriptionForm: React.FC<AddSubscriptionFormProps> = ({ onSucc
           type="submit" 
           className="bg-purple-600 hover:bg-purple-500 text-white rounded-2xl px-12 h-12 font-bold shadow-lg shadow-purple-500/20"
         >
-          <Repeat className="w-5 h-5 mr-2" /> Start Tracking
+          <Repeat className="w-5 h-5 mr-2" /> {initialData ? "Update Subscription" : "Start Tracking"}
         </Button>
       </div>
     </form>

@@ -20,6 +20,8 @@ import { useAuth } from "@/context/AuthContext";
 import { debtService } from "@/services/debtService";
 import { Debt } from "@/types";
 import { LiabilityList } from "@/components/debts/LiabilityList";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import toast from "react-hot-toast";
 
 export default function DebtsPageClient() {
   const { user } = useAuth();
@@ -31,6 +33,11 @@ export default function DebtsPageClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [selectedLender, setSelectedLender] = useState<string | null>(null);
+
+  // Edit/Delete State
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Extract unique lenders
   const uniqueLenders = Array.from(new Set(debts.map(d => d.lender).filter(Boolean))) as string[];
@@ -56,7 +63,33 @@ export default function DebtsPageClient() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
       setIsModalOpen(false);
+      setEditingDebt(null);
       fetchDebts(); // Refresh
+  };
+
+  const handleEditDebt = (debt: Debt) => {
+    setEditingDebt(debt);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteDebt = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      setIsDeleting(true);
+      await debtService.delete(deletingId);
+      setDebts(prev => prev.filter(d => d.id !== deletingId));
+      toast.success("Liability deleted successfully");
+      setDeletingId(null);
+    } catch (error) {
+       console.error(error);
+       toast.error("Failed to delete liability");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -165,6 +198,8 @@ export default function DebtsPageClient() {
                    return matchesSearch && matchesLender;
                  })} 
                  isLoading={isLoading} 
+                 onEdit={handleEditDebt}
+                 onDelete={handleDeleteDebt}
                />
             </div>
           ) : (
@@ -224,11 +259,25 @@ export default function DebtsPageClient() {
           <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-[2rem] mx-auto flex items-center justify-center border-2 border-red-100 dark:border-red-800 mb-4">
             <ShieldAlert className="w-8 h-8 text-red-600" />
           </div>
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Record a Liability</h3>
-          <p className="text-sm text-gray-500 font-medium">Link a loan or credit card to track your repayment journey.</p>
+          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingDebt ? 'Edit Liability' : 'Record a Liability'}</h3>
+          <p className="text-sm text-gray-500 font-medium">{editingDebt ? 'Update the details of your liability.' : 'Link a loan or credit card to track your repayment journey.'}</p>
         </div>
-        <AddLiabilityForm onSuccess={closeModal} onCancel={closeModal} familyId={familyDetails?.id} />
+        <AddLiabilityForm 
+          onSuccess={closeModal} 
+          onCancel={closeModal} 
+          familyId={familyDetails?.id}
+          initialData={editingDebt} 
+        />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Liability"
+        description="Are you sure you want to delete this liability? All related repayments and schedules will also be removed."
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

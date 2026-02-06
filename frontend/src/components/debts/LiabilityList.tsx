@@ -26,9 +26,11 @@ export interface DebtScheduleItem {
 interface LiabilityListProps {
   debts?: Debt[];
   isLoading?: boolean;
+  onEdit?: (debt: Debt) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoading = false }) => {
+export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoading = false, onEdit, onDelete }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [repaymentModalId, setRepaymentModalId] = useState<string | null>(null);
   const [visibleHistoryId, setVisibleHistoryId] = useState<string | null>(null);
@@ -96,9 +98,11 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
 
   return (
     <div className="space-y-4">
-      {debts.map((debt) => (
-        <div key={debt.id} className="flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl group hover:shadow-lg transition-all relative overflow-hidden">
-        <div className={`p-6 flex flex-col sm:flex-row items-center justify-between gap-6 ${activeMenu === debt.id ? 'z-50' : 'z-10'}`}>
+      {debts.map((debt, index) => {
+        const isLastItem = index > debts.length - 3;
+        return (
+        <div key={debt.id} className={`flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl group hover:shadow-lg transition-all relative ${activeMenu === debt.id ? 'z-50' : ''}`}>
+        <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
 
             <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/10 text-red-600 flex items-center justify-center">
@@ -140,14 +144,8 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
                 <Dropdown 
                   isOpen={activeMenu === debt.id} 
                   onClose={() => setActiveMenu(null)} 
-                  className="w-48 text-left"
+                  className={`w-48 text-left ${isLastItem ? 'bottom-full mb-2 !mt-0 origin-bottom-right' : ''}`}
                 >
-                  <DropdownItem onClick={() => { setActiveMenu(null); setRepaymentModalId(debt.id); }}>
-                    <div className="flex items-center gap-2">
-                       <Plus className="w-4 h-4 text-red-500" />
-                       <span className="font-bold">Record Repayment</span>
-                    </div>
-                  </DropdownItem>
                   <DropdownItem onClick={() => { setActiveMenu(null); toggleHistory(debt.id); }}>
                     <div className="flex items-center gap-2 text-gray-600">
                        <Calendar className="w-4 h-4" />
@@ -161,14 +159,14 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
                     </div>
                   </DropdownItem>
                   <div className="h-px bg-gray-50 dark:bg-gray-800 my-1" />
-                  <DropdownItem onClick={() => setActiveMenu(null)}>
-                    <div className="flex items-center gap-2">
-                      <Pencil className="w-4 h-4 text-gray-500" />
-                      <span>Edit Liability</span>
-                    </div>
+                  <DropdownItem onClick={() => { setActiveMenu(null); onEdit?.(debt); }}>
+                      <div className="flex items-center gap-2">
+                          <Pencil className="w-4 h-4 text-gray-500" />
+                          <span>Edit Liability</span>
+                      </div>
                   </DropdownItem>
                   <DropdownItem 
-                    onClick={() => setActiveMenu(null)}
+                    onClick={() => { setActiveMenu(null); onDelete?.(debt.id); }}
                     className="text-red-500 hover:bg-red-50 hover:text-red-600 font-bold"
                   >
                     <div className="flex items-center gap-2">
@@ -256,7 +254,7 @@ export const LiabilityList: React.FC<LiabilityListProps> = ({ debts = [], isLoad
            </div>
         )}
         </div>
-      ))}
+      )})}
 
       <Modal isOpen={!!repaymentModalId} onClose={() => setRepaymentModalId(null)} className="max-w-md p-8">
         <div className="mb-6">

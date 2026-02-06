@@ -567,11 +567,13 @@ export interface Subscription {
     frequency: RecurringFrequency;
     category_id?: string;
     wallet_id?: string;
+    vendor_id?: string;
     next_billing_date?: string;
     start_date: string;
     status: SubscriptionStatus;
     category?: TransactionCategory;
     wallet?: WalletInfoType;
+    vendor?: Contact;
 }
 
 export interface CreateSubscriptionPayload {

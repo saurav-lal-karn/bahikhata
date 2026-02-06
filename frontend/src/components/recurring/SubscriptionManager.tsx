@@ -17,17 +17,19 @@ import {
   XCircle,
   Clock
 } from "lucide-react";
-import { RecurringTransaction, RecurringInstance } from "@/types";
+import { Subscription, RecurringTransaction, RecurringInstance } from "@/types";
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 import { recurringService } from "@/services/recurringService";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 
 interface SubscriptionManagerProps {
-  transactions?: RecurringTransaction[];
+  transactions?: (Subscription | RecurringTransaction)[];
   isLoading?: boolean;
+  onEdit?: (subscription: Subscription | RecurringTransaction) => void;
+  onDelete?: (id: string) => void;
 }
 
 // Helper to determine icon/color based on type/name
@@ -41,13 +43,16 @@ const getStyle = (type: string, name: string) => {
     if (lowerType === 'utilities' || lowerName.includes('fiber') || lowerName.includes('wifi')) {
         return { icon: <Wifi className="w-5 h-5" />, color: "bg-blue-50 text-blue-600" };
     }
+    if (lowerType === 'utilities' || lowerName.includes('fiber') || lowerName.includes('wifi')) {
+        return { icon: <Wifi className="w-5 h-5" />, color: "bg-blue-50 text-blue-600" };
+    }
     if (lowerName.includes('phone') || lowerType.includes('mobile')) {
          return { icon: <Smartphone className="w-5 h-5" />, color: "bg-amber-50 text-amber-600" };
     }
     return { icon: <ShieldCheck className="w-5 h-5" />, color: "bg-cyan-50 text-cyan-600" };
 };
 
-export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transactions = [], isLoading = false }) => {
+export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transactions = [], isLoading = false, onEdit, onDelete }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [visibleHistoryId, setVisibleHistoryId] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<Record<string, RecurringInstance[]>>({});
@@ -83,7 +88,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transa
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
        {transactions.map((sub) => {
-         const style = getStyle(sub.type, sub.name);
+         const categoryName = 'category' in sub ? sub.category?.name : (sub as RecurringTransaction).type;
+         const style = getStyle(categoryName || "Subscription", sub.name);
+         const nextDate = 'next_billing_date' in sub ? sub.next_billing_date : (sub as RecurringTransaction).next_due_date;
+
          return (
          <div key={sub.id} className={`bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all group border-b-8 border-b-transparent hover:border-b-blue-500/30 relative flex flex-col ${activeMenu === sub.id ? 'z-50' : 'z-10'}`}>
            <div className="flex items-center justify-between mb-8">
@@ -120,19 +128,19 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transa
                         </div>
                       </DropdownItem>
                       <div className="h-px bg-gray-50 dark:bg-gray-800 my-1" />
-                      <DropdownItem onClick={() => setActiveMenu(null)}>
+                      <DropdownItem onClick={() => { setActiveMenu(null); onEdit?.(sub); }}>
                         <div className="flex items-center gap-2">
                           <Pencil className="w-4 h-4 text-gray-500" />
                           <span>Edit Settings</span>
                         </div>
                       </DropdownItem>
                       <DropdownItem 
-                        onClick={() => setActiveMenu(null)}
+                        onClick={() => { setActiveMenu(null); onDelete?.(sub.id); }}
                         className="text-red-500 hover:bg-red-50 hover:text-red-600 font-bold"
                       >
                         <div className="flex items-center gap-2">
                           <Trash2 className="w-4 h-4" />
-                          <span>Deactivate</span>
+                          <span>Delete Subscription</span>
                         </div>
                       </DropdownItem>
                     </Dropdown>
@@ -147,7 +155,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transa
               </h4>
               <div className="flex items-center gap-3 mt-3">
                  <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <CreditCard className="w-3.5 h-3.5" /> {sub.type}
+                    <CreditCard className="w-3.5 h-3.5" /> {'category' in sub ? sub.category?.name : (sub as RecurringTransaction).type}
                  </div>
               </div>
            </div>
@@ -163,7 +171,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ transa
               <div className="text-right">
                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Upcoming</span>
                  <p className="text-xs font-black text-gray-800 dark:text-white flex items-center gap-1.5">
-                    <Clock className="w-3 h-3 text-amber-500" /> {new Date(sub.next_due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <Clock className="w-3 h-3 text-amber-500" /> {formatDateTime(nextDate || "")}
                  </p>
               </div>
            </div>

@@ -25,6 +25,8 @@ import type { BudgetAlert } from "@/services/budgetService";
 import { ExpenseCategory, Budget } from "@/types";
 import { AlertCircle, CheckCheck } from "lucide-react";
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import toast from "react-hot-toast";
 
 export default function BudgetsPageClient() {
     const { user } = useAuth();
@@ -56,14 +58,46 @@ export default function BudgetsPageClient() {
   const [alerts, setAlerts] = useState<BudgetAlert[]>([]);
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
 
+  // Edit/Delete State
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
+    setEditingBudget(null);
     // Refresh budgets
     if (familyDetails?.id) {
         budgetService.getBudgets(familyDetails.id).then(setBudgets);
     }
   };
+
+  const handleEditBudget = (budget: Budget) => {
+    setEditingBudget(budget);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteBudget = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    try {
+      setIsDeleting(true);
+      await budgetService.deleteBudget(deletingId);
+      setBudgets(prev => prev.filter(b => b.id !== deletingId));
+      toast.success("Budget deleted successfully");
+      setDeletingId(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete budget");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
 
   // Month Picker Logic
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
@@ -314,6 +348,8 @@ export default function BudgetsPageClient() {
                    return matchesSearch && matchesCategory;
                  })} 
                  isLoading={isLoading} 
+                 onEdit={handleEditBudget}
+                 onDelete={handleDeleteBudget}
                />
             </div>
 
@@ -400,11 +436,26 @@ export default function BudgetsPageClient() {
       {/* Set Budget Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-4xl p-10">
         <div className="mb-10">
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Configure Category Budget</h3>
-          <p className="text-sm text-gray-500 font-medium">Set monthly limits and enable rollover for specific needs.</p>
+          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingBudget ? 'Edit Budget' : 'Configure Category Budget'}</h3>
+          <p className="text-sm text-gray-500 font-medium">{editingBudget ? 'Update your monthly spending limits.' : 'Set monthly limits and enable rollover for specific needs.'}</p>
         </div>
-        <AddBudgetForm onSuccess={closeModal} onCancel={closeModal} categories={categories} family_id={familyDetails?.id || ""} />
+        <AddBudgetForm 
+          onSuccess={closeModal} 
+          onCancel={closeModal} 
+          categories={categories} 
+          family_id={familyDetails?.id || ""} 
+          initialData={editingBudget}
+        />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Budget"
+        description="Are you sure you want to delete this budget? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

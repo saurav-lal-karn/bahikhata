@@ -22,20 +22,22 @@ import Button from "@/components/ui/button/Button";
 
 import { investmentService } from "@/services/investmentService";
 import toast from "react-hot-toast";
+import { Investment } from "@/types";
 
 interface AddInvestmentFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   familyId?: string;
+  initialData?: Investment | null;
 }
 
-export const AddInvestmentForm: React.FC<AddInvestmentFormProps> = ({ onSuccess, onCancel, familyId }) => {
+export const AddInvestmentForm: React.FC<AddInvestmentFormProps> = ({ onSuccess, onCancel, familyId, initialData }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    quantity: "",
-    avgBuyPrice: "",
-    currentPrice: "",
+    name: initialData?.name || "",
+    type: initialData?.type || "",
+    quantity: initialData?.quantity.toString() || "",
+    avgBuyPrice: initialData?.avg_buy_price.toString() || "",
+    currentPrice: initialData?.current_price.toString() || "",
   });
   
   const [isCustomType, setIsCustomType] = useState(false);
@@ -60,19 +62,27 @@ export const AddInvestmentForm: React.FC<AddInvestmentFormProps> = ({ onSuccess,
 
     try {
         const type = isCustomType ? customTypeName : formData.type;
-        await investmentService.create({
+        const payload = {
             family_id: familyId,
             name: formData.name,
             type: type,
             quantity: Number(formData.quantity),
             avg_buy_price: Number(formData.avgBuyPrice),
             current_price: Number(formData.currentPrice || formData.avgBuyPrice)
-        });
-        toast.success("Investment recorded");
+        };
+
+        if (initialData) {
+            await investmentService.update(initialData.id!, payload);
+            toast.success("Investment updated");
+        } else {
+            await investmentService.create(payload);
+            toast.success("Investment recorded");
+        }
+        
         if (onSuccess) onSuccess();
     } catch (error) {
         console.error("Failed to add investment", error);
-        toast.error("Failed to add investment");
+        toast.error(initialData ? "Failed to update investment" : "Failed to add investment");
     }
   };
 
@@ -133,6 +143,7 @@ export const AddInvestmentForm: React.FC<AddInvestmentFormProps> = ({ onSuccess,
                   setFormData({...formData, type: value});
                 }
               }}
+              value={formData.type}
               className="rounded-2xl h-14"
             />
           </div>
@@ -216,7 +227,7 @@ export const AddInvestmentForm: React.FC<AddInvestmentFormProps> = ({ onSuccess,
             type="submit" 
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-blue-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            Save Investment
+            {initialData ? "Update Investment" : "Save Investment"}
           </Button>
         </div>
       </form>

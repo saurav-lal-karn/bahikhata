@@ -16,21 +16,23 @@ import Button from "@/components/ui/button/Button";
 
 import { recurringService } from "@/services/recurringService";
 import toast from "react-hot-toast";
+import { RecurringTransaction } from "@/types";
 
 interface AddRecurringFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   familyId?: string;
+  initialData?: RecurringTransaction | null;
 }
 
-export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, onCancel, familyId }) => {
+export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, onCancel, familyId, initialData }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    frequency: "Monthly",
-    category: "Entertainment",
+    name: initialData?.name || "",
+    amount: initialData?.amount.toString() || "",
+    frequency: initialData?.frequency || "Monthly",
+    category: initialData?.type || "Entertainment",
     paymentFrom: "",
-    nextDate: new Date().toISOString().split('T')[0]
+    nextDate: initialData ? new Date(initialData.next_due_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   });
 
   const frequencies = [
@@ -56,19 +58,27 @@ export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, o
     }
 
     try {
-        await recurringService.create({
+        const payload = {
             family_id: familyId,
             name: formData.name,
             amount: Number(formData.amount),
             frequency: formData.frequency,
             next_due_date: new Date(formData.nextDate).toISOString(),
-            type: formData.category // Mapping category to Type
-        });
-        toast.success("Recurring transaction set up");
+            type: formData.category
+        };
+
+        if (initialData) {
+            await recurringService.update(initialData.id, payload);
+            toast.success("Recurring transaction updated");
+        } else {
+            await recurringService.create(payload);
+            toast.success("Recurring transaction set up");
+        }
+        
         if (onSuccess) onSuccess();
     } catch (error) {
         console.error("Failed to set up recurring transaction", error);
-        toast.error("Failed to set up recurring transaction");
+        toast.error(initialData ? "Failed to update subscription" : "Failed to set up recurring transaction");
     }
   };
 
@@ -160,11 +170,11 @@ export const AddRecurringForm: React.FC<AddRecurringFormProps> = ({ onSuccess, o
         >
           Cancel
         </Button>
-        <Button 
+         <Button 
           type="submit" 
           className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl px-12 h-12 font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-2"
         >
-          <Check className="w-5 h-5" /> Activate Automation
+          <Check className="w-5 h-5" /> {initialData ? "Update Automation" : "Activate Automation"}
         </Button>
       </div>
     </form>

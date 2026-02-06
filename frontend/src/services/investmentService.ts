@@ -6,6 +6,10 @@ export const investmentService = {
         const response = await apiClient.post("/investments", payload);
         return response.data;
     },
+    update: async (id: string, payload: any) => {
+        const response = await apiClient.put(`/investments/${id}`, payload);
+        return response.data.data;
+    },
     getAll: async (familyId?: string) => {
         const params = familyId ? { family_id: familyId } : {};
         const response = await apiClient.get("/investments", { params });

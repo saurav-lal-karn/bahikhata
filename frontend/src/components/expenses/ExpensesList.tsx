@@ -23,7 +23,7 @@ import { Project } from "@/types";
 import { Location } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
-export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refreshKey?: number }) => {
+export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { familyId: string; refreshKey?: number; onEdit?: (expense: Transaction) => void; onDelete?: (id: string) => void }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -313,14 +313,14 @@ export const ExpensesList = ({ familyId, refreshKey }: { familyId: string; refre
                       onClose={() => setActiveMenu(null)} 
                       className="w-32"
                     >
-                      <DropdownItem onClick={() => setActiveMenu(null)}>
+                      <DropdownItem onClick={() => { setActiveMenu(null); if (onEdit) onEdit(expense); }}>
                         <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                           <Pencil className="w-4 h-4" />
                           <span>Edit</span>
                         </div>
                       </DropdownItem>
                       <DropdownItem 
-                        onClick={() => setActiveMenu(null)}
+                        onClick={() => { setActiveMenu(null); if (onDelete && expense.id) onDelete(expense.id); }}
                         className="text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
                       >
                         <div className="flex items-center gap-2">
