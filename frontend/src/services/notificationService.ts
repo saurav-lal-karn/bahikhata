@@ -6,6 +6,7 @@ export interface Notification {
   family_id: string;
   title: string;
   message: string;
+  type: string;
   status: "read" | "unread";
   created_at: string;
   updated_at: string;

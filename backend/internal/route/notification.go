@@ -10,7 +10,7 @@ import (
 
 func RegisterNotificationRoutes(app *config.Application, router *gin.RouterGroup) {
 	repo := repository.NewNotificationRepository(app.DB)
-	svc := service.NewNotificationService(repo)
+	svc := service.NewNotificationService(repo, app.Hub)
 	ctrl := controller.NewNotificationController(svc)
 
 	router.GET("", ctrl.List)

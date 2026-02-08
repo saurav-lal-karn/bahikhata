@@ -29,6 +29,9 @@ type Env struct {
 	RefreshKey    string `mapstructure:"REFRESH_KEY"`
 	AccessKeyTTL  int    `mapstructure:"ACCESS_KEY_TTL"`
 	RefreshKeyTTL int    `mapstructure:"REFRESH_KEY_TTL"`
+
+	// AI Server
+	AIServerUrl string `mapstructure:"AI_SERVER_URL"`
 }
 
 func NewEnv() *Env {
@@ -52,5 +55,6 @@ func NewEnv() *Env {
 		RefreshKey:    os.Getenv("REFRESH_KEY"),
 		AccessKeyTTL:  helper.GetEnvAsInt("ACCESS_KEY_TTL", 3600),
 		RefreshKeyTTL: helper.GetEnvAsInt("REFRESH_KEY_TTL", 86400),
+		AIServerUrl:   os.Getenv("AI_SERVER_URL"),
 	}
 }

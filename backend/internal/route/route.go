@@ -6,8 +6,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sauravkarn541/bahikhata/internal/config"
+	"github.com/sauravkarn541/bahikhata/internal/controller"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/middleware"
+	"github.com/sauravkarn541/bahikhata/internal/repository"
+	"github.com/sauravkarn541/bahikhata/internal/service"
 )
 
 func SetupRouter(app *config.Application) *gin.Engine {
@@ -114,8 +117,21 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	attachmentRouter := protected.Group("/attachments")
 	RegisterAttachmentRoutes(app, attachmentRouter)
 
+	aiRouter := protected.Group("/ai")
+	RegisterAIRoutes(app, aiRouter)
+
+	RegisterWebSocketRoutes(app, protected)
+
 	// Serve static files
 	router.Static("/uploads", "./uploads")
+
+	// Internal routes (e.g., for AI server)
+	internal := api.Group("/internal")
+	// In a real app, you'd add internal-only auth (e.g. shared secret or IP whitelist)
+	repo := repository.NewNotificationRepository(app.DB)
+	svc := service.NewNotificationService(repo, app.Hub)
+	ctrl := controller.NewNotificationController(svc)
+	internal.POST("/notifications", ctrl.CreateInternal)
 
 	return router
 }

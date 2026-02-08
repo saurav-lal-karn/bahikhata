@@ -28,6 +28,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  token: string | null;
   login: (credentials: any) => Promise<void>;
   signup: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,6 +39,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -55,13 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     checkAuth();
+    const savedToken = sessionStorage.getItem("ws_token");
+    if (savedToken) setToken(savedToken);
   }, []);
 
   const login = async (credentials: any) => {
-    await apiFetch("/auth/login", {
+    const data = await apiFetch<{ access_token: string }>("/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
     });
+    if (data.access_token) {
+      setToken(data.access_token);
+      // Also store in sessionStorage for persistence across reloads (non-HttpOnly token used for WS)
+      sessionStorage.setItem("ws_token", data.access_token);
+    }
     await checkAuth();
     router.push("/dashboard");
   };
@@ -82,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiFetch("/auth/logout", { method: "POST" });
     } finally {
       setUser(null);
+      setToken(null);
+      sessionStorage.removeItem("ws_token");
       router.push("/signin");
     }
   };
@@ -92,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         isAuthenticated: !!user,
+        token,
         login,
         signup,
         logout,

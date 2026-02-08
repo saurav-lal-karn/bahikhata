@@ -5,6 +5,7 @@ import './globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { SocketProvider } from '@/context/SocketContext';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -31,7 +32,9 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
              <SidebarProvider>
-                {children}
+                <SocketProvider>
+                  {children}
+                </SocketProvider>
                 <Toaster position="top-right" />
              </SidebarProvider>
           </ThemeProvider>

@@ -17,6 +17,8 @@ import {
   notificationService,
   Notification as NotificationType,
 } from "@/services/notificationService";
+import { useSocket } from "@/context/SocketContext";
+import { toast } from "react-hot-toast";
 
 function formatTimeAgo(iso: string): string {
   const d = new Date(iso);
@@ -69,12 +71,20 @@ export default function NotificationsPageClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "read">("all");
   const [error, setError] = useState<string | null>(null);
+  const { lastMessage } = useSocket();
+
+  useEffect(() => {
+    if (lastMessage) {
+      // Assuming lastMessage is a NotificationType object
+      setNotifications((prev) => [lastMessage as NotificationType, ...prev]);
+    }
+  }, [lastMessage]);
 
   const fetchNotifications = useCallback(async () => {
     try {
       setError(null);
       setIsLoading(true);
-      const params: { family_id?: string; status?: string; limit?: number } = {
+      const params: { family_id?: string; status?: "unread" | "read"; limit?: number } = {
         limit: 100,
       };
       if (familyId) params.family_id = familyId;

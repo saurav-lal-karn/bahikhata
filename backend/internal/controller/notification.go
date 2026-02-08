@@ -106,3 +106,27 @@ func (nc *NotificationController) MarkAllRead(c *gin.Context) {
 	}
 	helper.SuccessResponse(c, http.StatusOK, "All notifications marked as read", nil)
 }
+
+// CreateInternal allows internal services to create notifications without a user context.
+// POST /internal/notifications
+func (nc *NotificationController) CreateInternal(c *gin.Context) {
+	var req struct {
+		UserID   uuid.UUID `json:"user_id" binding:"required"`
+		FamilyID uuid.UUID `json:"family_id" binding:"required"`
+		Title    string    `json:"title" binding:"required"`
+		Message  string    `json:"message" binding:"required"`
+		Type     string    `json:"type" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	if err := nc.svc.Create(c.Request.Context(), req.UserID, req.FamilyID, req.Title, req.Message, req.Type); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to create notification")
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusCreated, "Notification created successfully", nil)
+}

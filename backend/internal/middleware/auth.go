@@ -26,6 +26,11 @@ func AuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
+		// 3. If still not found, try query parameter (useful for WebSockets)
+		if tokenString == "" {
+			tokenString = c.Query("token")
+		}
+
 		if tokenString == "" {
 			helper.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized: No token provided")
 			c.Abort()

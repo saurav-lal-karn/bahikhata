@@ -6,6 +6,7 @@ import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import React from "react";
 import { Chatbot } from "@/components/chatbot/Chatbot";
+import { PlusButton } from "@/components/PlusButton";
 
 export default function AdminLayout({
   children,
@@ -36,6 +37,7 @@ export default function AdminLayout({
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
       </div>
       <Chatbot />
+      <PlusButton />
     </div>
   );
 }

@@ -13,6 +13,7 @@ type NotificationRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Notification, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, userID uuid.UUID, status string) error
 	MarkAllRead(ctx context.Context, userID uuid.UUID, familyID *uuid.UUID) error
+	Create(ctx context.Context, n *model.Notification) error
 }
 
 type notificationRepository struct {
@@ -59,4 +60,8 @@ func (r *notificationRepository) MarkAllRead(ctx context.Context, userID uuid.UU
 		query = query.Where("family_id = ?", *familyID)
 	}
 	return query.Update("status", "read").Error
+}
+
+func (r *notificationRepository) Create(ctx context.Context, n *model.Notification) error {
+	return r.db.WithContext(ctx).Create(n).Error
 }

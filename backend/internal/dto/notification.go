@@ -11,6 +11,7 @@ type NotificationResponse struct {
 	FamilyID  uuid.UUID `json:"family_id"`
 	Title     string    `json:"title"`
 	Message   string    `json:"message"`
+	Type      string    `json:"type"`
 	Status    string    `json:"status"`
 	CreatedAt string    `json:"created_at"`
 	UpdatedAt string    `json:"updated_at"`
@@ -23,6 +24,7 @@ func NotificationToResponse(n *model.Notification) NotificationResponse {
 		FamilyID:  n.FamilyID,
 		Title:     n.Title,
 		Message:   n.Message,
+		Type:      n.Type,
 		Status:    n.Status,
 		CreatedAt: n.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: n.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),

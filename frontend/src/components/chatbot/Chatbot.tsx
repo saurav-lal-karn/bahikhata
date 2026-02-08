@@ -185,21 +185,31 @@ export const Chatbot = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999]">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`group relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-2xl transition-all duration-500 overflow-hidden
-          ${isOpen 
-            ? 'rotate-90 bg-gray-900 dark:bg-white text-white dark:text-gray-900 scale-90' 
-            : 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white hover:scale-110 active:scale-95'}`}
-      >
-        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        {isOpen ? <X className="h-7 w-7" /> : <MessageSquare className="h-7 w-7" />}
+      <div className="relative group/chat">
+        {/* Tooltip */}
         {!isOpen && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-900 animate-bounce">
-            1
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover/chat:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-white/10 dark:border-gray-800">
+            BahiAssistant Chat
+            <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 border-8 border-transparent border-l-gray-900 dark:border-l-white"></div>
           </span>
         )}
-      </button>
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`group relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-2xl transition-all duration-500 overflow-hidden
+            ${isOpen 
+              ? 'rotate-90 bg-gray-900 dark:bg-white text-white dark:text-gray-900 scale-90' 
+              : 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white hover:scale-110 active:scale-95'}`}
+        >
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          {isOpen ? <X className="h-7 w-7" /> : <MessageSquare className="h-7 w-7" />}
+          {!isOpen && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-900 animate-bounce">
+              1
+            </span>
+          )}
+        </button>
+      </div>
 
       {isOpen && (
         <div className={`absolute bottom-20 right-0 ${isExpanded ? 'w-[900px] h-[650px]' : 'w-[400px] h-[600px]'} max-w-[calc(100vw-3rem)] max-h-[calc(100vh-8rem)] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-2xl flex overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300 transition-all`}>
