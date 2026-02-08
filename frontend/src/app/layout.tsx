@@ -35,7 +35,12 @@ export default function RootLayout({
                 <SocketProvider>
                   {children}
                 </SocketProvider>
-                <Toaster position="top-right" />
+                <Toaster 
+                  position="top-right" 
+                  containerStyle={{
+                    zIndex: 100000,
+                  }}
+                />
              </SidebarProvider>
           </ThemeProvider>
         </AuthProvider>
