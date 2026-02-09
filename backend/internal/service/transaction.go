@@ -204,7 +204,37 @@ func (s *transactionService) Update(ctx context.Context, id uuid.UUID, req *dto.
 		}
 
 		_, err = s.txRepo.Update(ctx, id, existing)
-		return err
+		if err != nil {
+			return err
+		}
+
+		// Update Items: For simplicity, delete old items and create new ones
+		// This is a common pattern for list items in transactional updates
+		if err := dbTx.Where("transaction_id = ?", id).Delete(&model.TransactionItem{}).Error; err != nil {
+			return err
+		}
+
+		if len(req.Items) > 0 {
+			newItems := make([]model.TransactionItem, len(req.Items))
+			for i, item := range req.Items {
+				mItem := model.TransactionItem{
+					TransactionID: id,
+					Name:          item.Name,
+					Amount:        item.Amount,
+					Quantity:      item.Quantity,
+					UnitPrice:     item.UnitPrice,
+				}
+				if item.CategoryID != nil {
+					catID, _ := uuid.Parse(*item.CategoryID)
+					mItem.CategoryID = &catID
+				}
+				newItems[i] = mItem
+			}
+			if err := dbTx.Create(&newItems).Error; err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 
 	if err != nil {

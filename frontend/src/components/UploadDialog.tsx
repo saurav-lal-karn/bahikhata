@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 interface UploadDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    onAnalysisComplete?: (data: AnalysisResponse) => void;
 }
 
 const CATEGORIES = [
@@ -16,7 +17,7 @@ const CATEGORIES = [
     "Healthcare", "Shopping", "Travel", "Insurance", "Investments"
 ];
 
-export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose }) => {
+export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onAnalysisComplete }) => {
     const [file, setFile] = useState<File | null>(null);
     const [category, setCategory] = useState("");
     const [isAiMode, setIsAiMode] = useState(true);
@@ -55,6 +56,9 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose }) =
                 setCategory(result.analysis.category);
             }
             toast.success("File processed successfully!");
+            if (onAnalysisComplete && result) {
+                onAnalysisComplete(result);
+            }
         } catch (error) {
             console.error(error);
             toast.error("Failed to analyze file");

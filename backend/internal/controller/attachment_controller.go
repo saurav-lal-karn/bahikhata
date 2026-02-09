@@ -80,6 +80,22 @@ func (c *AttachmentController) GetByEntity(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, attachments)
 }
 
+func (c *AttachmentController) GetByID(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	attachment, err := c.repo.GetByID(id)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Attachment not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, attachment)
+}
+
 func (c *AttachmentController) Delete(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {

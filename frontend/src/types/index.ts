@@ -205,6 +205,17 @@ export interface Location {
     created_at: string;
 }
 
+export interface TransactionItem {
+    id: string;
+    transaction_id: string;
+    name: string;
+    amount: number;
+    quantity: number;
+    unit_price: number;
+    category_id?: string;
+    category?: TransactionCategory;
+}
+
 export interface Transaction {
     id: string;
     type: TransactionType;
@@ -222,6 +233,8 @@ export interface Transaction {
     created_by_id: string;
     tags?: string[];
     attachments?: string[];
+    file_id?: string;
+    items?: TransactionItem[];
     created_at: string;
     updated_at: string;
     
@@ -249,6 +262,8 @@ export interface CreateTransactionPayload {
     family_id: string;
     tags?: string[];
     attachments?: string[];
+    file_id?: string;
+    items?: Partial<TransactionItem>[];
 }
 
 export interface TransactionListResponse {
@@ -612,12 +627,14 @@ export interface SplitParticipant {
 
 export interface Attachment {
     id: string;
+    family_id: string;
     file_name: string;
     file_path: string;
-    file_type: string;
-    file_size: number;
+    file_type?: string;
+    file_size?: number;
     entity_type: string;
     entity_id: string;
+    uploaded_by?: string;
     created_at: string;
 }
 

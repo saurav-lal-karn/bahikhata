@@ -37,7 +37,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
     if (user && token && !socket) {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = "localhost:8080"; // In production, use env variable
+      const host = "localhost:3080"; // In production, use env variable
       const wsUrl = `${protocol}//${host}/api/ws?token=${token}`;
 
       console.log("Connecting to WebSocket...");

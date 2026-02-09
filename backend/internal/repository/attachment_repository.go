@@ -8,6 +8,7 @@ import (
 
 type AttachmentRepository interface {
 	Create(attachment *model.Attachment) error
+	GetByID(id uuid.UUID) (*model.Attachment, error)
 	GetByEntity(entityType string, entityID uuid.UUID) ([]model.Attachment, error)
 	Delete(id uuid.UUID) error
 }
@@ -22,6 +23,12 @@ func NewAttachmentRepository(db *gorm.DB) AttachmentRepository {
 
 func (r *attachmentRepository) Create(attachment *model.Attachment) error {
 	return r.db.Create(attachment).Error
+}
+
+func (r *attachmentRepository) GetByID(id uuid.UUID) (*model.Attachment, error) {
+	var attachment model.Attachment
+	err := r.db.First(&attachment, id).Error
+	return &attachment, err
 }
 
 func (r *attachmentRepository) GetByEntity(entityType string, entityID uuid.UUID) ([]model.Attachment, error) {

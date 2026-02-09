@@ -2,11 +2,22 @@ import apiClient from "@/lib/axios";
 
 export interface AnalysisResponse {
     filename: string;
+    file_id: string;
     analysis: {
         category: string;
         confidence: number;
         description: string;
         tags: string[];
+        merchant_name: string;
+        amount: number;
+        date: string;
+        currency: string;
+        type: string;
+        line_items: Array<{
+            description: string;
+            amount: number;
+            quantity?: number;
+        }>;
     };
 }
 

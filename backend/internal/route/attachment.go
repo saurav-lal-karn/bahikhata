@@ -13,5 +13,6 @@ func RegisterAttachmentRoutes(app *config.Application, router *gin.RouterGroup) 
 
 	router.POST("", ctrl.Upload)
 	router.GET("", ctrl.GetByEntity)
+	router.GET(":id", ctrl.GetByID)
 	router.DELETE(":id", ctrl.Delete)
 }

@@ -28,6 +28,9 @@ export default function IncomePageClient() {
   const [selectedIncome, setSelectedIncome] = useState<Transaction | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
 
   const openModal = () => {
     setSelectedIncome(null);
@@ -66,8 +69,13 @@ export default function IncomePageClient() {
   const refreshIncomes = async () => {
     if (!familyDetails?.id) return;
     try {
-      const response = await transactionService.getTransactions(familyDetails.id, { type: 'INCOME' });
+      const response = await transactionService.getTransactions(familyDetails.id, { 
+        type: 'INCOME',
+        page: currentPage,
+        page_size: pageSize
+      });
       setIncomes(response.transactions);
+      setTotalCount(response.total_count);
     } catch (error) {
       console.error('Failed to refresh incomes:', error);
     }
@@ -84,13 +92,18 @@ export default function IncomePageClient() {
           const [walletResponse, incomeTypeResponse, response] = await Promise.all([
             walletService.getWallets(familyDetails.id, 1, 100),
             transactionCategoryService.getCategories(familyDetails.id, true, 'INCOME'),
-            transactionService.getTransactions(familyDetails.id, { type: 'INCOME' })
+            transactionService.getTransactions(familyDetails.id, { 
+              type: 'INCOME',
+              page: currentPage,
+              page_size: pageSize
+            })
           ]);
   
           if (isMounted) {
             setWallets(walletResponse.wallets);
             setIncomeTypes(incomeTypeResponse);
             setIncomes(response.transactions);
+            setTotalCount(response.total_count);
           }
         } catch (error) {
           if (isMounted) {
@@ -107,7 +120,7 @@ export default function IncomePageClient() {
       return () => {
         isMounted = false;
       };
-    }, [familyDetails]);
+    }, [familyDetails, currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -145,6 +158,10 @@ export default function IncomePageClient() {
         isLoading={isLoading} 
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={setCurrentPage}
       />
 
       {/* Add/Edit Income Modal */}

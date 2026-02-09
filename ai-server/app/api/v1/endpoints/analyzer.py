@@ -36,50 +36,73 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
         user_id=str(request.user_id),
         family_id=str(request.family_id),
         title="Document Analysis Started",
-        message=f"Analyzing your document: file_{request.file_id}",
+        message=f"Analyzing your document: {request.file_id}",
         n_type="TASK_PROGRESS"
     )
 
-    # Mock file access logic
-    print(f"Analyzing file with ID: {request.file_id} from URL: {request.file_url}")
-    
-    # Simulate processing time
-    await asyncio.sleep(2)
+    try:
+        # 2. Fetch file content from URL
+        import httpx
+        from app.services.ocr_service import ocr_service
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(request.file_url)
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail=f"Failed to fetch file from {request.file_url}")
+            file_contents = response.content
 
-    # 2. Notify progress
-    await notification_service.send_notification(
-        user_id=str(request.user_id),
-        family_id=str(request.family_id),
-        title="Analyzing Metadata",
-        message="Extracting categories and confidence scores...",
-        n_type="TASK_PROGRESS"
-    )
+        # 3. Notify OCR progress
+        await notification_service.send_notification(
+            user_id=str(request.user_id),
+            family_id=str(request.family_id),
+            title="Running OCR",
+            message="Extracting text from document...",
+            n_type="TASK_PROGRESS"
+        )
+        
+        # 4. Run OCR and Extraction
+        ocr_result = await ocr_service.process_receipt(file_contents, filename=f"file_{request.file_id}")
+        
+        # 5. Map OCR results to AnalysisResult
+        # Note: ocr_service already returns ReceiptData which we can use
+        analysis = AnalysisResult(
+            category=ocr_result.extracted_data.category or "Uncategorized",
+            confidence=ocr_result.confidence_score,
+            description=f"AI extracted details for merchant: {ocr_result.extracted_data.merchant_name}",
+            tags=["ai-extracted"],
+            merchant_name=ocr_result.extracted_data.merchant_name,
+            amount=ocr_result.extracted_data.total_amount,
+            date=ocr_result.extracted_data.transaction_date,
+            currency=ocr_result.extracted_data.currency or "INR",
+            type="RECEIPT", # Logic could be added to detect BILL vs RECEIPT
+            line_items=ocr_result.extracted_data.line_items
+        )
+        
+        result = AnalysisResponse(
+            filename=f"file_{request.file_id}",
+            analysis=analysis,
+            file_id=request.file_id
+        )
 
-    await asyncio.sleep(2)
-    
-    # Mock analysis logic
-    category = random.choice(CATEGORIES)
-    confidence = round(random.uniform(0.75, 0.99), 2)
-    
-    analysis = AnalysisResult(
-        category=category,
-        confidence=confidence,
-        description=f"Automatically detected category: {category} for file {request.file_id}",
-        tags=["ai-generated", "auto-detected", "decoupled-flow"]
-    )
-    
-    result = AnalysisResponse(
-        filename=f"file_{request.file_id}",
-        analysis=analysis
-    )
-
-    # 3. Notify completion
-    await notification_service.send_notification(
-        user_id=str(request.user_id),
-        family_id=str(request.family_id),
-        title="Analysis Complete",
-        message=f"Document analyzed successfully! Category: {category}",
-        n_type="TASK_COMPLETE"
-    )
-    
-    return ResponseBase(data=result)
+        # 6. Notify completion
+        await notification_service.send_notification(
+            user_id=str(request.user_id),
+            family_id=str(request.family_id),
+            title="Analysis Complete",
+            message=f"Document analyzed successfully! Merchant: {analysis.merchant_name}",
+            n_type="TASK_COMPLETE"
+        )
+        
+        return ResponseBase(data=result)
+        
+    except Exception as e:
+        print(f"Analysis Error: {e}")
+        # Notify Error
+        await notification_service.send_notification(
+            user_id=str(request.user_id),
+            family_id=str(request.family_id),
+            title="Analysis Failed",
+            message=f"Error analyzing document: {str(e)}",
+            n_type="TASK_ERROR"
+        )
+        raise HTTPException(status_code=500, detail=str(e))

@@ -35,6 +35,7 @@ interface AddExpenseFormProps {
   wallets?: WalletInfoType[];
   familyId: string;
   initialData?: Transaction | null;
+  prefilledData?: any; // New prop for AI pre-fill
 }
 
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ 
@@ -44,7 +45,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   paymentMethods = [],
   wallets = [],
   familyId,
-  initialData
+  initialData,
+  prefilledData
 }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -59,12 +61,40 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         category_id: initialData?.category_id || "",
         payment_method_id: initialData?.payment_method_id || "",
         wallet_id: initialData?.wallet_id || "",
-		contact_id: initialData?.contact_id || "",
-		project_id: initialData?.project_id || "",
-		location_id: initialData?.location_id || "",
+		contact_id: initialData?.contact_id || prefilledData?.contact_id || "",
+		project_id: initialData?.project_id || prefilledData?.project_id || "",
+		location_id: initialData?.location_id || prefilledData?.location_id || "",
 		tag_ids: initialData?.tags || [] as string[],
-        family_id: familyId
+        family_id: familyId,
+        file_id: initialData?.file_id || prefilledData?.file_id || "",
+        items: initialData?.items || [] as any[]
     });
+
+    const [scannedFile, setScannedFile] = useState<File | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanComplete, setScanComplete] = useState(!!prefilledData);
+
+    // Initial pre-fill logic
+	React.useEffect(() => {
+        if (prefilledData) {
+            setFormData(prev => ({
+                ...prev,
+                name: prefilledData.merchant_name || prev.name,
+                amount: prefilledData.amount || prev.amount,
+                transaction_date: prefilledData.date ? new Date(prefilledData.date).toISOString().split('T')[0] : prev.transaction_date,
+                category_id: initialData?.category_id || prefilledData?.category_id || prev.category_id,
+                description: initialData?.description || prefilledData.description || prev.description,
+                file_id: initialData?.file_id || prefilledData.file_id || prev.file_id,
+                items: initialData?.items || prefilledData.line_items?.map((item: any) => ({
+                    name: item.description,
+                    amount: item.amount,
+                    quantity: item.quantity || 1,
+                    unit_price: item.amount / (item.quantity || 1)
+                })) || prev.items
+            }));
+            setScanComplete(true);
+        }
+    }, [prefilledData]);
 
 	React.useEffect(() => {
 		const fetchData = async () => {
@@ -91,10 +121,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     const [isCustomPaymentMethod, setIsCustomPaymentMethod] = useState(false);
     const [customPaymentMethodName, setCustomPaymentMethodName] = useState("");
     
-    // OCR & File States
-    const [scannedFile, setScannedFile] = useState<File | null>(null);
-    const [isScanning, setIsScanning] = useState(false);
-    const [scanComplete, setScanComplete] = useState(false);
+    // OCR & File States are already declared above
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -166,8 +193,15 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 			contact_id: formData.contact_id || undefined,
 			project_id: formData.project_id || undefined,
 			location_id: formData.location_id || undefined,
-			tags: formData.tag_ids,
+            tags: formData.tag_ids,
             family_id: familyId,
+            file_id: formData.file_id || undefined,
+            items: formData.items.map(item => ({
+                name: item.name,
+                amount: Number(item.amount),
+                quantity: Number(item.quantity),
+                unit_price: Number(item.unit_price)
+            }))
         };
 
         if (initialData) {
@@ -442,6 +476,100 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({...formData, description: e.target.value})}
               className="w-full rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-4 px-5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all min-h-[56px] resize-none"
             />
+          </div>
+        </div>
+
+        {/* Transaction Items Section */}
+        <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+              <Package className="w-4 h-4 text-purple-500" />
+              Transaction Items
+            </h4>
+            <button
+              type="button"
+              onClick={() => setFormData({
+                ...formData,
+                items: [...formData.items, { name: "", amount: 0, quantity: 1, unit_price: 0 }]
+              })}
+              className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest hover:underline"
+            >
+              + Add Item
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {formData.items.map((item: any, index: number) => (
+              <div key={index} className="grid grid-cols-12 gap-3 p-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 group relative">
+                <div className="col-span-12 sm:col-span-5 space-y-1">
+                  <Label className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">Item Name</Label>
+                  <Input 
+                    placeholder="E.g. Apple"
+                    value={item.name || ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const newItems = [...formData.items];
+                      newItems[index].name = e.target.value;
+                      setFormData({ ...formData, items: newItems });
+                    }}
+                    className="h-10 text-xs rounded-xl"
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-2 space-y-1">
+                  <Label className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">Qty</Label>
+                  <Input 
+                    type="number"
+                    value={item.quantity || 0}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const qty = Number(e.target.value);
+                      const newItems = [...formData.items];
+                      newItems[index].quantity = qty;
+                      newItems[index].amount = qty * (newItems[index].unit_price || 0);
+                      setFormData({ ...formData, items: newItems });
+                    }}
+                    className="h-10 text-xs rounded-xl"
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-2 space-y-1">
+                  <Label className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">Unit Price</Label>
+                  <Input 
+                    type="number"
+                    value={item.unit_price || 0}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const price = Number(e.target.value);
+                      const newItems = [...formData.items];
+                      newItems[index].unit_price = price;
+                      newItems[index].amount = price * (newItems[index].quantity || 0);
+                      setFormData({ ...formData, items: newItems });
+                    }}
+                    className="h-10 text-xs rounded-xl"
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-2 space-y-1">
+                  <Label className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">Total</Label>
+                  <Input 
+                    type="number"
+                    value={item.amount || 0}
+                    readOnly
+                    className="h-10 text-xs rounded-xl bg-gray-100 dark:bg-gray-800"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newItems = formData.items.filter((_, i: number) => i !== index);
+                    setFormData({ ...formData, items: newItems });
+                  }}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            {formData.items.length === 0 && (
+              <p className="text-center py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50/30 dark:bg-gray-900/20 rounded-2xl border border-dashed border-gray-100 dark:border-gray-800">
+                No items added yet. AI will auto-fill if available.
+              </p>
+            )}
           </div>
         </div>
 

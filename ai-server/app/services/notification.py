@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     def __init__(self):
         # In a real app, this should be the internal backend URL
-        self.backend_url = f"http://localhost:8080/api/internal/notifications"
+        self.backend_url = f"http://localhost:3080/api/internal/notifications"
         if hasattr(settings, "BACKEND_INTERNAL_URL") and settings.BACKEND_INTERNAL_URL:
              self.backend_url = f"{settings.BACKEND_INTERNAL_URL}/api/internal/notifications"
 

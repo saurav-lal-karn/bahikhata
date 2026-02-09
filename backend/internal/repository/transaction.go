@@ -54,6 +54,8 @@ func (r *transactionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mod
 		Preload("Contact").
 		Preload("Location").
 		Preload("Project").
+		Preload("Items").
+		Preload("Items.Category").
 		First(&tx, id).Error; err != nil {
 		return nil, fmt.Errorf("failed to get transaction %s: %w", id, err)
 	}
@@ -113,7 +115,9 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 		Preload("Contact").
 		Preload("Location").
 		Preload("Project").
-		Order("transaction_date DESC").
+		Preload("Items").
+		Preload("Items.Category").
+		Order("created_at DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&txs).Error; err != nil {

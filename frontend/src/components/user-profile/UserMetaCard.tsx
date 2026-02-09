@@ -90,7 +90,7 @@ export default function UserMetaCard() {
     if (!url) return "/images/user/owner.jpg";
     if (url.startsWith("http")) return url;
     // Construct full URL
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3080";
     try {
        const urlObj = new URL(apiUrl);
        return `${urlObj.origin}${url}`;

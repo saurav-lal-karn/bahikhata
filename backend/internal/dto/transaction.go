@@ -26,6 +26,17 @@ type CreateTransactionRequest struct {
 	UserID          *string                       `json:"user_id" binding:"omitempty,uuid"`
 	Tags            []string                      `json:"tags"`
 	Attachments     interface{}                   `json:"attachments"`
+	FileID          *string                       `json:"file_id" binding:"omitempty,uuid"`
+	Items           []CreateTransactionItemRequest `json:"items"`
+}
+
+// CreateTransactionItemRequest represents an item within a transaction.
+type CreateTransactionItemRequest struct {
+	Name       string  `json:"name" binding:"required"`
+	Amount     float64 `json:"amount" binding:"required"`
+	Quantity   float64 `json:"quantity"`
+	UnitPrice  float64 `json:"unit_price"`
+	CategoryID *string `json:"category_id" binding:"omitempty,uuid"`
 }
 
 // ToModel converts CreateTransactionRequest to model.Transaction.
@@ -48,6 +59,13 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		TransactionDate: r.TransactionDate,
 		FamilyID:        familyID,
 		CreatedByID:     creatorID,
+	}
+
+	if r.FileID != nil {
+		fileID, err := uuid.Parse(*r.FileID)
+		if err == nil {
+			transaction.FileID = &fileID
+		}
 	}
 
 	if r.CategoryID != nil {
@@ -102,6 +120,25 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		transaction.Attachments = model.JSONB(attachmentsJSON)
 	}
 
+	if len(r.Items) > 0 {
+		transaction.Items = make([]model.TransactionItem, len(r.Items))
+		for i, item := range r.Items {
+			mItem := model.TransactionItem{
+				Name:      item.Name,
+				Amount:    item.Amount,
+				Quantity:  item.Quantity,
+				UnitPrice: item.UnitPrice,
+			}
+			if item.CategoryID != nil {
+				catID, err := uuid.Parse(*item.CategoryID)
+				if err == nil {
+					mItem.CategoryID = &catID
+				}
+			}
+			transaction.Items[i] = mItem
+		}
+	}
+
 	return transaction, nil
 }
 
@@ -115,6 +152,7 @@ type UpdateTransactionRequest struct {
 	TransactionDate time.Time `json:"transaction_date" binding:"required"`
 	Tags            []string  `json:"tags"`
 	Attachments     interface{} `json:"attachments"`
+	Items           []CreateTransactionItemRequest `json:"items"`
 }
 
 // ==================== Response DTOs ====================
@@ -137,6 +175,7 @@ type TransactionResponse struct {
 	CreatedByID       string                        `json:"created_by_id"`
 	Tags              []string                      `json:"tags,omitempty"`
 	Attachments       interface{}                   `json:"attachments,omitempty"`
+	FileID            *string                       `json:"file_id,omitempty"`
 	CreatedAt         string                        `json:"created_at"`
 	UpdatedAt         string                        `json:"updated_at"`
 	
@@ -147,6 +186,18 @@ type TransactionResponse struct {
 	Contact       *ContactResponse            `json:"contact,omitempty"`
 	Location      *LocationResponse           `json:"location,omitempty"`
 	Project       *ProjectResponse            `json:"project,omitempty"`
+	Items         []TransactionItemResponse   `json:"items,omitempty"`
+}
+
+// TransactionItemResponse represents an item within a transaction response.
+type TransactionItemResponse struct {
+	ID         string                       `json:"id"`
+	Name       string                       `json:"name"`
+	Amount     float64                      `json:"amount"`
+	Quantity   float64                      `json:"quantity"`
+	UnitPrice  float64                      `json:"unit_price"`
+	CategoryID *string                      `json:"category_id,omitempty"`
+	Category   *TransactionCategoryResponse `json:"category,omitempty"`
 }
 
 // TransactionListResponse represents a paginated list of transactions.
@@ -186,6 +237,11 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 		CreatedByID:     m.CreatedByID.String(),
 		CreatedAt:       m.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       m.UpdatedAt.Format(time.RFC3339),
+	}
+	
+	if m.FileID != nil {
+		fileID := m.FileID.String()
+		resp.FileID = &fileID
 	}
 
 	if m.CategoryID != nil {
@@ -251,6 +307,27 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 
 	if m.Project != nil {
 		resp.Project = ToProjectResponse(m.Project)
+	}
+
+	if len(m.Items) > 0 {
+		resp.Items = make([]TransactionItemResponse, len(m.Items))
+		for i, item := range m.Items {
+			itemResp := TransactionItemResponse{
+				ID:        item.ID.String(),
+				Name:      item.Name,
+				Amount:    item.Amount,
+				Quantity:  item.Quantity,
+				UnitPrice: item.UnitPrice,
+			}
+			if item.CategoryID != nil {
+				catID := item.CategoryID.String()
+				itemResp.CategoryID = &catID
+			}
+			if item.Category != nil {
+				itemResp.Category = ToTransactionCategoryResponse(item.Category)
+			}
+			resp.Items[i] = itemResp
+		}
 	}
 
 	return resp

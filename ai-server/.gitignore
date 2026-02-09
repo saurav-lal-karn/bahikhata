@@ -143,3 +143,5 @@ cython_debug/
 # IDE settings
 .vscode/
 .idea/
+
+chroma_db/

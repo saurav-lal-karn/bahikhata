@@ -11,5 +11,5 @@ async def upload_receipt(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Invalid file type")
     
     contents = await file.read()
-    result = await ocr_service.process_receipt(contents)
+    result = await ocr_service.process_receipt(contents, filename=file.filename)
     return ResponseBase(data=result)

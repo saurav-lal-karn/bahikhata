@@ -89,6 +89,28 @@ type Transaction struct {
 	Contact       *Contact             `json:"contact,omitempty" gorm:"foreignKey:ContactID"`
 	Location      *Location            `json:"location,omitempty" gorm:"foreignKey:LocationID"`
 	Project       *Project             `json:"project,omitempty" gorm:"foreignKey:ProjectID"`
+	Items         []TransactionItem    `json:"items,omitempty" gorm:"foreignKey:TransactionID"`
+}
+
+// TransactionItem represents an individual item in a transaction (e.g., from a receipt).
+type TransactionItem struct {
+	ID            uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	TransactionID uuid.UUID  `json:"transaction_id" gorm:"type:uuid;not null;index"`
+	Name          string     `json:"name" gorm:"type:text;not null"`
+	Quantity      float64    `json:"quantity" gorm:"type:numeric;default:1"`
+	UnitPrice     float64    `json:"unit_price" gorm:"type:numeric;default:0"`
+	Amount        float64    `json:"amount" gorm:"type:numeric;not null"`
+	CategoryID    *uuid.UUID `json:"category_id,omitempty" gorm:"type:uuid;index"`
+	CreatedAt     time.Time  `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
+	UpdatedAt     time.Time  `json:"updated_at" gorm:"type:timestamp;not null;default:now()"`
+
+	// Relationships
+	Category *TransactionCategory `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+}
+
+// TableName returns the table name for the TransactionItem model.
+func (TransactionItem) TableName() string {
+	return "transaction_items"
 }
 
 // TableName returns the table name for the Transaction model.

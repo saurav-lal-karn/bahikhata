@@ -30,9 +30,13 @@ interface IncomeListProps {
   isLoading: boolean;
   onEdit: (income: Transaction) => void;
   onDelete: (id: string) => void;
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
 }
 
-export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListProps) => {
+export const IncomeList = ({ incomes, isLoading, onEdit, onDelete, currentPage, pageSize, totalCount, onPageChange }: IncomeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -44,8 +48,11 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
   const wallets = Array.from(new Set(incomes.map(i => i.wallet?.name).filter(Boolean))) as string[];
 
   const filteredIncome = incomes.filter(item => {
-    const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const search = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || (
+      (item.name?.toLowerCase().includes(search) || false) ||
+      (item.category?.name?.toLowerCase().includes(search) || false)
+    );
     const matchesSource = !selectedSource || item.category?.name === selectedSource;
     const matchesWallet = !selectedWallet || item.wallet?.name === selectedWallet;
     
@@ -279,11 +286,23 @@ export const IncomeList = ({ incomes, isLoading, onEdit, onDelete }: IncomeListP
       {/* Pagination Placeholder */}
       <div className="p-6 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
         <p className="text-sm text-gray-500 font-medium">
-          Showing <span className="font-bold text-gray-800 dark:text-white/90">{filteredIncome.length > 0 ? 1 : 0}</span> to <span className="font-bold text-gray-800 dark:text-white/90">{filteredIncome.length}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{incomes.length}</span> entries
+          Showing <span className="font-bold text-gray-800 dark:text-white/90">{totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> to <span className="font-bold text-gray-800 dark:text-white/90">{Math.min(currentPage * pageSize, totalCount)}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{totalCount}</span> entries
         </p>
         <div className="flex gap-2">
-          <button className="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-500 disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800" disabled>Previous</button>
-          <button className="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-500 disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800" disabled>Next</button>
+          <button 
+            onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-500 disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage * pageSize >= totalCount}
+            className="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-500 disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

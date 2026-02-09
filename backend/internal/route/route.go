@@ -121,9 +121,10 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	RegisterAIRoutes(app, aiRouter)
 
 	RegisterWebSocketRoutes(app, protected)
-
+	
 	// Serve static files
 	router.Static("/uploads", "./uploads")
+
 
 	// Internal routes (e.g., for AI server)
 	internal := api.Group("/internal")

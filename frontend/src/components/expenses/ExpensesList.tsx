@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Search, 
   Filter, 
@@ -8,8 +9,10 @@ import {
   ShoppingCart,
   Pencil,
   MoreVertical,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from "lucide-react";
+import Link from "next/link";
 
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
@@ -24,6 +27,7 @@ import { Location } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { familyId: string; refreshKey?: number; onEdit?: (expense: Transaction) => void; onDelete?: (id: string) => void }) => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -36,15 +40,21 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Extract unique filter options from data
   const categories = Array.from(new Set(expenses.map(e => e.category?.name).filter(Boolean))) as string[];
   const methods = Array.from(new Set(expenses.map(e => e.payment_method?.name).filter(Boolean))) as string[];
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const search = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || (
+      (expense.name?.toLowerCase().includes(search) || false) ||
+      (expense.category?.name?.toLowerCase().includes(search) || false) ||
+      (expense.contact?.name?.toLowerCase().includes(search) || false)
+    );
     const matchesCategory = !selectedCategory || expense.category?.name === selectedCategory;
     const matchesMethod = !selectedMethod || expense.payment_method?.name === selectedMethod;
 
@@ -82,12 +92,17 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const params: Record<string, string | number | boolean | undefined> = { type: 'EXPENSE' };
+        const params: Record<string, string | number | boolean | undefined> = { 
+          type: 'EXPENSE',
+          page: currentPage,
+          page_size: pageSize
+        };
         if (selectedContactId) params.contact_id = selectedContactId;
         if (selectedProjectId) params.project_id = selectedProjectId;
         if (selectedLocationId) params.location_id = selectedLocationId;
         const response = await transactionService.getTransactions(familyId, params);
         setExpenses(response.transactions);
+        setTotalCount(response.total_count);
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
       }
@@ -95,7 +110,7 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
     if (familyId && familyId !== "") {
       fetchExpenses();
     }
-  }, [familyId, refreshKey, selectedContactId, selectedProjectId, selectedLocationId]);
+  }, [familyId, refreshKey, selectedContactId, selectedProjectId, selectedLocationId, currentPage, pageSize]);
 
   return (
     <div className="rounded-3xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden shadow-sm">
@@ -256,7 +271,9 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
                     </div> */}
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
-                        {expense.name}
+                        <Link href={`/transactions/${expense.id}`} className="hover:text-emerald-500 transition-colors">
+                          {expense.name}
+                        </Link>
                       </h4>
                         {(expense.contact?.name || expense.project?.name || expense.location?.name) && (
                         <div className="flex flex-wrap gap-1.5 mt-1">
@@ -313,6 +330,12 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
                       onClose={() => setActiveMenu(null)} 
                       className="w-32"
                     >
+                      <DropdownItem onClick={() => { setActiveMenu(null); router.push(`/transactions/${expense.id}`); }}>
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <Eye className="w-4 h-4" />
+                          <span>View Details</span>
+                        </div>
+                      </DropdownItem>
                       <DropdownItem onClick={() => { setActiveMenu(null); if (onEdit) onEdit(expense); }}>
                         <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                           <Pencil className="w-4 h-4" />
@@ -350,11 +373,23 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
       {/* Pagination Placeholder */}
       <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Showing <span className="font-bold text-gray-800 dark:text-white/90">1</span> to <span className="font-bold text-gray-800 dark:text-white/90">{filteredExpenses.length}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{expenses.length}</span> entries
+          Showing <span className="font-bold text-gray-800 dark:text-white/90">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-bold text-gray-800 dark:text-white/90">{Math.min(currentPage * pageSize, totalCount)}</span> of <span className="font-bold text-gray-800 dark:text-white/90">{totalCount}</span> entries
         </p>
         <div className="flex gap-2">
-          <button className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800" disabled>Previous</button>
-          <button className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800" disabled>Next</button>
+          <button 
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={currentPage * pageSize >= totalCount}
+            className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium disabled:opacity-50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
