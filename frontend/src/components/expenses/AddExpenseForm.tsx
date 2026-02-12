@@ -26,6 +26,7 @@ import { organizationService } from "@/services/organizationService";
 import toast from "react-hot-toast";
 import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType, Transaction } from "@/types";
 import type { Location } from "@/services/organizationService";
+import { FieldConfidenceIndicator } from "@/components/shared/FieldConfidenceIndicator";
 
 interface AddExpenseFormProps {
   onSuccess?: () => void;
@@ -299,6 +300,12 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               />
               <FileSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
             </div>
+            {prefilledData?.field_confidence?.merchant_name !== undefined && (
+              <FieldConfidenceIndicator 
+                confidence={prefilledData.field_confidence.merchant_name} 
+                fieldName="merchant_name"
+              />
+            )}
           </div>
           <div className="space-y-2">
             <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Amount (₹)</Label>
@@ -311,6 +318,12 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, amount: Number(e.target.value)})}
               className="rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-purple-500 transition-all font-black text-lg h-14"
             />
+            {prefilledData?.field_confidence?.total_amount !== undefined && (
+              <FieldConfidenceIndicator 
+                confidence={prefilledData.field_confidence.total_amount} 
+                fieldName="total_amount"
+              />
+            )}
           </div>
         </div>
 

@@ -13,11 +13,21 @@ export interface AnalysisResponse {
         date: string;
         currency: string;
         type: string;
+        transaction_type?: string; // EXPENSE or INCOME
+        document_type?: string; // RECEIPT, BILL, INVOICE
         line_items: Array<{
             description: string;
             amount: number;
             quantity?: number;
         }>;
+        // Bill/Invoice specific fields
+        bill_number?: string;
+        due_date?: string;
+        invoice_number?: string;
+        // Field-level confidence scores
+        field_confidence?: {
+            [key: string]: number; // field name -> confidence (0-1)
+        };
     };
 }
 

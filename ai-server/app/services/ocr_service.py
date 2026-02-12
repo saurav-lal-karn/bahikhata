@@ -1,12 +1,13 @@
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 import io
 from groq import Groq
 import uuid
 import json
 from datetime import datetime
+from typing import Tuple, Dict
 
-from app.schemas.ocr import OCRResponse, ReceiptData
+from app.schemas.ocr import OCRResponse, ReceiptData, FieldConfidence
 from app.core.config import settings
 from app.services.vector_db_service import vector_db_service
 
@@ -16,57 +17,137 @@ class OCRService:
         if settings.TESSERACT_CMD:
             pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
 
-    async def process_receipt(self, file_contents: bytes, filename: str = "") -> OCRResponse:
-        # 1. Extract text using Tesseract
+    async def preprocess_image(self, image: Image.Image) -> Image.Image:
+        """
+        Preprocess image to improve OCR accuracy
+        - Resize if too large
+        - Enhance contrast
+        - Denoise
+        """
+        try:
+            # Resize if image is too large (max 2000px on longest side)
+            max_size = 2000
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                new_size = tuple(int(dim * ratio) for dim in image.size)
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+            
+            # Convert to grayscale for better OCR
+            if image.mode != 'L':
+                image = image.convert('L')
+            
+            # Enhance contrast
+            enhancer = ImageEnhance.Contrast(image)
+            image = enhancer.enhance(1.5)
+            
+            # Denoise
+            image = image.filter(ImageFilter.MedianFilter(size=3))
+            
+            # Sharpen
+            image = image.filter(ImageFilter.SHARPEN)
+            
+            return image
+        except Exception as e:
+            print(f"Preprocessing error: {e}")
+            return image  # Return original if preprocessing fails
+
+    async def extract_text_from_image(self, file_contents: bytes, filename: str = "") -> Tuple[str, bool]:
+        """
+        Extract text using Tesseract OCR
+        Returns: (extracted_text, is_high_quality)
+        """
         try:
             if filename.lower().endswith('.pdf') or (not filename and file_contents.startswith(b'%PDF')):
                 from pdf2image import convert_from_bytes
                 images = convert_from_bytes(file_contents)
                 extracted_text = ""
                 for img in images:
-                    extracted_text += pytesseract.image_to_string(img) + "\n"
+                    # Preprocess each page
+                    processed_img = await self.preprocess_image(img)
+                    extracted_text += pytesseract.image_to_string(processed_img) + "\n"
             else:
                 image = Image.open(io.BytesIO(file_contents))
-                extracted_text = pytesseract.image_to_string(image)
+                # Preprocess image
+                processed_image = await self.preprocess_image(image)
+                extracted_text = pytesseract.image_to_string(processed_image)
+            
+            # Determine if OCR quality is good (basic heuristic)
+            is_high_quality = len(extracted_text.strip()) > 20 and extracted_text.count('\n') > 2
+            
+            return extracted_text, is_high_quality
         except Exception as e:
-            # Fallback for basic error handling, in real app would be more robust
-            extracted_text = ""
             print(f"OCR Error: {e}")
+            return "", False
 
-        # 2. Store in Vector DB
+    async def detect_document_type(self, text: str) -> str:
+        """
+        Detect document type from extracted text
+        Returns: RECEIPT, BILL, or INVOICE
+        """
+        text_lower = text.lower()
+        
+        # Bill indicators
+        bill_keywords = ['bill', 'due date', 'account number', 'billing period', 'amount due', 'utility']
+        bill_score = sum(1 for keyword in bill_keywords if keyword in text_lower)
+        
+        # Invoice indicators
+        invoice_keywords = ['invoice', 'invoice number', 'invoice date', 'payment terms', 'net 30', 'vendor']
+        invoice_score = sum(1 for keyword in invoice_keywords if keyword in text_lower)
+        
+        # Receipt indicators
+        receipt_keywords = ['receipt', 'thank you', 'total', 'change', 'cash', 'card']
+        receipt_score = sum(1 for keyword in receipt_keywords if keyword in text_lower)
+        
+        # Determine document type
+        scores = {
+            'BILL': bill_score,
+            'INVOICE': invoice_score,
+            'RECEIPT': receipt_score
+        }
+        
+        return max(scores, key=scores.get) if max(scores.values()) > 0 else 'RECEIPT'
+
+    async def process_receipt(self, file_contents: bytes, filename: str = "") -> OCRResponse:
+        """
+        Process document (receipt, bill, or invoice) and extract structured data
+        """
+        # 1. Extract text using Tesseract
+        extracted_text, is_high_quality = await self.extract_text_from_image(file_contents, filename)
+        
+        if not extracted_text.strip():
+            # Return empty response with low confidence
+            return OCRResponse(
+                extracted_data=ReceiptData(
+                    merchant_name="Unknown",
+                    total_amount=0.0,
+                    currency="INR",
+                    category="Uncategorized",
+                    document_type="RECEIPT"
+                ),
+                confidence_score=0.0,
+                field_confidence=FieldConfidence()
+            )
+
+        # 2. Detect document type
+        document_type = await self.detect_document_type(extracted_text)
+
+        # 3. Store in Vector DB
         doc_id = str(uuid.uuid4())
         vector_db_service.add_document(
             doc_id=doc_id,
             text=extracted_text,
-            metadata={"timestamp": datetime.now().isoformat(), "type": "receipt"}
+            metadata={"timestamp": datetime.now().isoformat(), "type": document_type.lower()}
         )
 
-        # 3. Use Groq to generate structured JSON
-        prompt = f"""
-        Extract the following information from the receipt text provided below. 
-        Return ONLY a JSON object matching this structure:
-        {{
-            "merchant_name": "string",
-            "transaction_date": "YYYY-MM-DD",
-            "total_amount": float,
-            "tax_amount": float,
-            "currency": "string",
-            "category": "string",
-            "line_items": [
-                {{"description": "string", "amount": float, "quantity": int}}
-            ]
-        }}
-
-        Receipt Text:
-        {extracted_text}
-        """
+        # 4. Use Groq to generate structured JSON with field-level confidence
+        prompt = self._build_extraction_prompt(extracted_text, document_type)
 
         try:
             chat_completion = self.groq_client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that extracts structured data from receipt text. Return ONLY JSON."
+                        "content": "You are a helpful assistant that extracts structured data from financial documents. Return ONLY JSON with extracted data and confidence scores for each field."
                     },
                     {
                         "role": "user",
@@ -78,8 +159,22 @@ class OCRService:
             )
             
             extracted_json = json.loads(chat_completion.choices[0].message.content)
+            
+            # Extract field confidence scores
+            field_confidence_data = extracted_json.pop('field_confidence', {})
+            field_confidence = FieldConfidence(**field_confidence_data)
+            
+            # Calculate overall confidence
+            confidence_values = [v for v in field_confidence_data.values() if v is not None]
+            overall_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.5
+            
+            # Adjust confidence based on OCR quality
+            if not is_high_quality:
+                overall_confidence *= 0.7
+            
             data = ReceiptData(**extracted_json)
-            confidence = 0.9  # Estimated default confidence or calculated from LLM if possible
+            data.document_type = document_type
+            
         except Exception as e:
             print(f"Groq Error: {e}")
             # Fallback data if LLM fails
@@ -87,10 +182,78 @@ class OCRService:
                 merchant_name="Unknown",
                 total_amount=0.0,
                 currency="INR",
-                category="Uncategorized"
+                category="Uncategorized",
+                document_type=document_type
             )
-            confidence = 0.0
+            overall_confidence = 0.0
+            field_confidence = FieldConfidence()
 
-        return OCRResponse(extracted_data=data, confidence_score=confidence)
+        return OCRResponse(
+            extracted_data=data,
+            confidence_score=overall_confidence,
+            field_confidence=field_confidence
+        )
+
+    def _build_extraction_prompt(self, text: str, document_type: str) -> str:
+        """Build LLM prompt based on document type"""
+        
+        base_fields = """
+            "merchant_name": "string",
+            "transaction_date": "YYYY-MM-DD",
+            "total_amount": float,
+            "tax_amount": float,
+            "currency": "string",
+            "category": "string",
+            "transaction_type": "EXPENSE or INCOME",
+            "line_items": [
+                {"description": "string", "amount": float, "quantity": int}
+            ]
+        """
+        
+        if document_type == "BILL":
+            specific_fields = """
+            "bill_number": "string",
+            "due_date": "YYYY-MM-DD",
+            "account_number": "string (optional)"
+            """
+        elif document_type == "INVOICE":
+            specific_fields = """
+            "invoice_number": "string",
+            "due_date": "YYYY-MM-DD",
+            "payment_terms": "string (optional)"
+            """
+        else:  # RECEIPT
+            specific_fields = ""
+        
+        prompt = f"""
+        Extract the following information from this {document_type} text. 
+        Return ONLY a JSON object with this structure:
+        {{
+            {base_fields}
+            {specific_fields if specific_fields else ""}
+            "field_confidence": {{
+                "merchant_name": float (0.0-1.0),
+                "transaction_date": float (0.0-1.0),
+                "total_amount": float (0.0-1.0),
+                "tax_amount": float (0.0-1.0),
+                "category": float (0.0-1.0),
+                "transaction_type": float (0.0-1.0)
+                {', "bill_number": float (0.0-1.0), "due_date": float (0.0-1.0)' if document_type == "BILL" else ''}
+                {', "invoice_number": float (0.0-1.0), "due_date": float (0.0-1.0)' if document_type == "INVOICE" else ''}
+            }}
+        }}
+
+        IMPORTANT Instructions:
+        1. Determine if this is an EXPENSE (money going out) or INCOME (money coming in)
+        2. For each field, provide a confidence score (0.0-1.0) indicating how certain you are
+        3. Use 1.0 for fields you're very confident about, 0.5 for uncertain, 0.0 for missing
+        4. If a field is not found, use null and set confidence to 0.0
+        5. Suggest an appropriate category based on the merchant/description
+
+        Document Text:
+        {text}
+        """
+        
+        return prompt
 
 ocr_service = OCRService()

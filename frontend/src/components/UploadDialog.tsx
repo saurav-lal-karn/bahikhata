@@ -23,6 +23,8 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onA
     const [isAiMode, setIsAiMode] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [confirmedType, setConfirmedType] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { user } = useAuth();
 
@@ -55,10 +57,10 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onA
             if (isAiMode && result?.analysis?.category) {
                 setCategory(result.analysis.category);
             }
+            // Show confirmation step
+            setConfirmedType(result.analysis.transaction_type || "EXPENSE");
+            setShowConfirmation(true);
             toast.success("File processed successfully!");
-            if (onAnalysisComplete && result) {
-                onAnalysisComplete(result);
-            }
         } catch (error) {
             console.error(error);
             toast.error("Failed to analyze file");
@@ -67,11 +69,21 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onA
         }
     };
 
+    const handleConfirmType = () => {
+        if (onAnalysisComplete && analysisResult) {
+            // Pass the confirmed type along with the analysis result
+            onAnalysisComplete({ ...analysisResult, analysis: { ...analysisResult.analysis, transaction_type: confirmedType } });
+        }
+        handleClose();
+    };
+
     const reset = () => {
         setFile(null);
         setCategory("");
         setAnalysisResult(null);
         setIsUploading(false);
+        setShowConfirmation(false);
+        setConfirmedType("");
     };
 
     const handleClose = () => {
@@ -206,6 +218,45 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onA
                             </div>
                         </div>
                     )}
+
+                    {/* Category Confirmation Step */}
+                    {showConfirmation && analysisResult && (
+                        <div className="p-5 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-blue-500" />
+                                <span className="text-sm font-black text-blue-900 dark:text-blue-100 uppercase tracking-widest">Confirm Transaction Type</span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                                AI detected this as an <span className="font-bold text-blue-600 dark:text-blue-400">{analysisResult.analysis.transaction_type}</span> transaction. Is this correct?
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setConfirmedType("EXPENSE")}
+                                    className={`p-4 rounded-xl border-2 transition-all text-center ${
+                                        confirmedType === "EXPENSE"
+                                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                            : 'border-gray-200 dark:border-gray-700 hover:border-red-300'
+                                    }`}
+                                >
+                                    <div className="text-2xl mb-1">💸</div>
+                                    <div className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Expense</div>
+                                    <div className="text-[10px] text-gray-500 mt-1">Money Out</div>
+                                </button>
+                                <button
+                                    onClick={() => setConfirmedType("INCOME")}
+                                    className={`p-4 rounded-xl border-2 transition-all text-center ${
+                                        confirmedType === "INCOME"
+                                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                            : 'border-gray-200 dark:border-gray-700 hover:border-green-300'
+                                    }`}
+                                >
+                                    <div className="text-2xl mb-1">💰</div>
+                                    <div className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Income</div>
+                                    <div className="text-[10px] text-gray-500 mt-1">Money In</div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-10 flex gap-3">
@@ -216,15 +267,20 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onA
                         Cancel
                     </button>
                     <button 
-                        disabled={!file || isUploading || (!isAiMode && !category)}
-                        onClick={handleUpload}
+                        disabled={!file || isUploading || (!isAiMode && !category) || (showConfirmation && !confirmedType)}
+                        onClick={showConfirmation ? handleConfirmType : handleUpload}
                         className={`flex-2 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2
-                            ${!file || isUploading || (!isAiMode && !category)
+                            ${!file || isUploading || (!isAiMode && !category) || (showConfirmation && !confirmedType)
                                 ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed shadow-none'
                                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/20'}`}
                     >
                         {isUploading ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : showConfirmation ? (
+                            <>
+                                <Check className="w-4 h-4" />
+                                Confirm & Continue
+                            </>
                         ) : (
                             <>
                                 <Upload className="w-4 h-4" />

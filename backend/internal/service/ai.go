@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/config"
@@ -30,7 +32,85 @@ func NewAIService(env *config.Env, repo repository.AttachmentRepository) AIServi
 	return &aiService{env: env, repo: repo}
 }
 
+// ValidateFile validates file size and type
+func (s *aiService) ValidateFile(fileHeader *multipart.FileHeader) error {
+	const maxFileSize = 10 * 1024 * 1024 // 10MB
+	
+	if fileHeader.Size > maxFileSize {
+		return fmt.Errorf("file size exceeds maximum allowed size of 10MB")
+	}
+	
+	// Check file type
+	contentType := fileHeader.Header.Get("Content-Type")
+	allowedTypes := []string{"image/jpeg", "image/png", "image/jpg", "image/webp", "application/pdf"}
+	
+	isAllowed := false
+	for _, allowedType := range allowedTypes {
+		if strings.HasPrefix(contentType, allowedType) {
+			isAllowed = true
+			break
+		}
+	}
+	
+	if !isAllowed {
+		return fmt.Errorf("file type %s not allowed. Please upload images (JPEG, PNG, WebP) or PDF files", contentType)
+	}
+	
+	return nil
+}
+
+// callAIServerWithRetry calls AI server with retry logic
+func (s *aiService) callAIServerWithRetry(ctx context.Context, requestBody []byte, maxRetries int) ([]byte, error) {
+	targetURL := fmt.Sprintf("%s/api/v1/analyzer/analyze", s.env.AIServerUrl)
+	
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			// Exponential backoff: 1s, 2s, 4s
+			waitTime := time.Duration(1<<uint(attempt-1)) * time.Second
+			select {
+			case <-time.After(waitTime):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+		
+		req, err := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(requestBody))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+		
+		client := &http.Client{Timeout: 60 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("attempt %d failed: %w", attempt+1, err)
+			continue
+		}
+		defer resp.Body.Close()
+		
+		if resp.StatusCode == http.StatusOK {
+			respData, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			return respData, nil
+		}
+		
+		respBody, _ := io.ReadAll(resp.Body)
+		lastErr = fmt.Errorf("AI server returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+	
+	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries+1, lastErr)
+}
+
 func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID) (interface{}, error) {
+	// 0. Validate file
+	if err := s.ValidateFile(fileHeader); err != nil {
+		return nil, fmt.Errorf("file validation failed: %w", err)
+	}
+	
 	file, err := fileHeader.Open()
 	if err != nil {
 		return nil, err
@@ -68,10 +148,8 @@ func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.F
 		return nil, fmt.Errorf("failed to store attachment: %w", err)
 	}
 
-	// 3. Prepare AI server call
-	// Construct a "public" URL (internal networking or absolute path)
+	// 3. Prepare request body for AI server
 	fileURL := fmt.Sprintf("%s/uploads/%s", s.env.AppUrl, filename)
-
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"file_id":   attachment.ID,
 		"file_url":  fileURL,
@@ -82,31 +160,10 @@ func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.F
 		return nil, err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v1/analyzer/analyze", s.env.AIServerUrl)
-	req, err := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(requestBody))
+	// 4. Call AI server with retry logic (max 3 retries)
+	respData, err := s.callAIServerWithRetry(ctx, requestBody, 2)
 	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("AI server returned status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// For simplicity, we just return the raw response from AI server
-	// We could decode into a struct but returning interface{} is fine for proxying a mock response
-	// The frontend will handle the specific structure
-	respData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AI analysis failed: %w", err)
 	}
 	
 	return respData, nil

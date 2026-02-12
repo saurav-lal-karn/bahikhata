@@ -4,6 +4,7 @@ from pydantic import BaseModel, HttpUrl
 from uuid import UUID
 from app.schemas.common import ResponseBase
 from app.schemas.analysis import AnalysisResponse, AnalysisResult
+from app.schemas.ocr import LineItem
 
 router = APIRouter()
 
@@ -12,19 +13,6 @@ class AnalyzeRequest(BaseModel):
     file_url: str
     user_id: UUID
     family_id: UUID
-
-CATEGORIES = [
-    "Groceries",
-    "Dining Out",
-    "Transportation",
-    "Utilities",
-    "Entertainment",
-    "Healthcare",
-    "Shopping",
-    "Travel",
-    "Insurance",
-    "Investments"
-]
 
 from app.services.notification import notification_service
 import asyncio
@@ -60,11 +48,18 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
             n_type="TASK_PROGRESS"
         )
         
-        # 4. Run OCR and Extraction
+        # 4. Run OCR and Extraction with enhanced service
         ocr_result = await ocr_service.process_receipt(file_contents, filename=f"file_{request.file_id}")
         
-        # 5. Map OCR results to AnalysisResult
-        # Note: ocr_service already returns ReceiptData which we can use
+        # 5. Map OCR results to AnalysisResult with field confidence
+        field_confidence_dict = {}
+        if ocr_result.field_confidence:
+            # Convert FieldConfidence model to dict, excluding None values
+            field_confidence_dict = {
+                k: v for k, v in ocr_result.field_confidence.model_dump().items() 
+                if v is not None
+            }
+        
         analysis = AnalysisResult(
             category=ocr_result.extracted_data.category or "Uncategorized",
             confidence=ocr_result.confidence_score,
@@ -74,8 +69,16 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
             amount=ocr_result.extracted_data.total_amount,
             date=ocr_result.extracted_data.transaction_date,
             currency=ocr_result.extracted_data.currency or "INR",
-            type="RECEIPT", # Logic could be added to detect BILL vs RECEIPT
-            line_items=ocr_result.extracted_data.line_items
+            type=ocr_result.extracted_data.document_type or "RECEIPT",
+            transaction_type=ocr_result.extracted_data.transaction_type or "EXPENSE",
+            line_items=ocr_result.extracted_data.line_items,
+            # Bill/Invoice specific fields
+            bill_number=ocr_result.extracted_data.bill_number,
+            due_date=ocr_result.extracted_data.due_date,
+            invoice_number=ocr_result.extracted_data.invoice_number,
+            document_type=ocr_result.extracted_data.document_type or "RECEIPT",
+            # Field-level confidence
+            field_confidence=field_confidence_dict
         )
         
         result = AnalysisResponse(
@@ -84,12 +87,13 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
             file_id=request.file_id
         )
 
-        # 6. Notify completion
+        # 6. Notify completion with document type
+        doc_type_label = ocr_result.extracted_data.document_type or "Document"
         await notification_service.send_notification(
             user_id=str(request.user_id),
             family_id=str(request.family_id),
             title="Analysis Complete",
-            message=f"Document analyzed successfully! Merchant: {analysis.merchant_name}",
+            message=f"{doc_type_label} analyzed successfully! Merchant: {analysis.merchant_name}",
             n_type="TASK_COMPLETE"
         )
         
@@ -97,6 +101,8 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
         
     except Exception as e:
         print(f"Analysis Error: {e}")
+        import traceback
+        traceback.print_exc()
         # Notify Error
         await notification_service.send_notification(
             user_id=str(request.user_id),

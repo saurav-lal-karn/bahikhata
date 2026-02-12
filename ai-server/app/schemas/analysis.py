@@ -1,8 +1,8 @@
 from pydantic import BaseModel, field_validator
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union, Any, Dict
 from uuid import UUID
 from datetime import date
-from app.schemas.ocr import LineItem
+from app.schemas.ocr import LineItem, FieldConfidence
 
 class AnalysisResult(BaseModel):
     category: str
@@ -13,10 +13,18 @@ class AnalysisResult(BaseModel):
     amount: Optional[float] = None
     date: Optional[Any] = None
     currency: Optional[str] = "INR"
-    type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, OTHER
+    type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, INVOICE
+    transaction_type: Optional[str] = "EXPENSE"  # EXPENSE or INCOME
     line_items: List[LineItem] = []
+    # Bill/Invoice specific fields
+    bill_number: Optional[str] = None
+    due_date: Optional[Any] = None
+    invoice_number: Optional[str] = None
+    document_type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, INVOICE
+    # Field-level confidence
+    field_confidence: Optional[Dict[str, float]] = None
 
-    @field_validator("date", mode="before")
+    @field_validator("date", "due_date", mode="before")
     @classmethod
     def serialize_date(cls, v: Any) -> Any:
         if isinstance(v, date):

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { 
   FileSpreadsheet, 
@@ -9,9 +9,14 @@ import {
   AlertCircle,
   Download,
   Trash2,
-  Table as TableIcon
+  Table as TableIcon,
+  ChevronDown
 } from "lucide-react";
 import Button from "@/components/ui/button/Button";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
+import { Dropdown } from "@/components/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
 
 interface BulkImportExpensesProps {
   onSuccess?: () => void;
@@ -32,6 +37,8 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({ onSucces
   const [importedData, setImportedData] = useState<ImportedExpense[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -44,27 +51,105 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({ onSucces
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
     },
     multiple: false
   });
 
-  const handleFileSelection = (selectedFile: File) => {
+  const validateRow = (row: any, index: number): ImportedExpense => {
+    const id = `row-${index}-${Date.now()}`;
+    const name = row.name || row.Name || '';
+    const amountStr = row.amount || row.Amount || '';
+    const category = row.category || row.Category || 'Uncategorized';
+    let dateStr = row.date || row.Date || '';
+    
+    let status: 'valid' | 'invalid' = 'valid';
+    let error = '';
+
+    // Validate Name
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      status = 'invalid';
+      error = 'Missing name';
+    }
+
+    // Validate Amount
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      status = 'invalid';
+      error = 'Invalid amount';
+    }
+
+    // Validate Date (Simple check)
+    if (!dateStr) {
+      status = 'invalid';
+      error = 'Missing date';
+    } else {
+      // Try to parse date if it's Excel serial number
+      if (typeof dateStr === 'number') {
+         const date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+         dateStr = date.toISOString().split('T')[0];
+      } else if (new Date(dateStr).toString() === 'Invalid Date') {
+        status = 'invalid';
+        error = 'Invalid date format';
+      }
+    }
+
+    return {
+      id,
+      name,
+      amount: amountStr.toString(),
+      category,
+      date: dateStr,
+      status,
+      error
+    };
+  };
+
+  const handleFileSelection = async (selectedFile: File) => {
     setFile(selectedFile);
     setIsProcessing(true);
-    
-    // Simulate parsing delay
-    setTimeout(() => {
-      const mockData: ImportedExpense[] = [
-        { id: '1', name: 'Office Rent', amount: '25000', category: 'housing', date: '2026-01-01', status: 'valid' },
-        { id: '2', name: 'Internet Bill', amount: '1200', category: 'utilities', date: '2026-01-05', status: 'valid' },
-        { id: '3', name: 'Software Subs', amount: 'invalid', category: 'entertainment', date: '2026-01-10', status: 'invalid', error: 'Invalid amount' },
-        { id: '4', name: 'Team Lunch', amount: '4500', category: 'food', date: 'not-a-date', status: 'invalid', error: 'Invalid date format' },
-        { id: '5', name: 'New Desk', amount: '8900', category: 'office', date: '2026-01-12', status: 'valid' },
-      ];
-      setImportedData(mockData);
+    setImportedData([]);
+
+    try {
+      if (selectedFile.name.endsWith('.csv')) {
+        Papa.parse(selectedFile, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            const parsedData = results.data.map((row: any, index: number) => validateRow(row, index));
+            setImportedData(parsedData);
+            setIsProcessing(false);
+          },
+          error: (error) => {
+            console.error('CSV Parse Error:', error);
+            setIsProcessing(false);
+          }
+        });
+      } else if (selectedFile.name.endsWith('.xlsx')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = e.target?.result;
+          if (data) {
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            const parsedData = jsonData.map((row: any, index: number) => validateRow(row, index));
+            setImportedData(parsedData);
+          }
+          setIsProcessing(false);
+        };
+        reader.onerror = () => {
+             console.error('Excel Read Error');
+             setIsProcessing(false);
+        };
+        reader.readAsBinaryString(selectedFile);
+      } else {
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const removeFile = () => {
@@ -79,12 +164,12 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({ onSucces
   const handleImport = () => {
     const validData = importedData.filter(row => row.status === 'valid');
     console.log("Importing valid expenses:", validData);
+    // Here you would typically send validData to your backend API
     if (onSuccess) onSuccess();
   };
 
-  const downloadTemplate = () => {
-    console.log("Downloading CSV template...");
-    // Mock download logic
+  const toggleDropdown = () => {
+    setIsTemplateDropdownOpen(!isTemplateDropdownOpen);
   };
 
   return (
@@ -119,16 +204,44 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({ onSucces
               </div>
               <div>
                 <p className="text-sm font-bold text-blue-900 dark:text-blue-300">Need a template?</p>
-                <p className="text-xs text-blue-700/70 dark:text-blue-400/70 font-medium">Download our CSV format to ensure smooth import.</p>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70 font-medium">Download our CSV or Excel template to ensure smooth import.</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={downloadTemplate}
-              className="rounded-xl border-blue-200 hover:bg-blue-100 text-blue-700 font-bold text-xs gap-2"
-            >
-              <Download className="w-4 h-4" /> Template
-            </Button>
+            
+            <div className="relative" ref={dropdownRef}>
+              <Button 
+                variant="outline" 
+                onClick={toggleDropdown}
+                className="dropdown-toggle rounded-xl border-blue-200 hover:bg-blue-100 text-blue-700 font-bold text-xs gap-2"
+              >
+                <Download className="w-4 h-4" /> Templates <ChevronDown className="w-3 h-3" />
+              </Button>
+              
+              <Dropdown 
+                isOpen={isTemplateDropdownOpen} 
+                onClose={() => setIsTemplateDropdownOpen(false)}
+                className="w-48 right-0"
+              >
+                <div className="p-1">
+                    <DropdownItem 
+                      tag="a" 
+                      href="/data/expense_template.csv" 
+                      className="rounded-lg text-xs font-medium"
+                      onClick={() => setIsTemplateDropdownOpen(false)}
+                    >
+                      Download CSV Template
+                    </DropdownItem>
+                    <DropdownItem 
+                      tag="a" 
+                      href="/data/expense_template.xlsx" 
+                      className="rounded-lg text-xs font-medium"
+                      onClick={() => setIsTemplateDropdownOpen(false)}
+                    >
+                      Download Excel Template
+                    </DropdownItem>
+                </div>
+              </Dropdown>
+            </div>
           </div>
         </div>
       ) : (

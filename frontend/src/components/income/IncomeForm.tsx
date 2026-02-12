@@ -32,9 +32,10 @@ interface IncomeFormProps {
   incomeTypes: TransactionCategory[];
   familyId: string;
   income?: Transaction; // Updated to Transaction
+  prefilledData?: any; // AI pre-fill data
 }
 
-export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income }) => {
+export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income, prefilledData }) => {
   const isEditing = !!income;
 
     const [formData, setFormData] = useState({
@@ -48,7 +49,22 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
 	project_id: income?.project_id || "",
 	tag_ids: income?.tags || [] as string[],
     family_id: familyId,
+    file_id: income?.file_id || prefilledData?.file_id || "",
   });
+
+  // AI pre-fill effect
+  React.useEffect(() => {
+    if (prefilledData) {
+      setFormData(prev => ({
+        ...prev,
+        name: prefilledData.merchant_name || prev.name,
+        amount: prefilledData.amount || prev.amount,
+        date: prefilledData.date ? new Date(prefilledData.date).toISOString().split('T')[0] : prev.date,
+        description: prefilledData.description || prev.description,
+        file_id: prefilledData.file_id || prev.file_id,
+      }));
+    }
+  }, [prefilledData]);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -101,6 +117,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
 			project_id: formData.project_id || undefined,
 			tags: formData.tag_ids,
             family_id: familyId,
+            file_id: formData.file_id || undefined,
         };
         
         if (isEditing && income?.id) {
