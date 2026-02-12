@@ -12,10 +12,17 @@ func RegisterTransactionRoutes(app *config.Application, rg *gin.RouterGroup) {
 	txRepo := repository.NewTransactionRepository(app.DB)
 	categoryRepo := repository.NewTransactionCategoryRepository(app.DB)
 	walletRepo := repository.NewWalletRepository(app.DB)
+	walletTypeRepo := repository.NewWalletTypeRepository(app.DB)
 	paymentRepo := repository.NewPaymentMethodRepository(app.DB)
+	contactRepo := repository.NewContactRepository(app.DB)
+	projectRepo := repository.NewProjectRepository(app.DB)
+	locationRepo := repository.NewLocationRepository(app.DB)
+	tagRepo := repository.NewTagRepository(app.DB)
 	familyRepo := repository.NewFamilyRepository(app.DB)
+	notificationRepo := repository.NewNotificationRepository(app.DB)
+	notificationService := service.NewNotificationService(notificationRepo, app.Hub)
 
-	txService := service.NewTransactionService(txRepo, categoryRepo, walletRepo, paymentRepo, familyRepo, app.DB, config.GetLogger())
+	txService := service.NewTransactionService(txRepo, categoryRepo, walletRepo, walletTypeRepo, paymentRepo, contactRepo, projectRepo, locationRepo, tagRepo, familyRepo, notificationService, app.DB, config.GetLogger())
 	txController := controller.NewTransactionController(txService)
 
 	rg.POST("", txController.Create)
@@ -24,4 +31,5 @@ func RegisterTransactionRoutes(app *config.Application, rg *gin.RouterGroup) {
 	rg.GET("/details/:id", txController.GetByID)
 	rg.PUT("/:id", txController.Update)
 	rg.DELETE("/:id", txController.Delete)
+	rg.POST("/bulk-import/:family_id", txController.BulkImport)
 }

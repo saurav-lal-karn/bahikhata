@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
@@ -22,14 +23,25 @@ type TransactionService interface {
 	GetStats(ctx context.Context, familyID uuid.UUID, userID uuid.UUID, filters map[string]interface{}) (*dto.TransactionStatsResponse, error)
 	ResolveCategoryID(ctx context.Context, name string, type_ model.TransactionCategoryType, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
 	ResolvePaymentMethodID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	ResolveWalletID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	ResolveContactID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	ResolveProjectID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	ResolveLocationID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	BulkImport(ctx context.Context, req *dto.BulkImportTransactionsRequest, familyID uuid.UUID, userID uuid.UUID) (*dto.BulkImportTransactionsResponse, error)
 }
 
 type transactionService struct {
 	txRepo       repository.TransactionRepository
 	categoryRepo repository.TransactionCategoryRepository
 	walletRepo   repository.WalletRepository
+	walletTypeRepo repository.WalletTypeRepository
 	paymentRepo  repository.PaymentMethodRepository
+	contactRepo  repository.ContactRepository
+	projectRepo  repository.ProjectRepository
+	locationRepo repository.LocationRepository
+	tagRepo      repository.TagRepository
 	familyRepo   repository.FamilyRepository
+	notificationService NotificationService
 	db           *gorm.DB
 	logger       *logrus.Logger
 }
@@ -39,8 +51,14 @@ func NewTransactionService(
 	txRepo repository.TransactionRepository,
 	categoryRepo repository.TransactionCategoryRepository,
 	walletRepo repository.WalletRepository,
+	walletTypeRepo repository.WalletTypeRepository,
 	paymentRepo repository.PaymentMethodRepository,
+	contactRepo repository.ContactRepository,
+	projectRepo repository.ProjectRepository,
+	locationRepo repository.LocationRepository,
+	tagRepo repository.TagRepository,
 	familyRepo repository.FamilyRepository,
+	notificationService NotificationService,
 	db *gorm.DB,
 	logger *logrus.Logger,
 ) TransactionService {
@@ -48,8 +66,14 @@ func NewTransactionService(
 		txRepo:       txRepo,
 		categoryRepo: categoryRepo,
 		walletRepo:   walletRepo,
+		walletTypeRepo: walletTypeRepo,
 		paymentRepo:  paymentRepo,
+		contactRepo:  contactRepo,
+		projectRepo:  projectRepo,
+		locationRepo: locationRepo,
+		tagRepo:      tagRepo,
 		familyRepo:   familyRepo,
+		notificationService: notificationService,
 		db:           db,
 		logger:       logger,
 	}
@@ -330,4 +354,254 @@ func (s *transactionService) ResolvePaymentMethodID(ctx context.Context, name st
 		return uuid.Nil, err
 	}
 	return pm.ID, nil
+}
+
+func (s *transactionService) ResolveWalletID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
+	if name == "" {
+		return uuid.Nil, nil
+	}
+	wallet, err := s.walletRepo.GetByName(ctx, name, familyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Find a default Wallet Type (e.g. Cash)
+			types, err := s.walletTypeRepo.List(ctx, familyID, userID)
+			var typeID uuid.UUID
+			if err == nil && len(types) > 0 {
+				typeID = types[0].ID // Pick first available type
+			} else {
+				// Fallback or error? If no types exist, we can't create wallet.
+				// For now let's assume at least one type exists (System types)
+				return uuid.Nil, fmt.Errorf("no wallet types found")
+			}
+			
+			newWallet := &model.Wallet{
+				ID:          uuid.New(),
+				Name:        name,
+				FamilyID:    familyID,
+				Currency:    "NPR", // Default
+				WalletTypeID: typeID,
+				Balance:     0,
+				UserID:      userID,
+			}
+			created, err := s.walletRepo.Create(ctx, newWallet)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			return created.ID, nil
+		}
+		return uuid.Nil, err
+	}
+	return wallet.ID, nil
+}
+
+func (s *transactionService) ResolveContactID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
+	if name == "" {
+		return uuid.Nil, nil
+	}
+	contact, err := s.contactRepo.GetByName(ctx, name, familyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newContact := &model.Contact{
+				ID:          uuid.New(),
+				Name:        name,
+				FamilyID:    familyID,
+				Type:        model.ContactTypeVendor, // Default for expenses
+				IsActive:    true,
+			}
+			err := s.contactRepo.Create(ctx, newContact)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			return newContact.ID, nil
+		}
+		return uuid.Nil, err
+	}
+	return contact.ID, nil
+}
+
+func (s *transactionService) ResolveProjectID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
+	if name == "" {
+		return uuid.Nil, nil
+	}
+	project, err := s.projectRepo.GetByName(ctx, name, familyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newProject := &model.Project{
+				ID:          uuid.New(),
+				Name:        name,
+				FamilyID:    familyID,
+				IsActive:    true,
+			}
+			err := s.projectRepo.Create(ctx, newProject)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			return newProject.ID, nil
+		}
+		return uuid.Nil, err
+	}
+	return project.ID, nil
+}
+
+func (s *transactionService) ResolveLocationID(ctx context.Context, name string, familyID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
+	if name == "" {
+		return uuid.Nil, nil
+	}
+	location, err := s.locationRepo.GetByName(ctx, name, familyID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newLocation := &model.Location{
+				ID:          uuid.New(),
+				Name:        name,
+				FamilyID:    &familyID,
+			}
+			err := s.locationRepo.Create(ctx, newLocation)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			return newLocation.ID, nil
+		}
+		return uuid.Nil, err
+	}
+	return location.ID, nil
+}
+
+func (s *transactionService) BulkImport(ctx context.Context, req *dto.BulkImportTransactionsRequest, familyID uuid.UUID, userID uuid.UUID) (*dto.BulkImportTransactionsResponse, error) {
+	// Verify family exists (Sync check)
+	_, err := s.familyRepo.GetByID(ctx, familyID)
+	if err != nil {
+		return nil, NewNotFoundError("family", familyID)
+	}
+
+	// Run import in background
+	go func(transactions []dto.BulkImportTransactionItemRequest, fID, uID uuid.UUID) {
+		// Create a background context with a reasonable timeout or just Background
+		bgCtx := context.Background()
+		
+		results := make([]dto.BulkImportResult, len(transactions))
+		successCount := 0
+		failedCount := 0
+
+		for i, txReq := range transactions {
+			// Resolve UUIDs
+			walletID, err := s.ResolveWalletID(bgCtx, txReq.WalletName, fID, uID)
+			if err != nil {
+				results[i] = dto.BulkImportResult{RowIndex: i + 1, Success: false, Error: "Wallet error: " + err.Error()}
+				failedCount++
+				continue
+			}
+			if walletID == uuid.Nil {
+				results[i] = dto.BulkImportResult{RowIndex: i + 1, Success: false, Error: "Wallet name required"}
+				failedCount++
+				continue
+			}
+
+			// Resolve Optional Entities
+			var categoryID *string
+			if txReq.CategoryName != "" {
+				id, err := s.ResolveCategoryID(bgCtx, txReq.CategoryName, model.CategoryTypeExpense, fID, uID)
+				if err == nil && id != uuid.Nil {
+					sid := id.String()
+					categoryID = &sid
+				}
+			}
+
+			var paymentMethodID *string
+			if txReq.PaymentMethodName != "" {
+				id, err := s.ResolvePaymentMethodID(bgCtx, txReq.PaymentMethodName, fID, uID)
+				if err == nil && id != uuid.Nil {
+					sid := id.String()
+					paymentMethodID = &sid
+				}
+			}
+
+			var contactID *string
+			if txReq.VendorName != "" {
+				id, err := s.ResolveContactID(bgCtx, txReq.VendorName, fID, uID)
+				if err == nil && id != uuid.Nil {
+					sid := id.String()
+					contactID = &sid
+				}
+			}
+
+			var projectID *string
+			if txReq.ProjectName != "" {
+				id, err := s.ResolveProjectID(bgCtx, txReq.ProjectName, fID, uID)
+				if err == nil && id != uuid.Nil {
+					sid := id.String()
+					projectID = &sid
+				}
+			}
+
+			var locationID *string
+			if txReq.LocationName != "" {
+				id, err := s.ResolveLocationID(bgCtx, txReq.LocationName, fID, uID)
+				if err == nil && id != uuid.Nil {
+					sid := id.String()
+					locationID = &sid
+				}
+			}
+
+			createReq := dto.CreateTransactionRequest{
+				Type:            txReq.Type,
+				Amount:          txReq.Amount,
+				Description:     txReq.Description,
+				WalletID:        walletID.String(),
+				CategoryID:      categoryID,
+				PaymentMethodID: paymentMethodID,
+				ContactID:       contactID,
+				ProjectID:       projectID,
+				LocationID:      locationID,
+				TransactionDate: txReq.TransactionDate,
+				FamilyID:        fID.String(),
+				Tags:            txReq.Tags,
+				Items:           txReq.Items,
+			}
+
+			// Create transaction
+			_, err = s.Create(bgCtx, &createReq, uID)
+			if err != nil {
+				results[i] = dto.BulkImportResult{
+					RowIndex: i + 1,
+					Success:  false,
+					Error:    err.Error(),
+				}
+				failedCount++
+			} else {
+				results[i] = dto.BulkImportResult{
+					RowIndex: i + 1,
+					Success:  true,
+					// Data:     resp, // Omit data from result to keep notification payload small check?
+				}
+				successCount++
+			}
+
+			transactionTitle := "Transaction Created"
+			transactionMessage := fmt.Sprintf("Transaction of %f for %s created successfully.", txReq.Amount, txReq.Description)
+			err = s.notificationService.Create(bgCtx, uID, fID, transactionTitle, transactionMessage, "TRANSACTION_CREATED")
+			if err != nil {
+				s.logger.Errorf("Failed to send transaction notification: %v", err)
+			}
+		}
+
+		// Send Notification
+		title := "Bulk Import Completed"
+		message := fmt.Sprintf("Imported %d transactions successfully. %d failed.", successCount, failedCount)
+		// We can perhaps store the results details somewhere or send a link, but for now just summary.
+		// If failedCount > 0, we might want to alert more visibly.
+		
+		err := s.notificationService.Create(bgCtx, uID, fID, title, message, "SYSTEM_ALERT")
+		if err != nil {
+			s.logger.Errorf("Failed to send bulk import notification: %v", err)
+		}
+
+	}(req.Transactions, familyID, userID)
+
+	// Return immediate success indicating processing started
+	return &dto.BulkImportTransactionsResponse{
+		SuccessCount: 0,
+		FailedCount:  0,
+		Results:      []dto.BulkImportResult{}, 
+		// Frontend should interpret 0/0 empty as "Processing" or we check HTTP 202 if we changed controller (but we kept it as is for now)
+	}, nil
 }

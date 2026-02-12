@@ -37,6 +37,10 @@ interface AddExpenseFormProps {
   familyId: string;
   initialData?: Transaction | null;
   prefilledData?: any; // New prop for AI pre-fill
+  contacts?: Contact[];
+  projects?: Project[];
+  tags?: TagType[];
+  locations?: Location[];
 }
 
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ 
@@ -47,12 +51,16 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   wallets = [],
   familyId,
   initialData,
-  prefilledData
+  prefilledData,
+  contacts: propContacts,
+  projects: propProjects,
+  tags: propTags,
+  locations: propLocations
 }) => {
-    const [contacts, setContacts] = useState<Contact[]>([]);
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [tags, setTags] = useState<TagType[]>([]);
-	const [locations, setLocations] = useState<Location[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>(propContacts || []);
+	const [projects, setProjects] = useState<Project[]>(propProjects || []);
+	const [tags, setTags] = useState<TagType[]>(propTags || []);
+	const [locations, setLocations] = useState<Location[]>(propLocations || []);
 
     const [formData, setFormData] = useState({
         name: initialData?.name || "",
@@ -98,24 +106,24 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }, [prefilledData]);
 
 	React.useEffect(() => {
+        // Only fetch if props are not provided
+        if (propContacts && propProjects && propTags && propLocations) return;
+
 		const fetchData = async () => {
 			try {
-				const [fetchedContacts, fetchedProjects, fetchedTags, fetchedLocations] = await Promise.all([
-					contactService.getContacts(familyId),
-					organizationService.getProjects(familyId),
-					organizationService.getTags(familyId),
-					organizationService.getLocations(familyId).catch(() => [])
-				]);
-				setContacts(fetchedContacts);
-				setProjects(fetchedProjects);
-				setTags(fetchedTags);
-				setLocations(fetchedLocations);
+                const promises = [];
+                if (!propContacts) promises.push(contactService.getContacts(familyId).then(setContacts));
+                if (!propProjects) promises.push(organizationService.getProjects(familyId).then(setProjects));
+                if (!propTags) promises.push(organizationService.getTags(familyId).then(setTags));
+                if (!propLocations) promises.push(organizationService.getLocations(familyId).catch(() => []).then(setLocations));
+                
+				await Promise.all(promises);
 			} catch (error) {
 				console.error("Failed to fetch organizational data", error);
 			}
 		};
 		fetchData();
-	}, [familyId]);
+	}, [familyId, propContacts, propProjects, propTags, propLocations]);
   
     const [isCustomCategory, setIsCustomCategory] = useState(false);
     const [customCategoryName, setCustomCategoryName] = useState("");

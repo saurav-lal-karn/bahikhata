@@ -15,6 +15,9 @@ import { walletService } from "@/services/walletService";
 import { transactionService } from "@/services/transactionService";
 import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
 import toast from "react-hot-toast";
+import { contactService } from "@/services/contactService";
+import { organizationService, Location } from "@/services/organizationService";
+import { Contact, Project, Tag } from "@/types";
 
 export default function ExpensesPageClient() {
   const { user } = useAuth();
@@ -22,9 +25,14 @@ export default function ExpensesPageClient() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkLarge, setIsBulkLarge] = useState(false);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [wallets, setWallets] = useState<WalletInfoType[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
@@ -35,7 +43,7 @@ export default function ExpensesPageClient() {
   const closeModal = () => { setIsModalOpen(false); setEditingExpense(null); };
   
   const openBulkModal = () => setIsBulkModalOpen(true);
-  const closeBulkModal = () => setIsBulkModalOpen(false);
+  const closeBulkModal = () => { setIsBulkModalOpen(false); setIsBulkLarge(false); };
 
   const handleExpenseAdded = () => {
     setRefreshKey(prev => prev + 1);
@@ -73,16 +81,24 @@ export default function ExpensesPageClient() {
       if (!familyDetails?.id) return;
 
       try {
-        const [categoriesResponse, paymentMethodsResponse, walletResponse] = await Promise.all([
+        const [categoriesResponse, paymentMethodsResponse, walletResponse, contactsResponse, projectsResponse, tagsResponse, locationsResponse] = await Promise.all([
           transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
           paymentMethodService.getPaymentMethods(familyDetails.id),
-          walletService.getWallets(familyDetails.id, 1, 100)
+          walletService.getWallets(familyDetails.id, 1, 100),
+          contactService.getContacts(familyDetails.id),
+          organizationService.getProjects(familyDetails.id),
+          organizationService.getTags(familyDetails.id),
+          organizationService.getLocations(familyDetails.id).catch(() => [])
         ]);
 
         if (isMounted) {
           setCategories(categoriesResponse);
           setPaymentMethods(paymentMethodsResponse);
           setWallets(walletResponse.wallets);
+          setContacts(contactsResponse);
+          setProjects(projectsResponse);
+          setTags(tagsResponse);
+          setLocations(locationsResponse);
         }
       } catch (error) {
         if (isMounted) {
@@ -151,6 +167,10 @@ export default function ExpensesPageClient() {
           wallets={wallets}
           familyId={familyDetails?.id || ""}
           initialData={editingExpense}
+          contacts={contacts}
+          projects={projects}
+          tags={tags}
+          locations={locations}
         />
       </Modal>
 
@@ -164,12 +184,24 @@ export default function ExpensesPageClient() {
       />
 
       {/* Bulk Import Modal */}
-      <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className="max-w-4xl p-10">
+      <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className={isBulkLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-4xl p-10 transition-all duration-500 ease-in-out"}>
         <div className="mb-10">
           <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Bulk Import</h3>
           <p className="text-sm text-gray-500 font-medium">Upload a CSV or Excel file to import multiple expenses at once.</p>
         </div>
-        <BulkImportExpenses onSuccess={closeBulkModal} onCancel={closeBulkModal} />
+        <BulkImportExpenses 
+          onSuccess={closeBulkModal} 
+          onCancel={closeBulkModal}
+          onFileSelect={(hasFile) => setIsBulkLarge(hasFile)}
+          familyId={familyDetails?.id || ""}
+          categories={categories}
+          wallets={wallets}
+          paymentMethods={paymentMethods}
+          contacts={contacts}
+          projects={projects}
+          tags={tags}
+          locations={locations}
+        />
       </Modal>
     </div>
   );

@@ -2,6 +2,10 @@ import apiClient from "@/lib/axios";
 import { CreateTransactionPayload, TransactionListResponse, Transaction } from "@/types";
 
 export const transactionService = {
+    bulkImport: async (payload: { transactions: any[] }, familyId: string) => {
+        const response = await apiClient.post(`/transactions/bulk-import/${familyId}`, payload);
+        return response.data.data;
+    },
     createTransaction: async (data: CreateTransactionPayload) => {
         const response = await apiClient.post("/transactions", data);
         return response.data.data;

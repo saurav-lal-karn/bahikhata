@@ -39,6 +39,9 @@ type WalletRepository interface {
 
 	// UpdateBalanceWithTx updates the balance of a wallet within a transaction.
 	UpdateBalanceWithTx(ctx context.Context, tx *gorm.DB, id uuid.UUID, delta float64) error
+
+	// GetByName retrieves a wallet by name for a given family.
+	GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Wallet, error)
 }
 
 type walletRepository struct {
@@ -170,4 +173,12 @@ func (r *walletRepository) UpdateBalanceWithTx(ctx context.Context, tx *gorm.DB,
 		return fmt.Errorf("wallet repository: update balance: %w", err)
 	}
 	return nil
+}
+
+func (r *walletRepository) GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Wallet, error) {
+	var wallet model.Wallet
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyID).First(&wallet).Error; err != nil {
+		return nil, err
+	}
+	return &wallet, nil
 }

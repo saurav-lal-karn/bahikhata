@@ -14,6 +14,7 @@ type ContactRepository interface {
 	ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Contact, error)
 	Update(ctx context.Context, contact *model.Contact) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Contact, error)
 }
 
 type contactRepo struct {
@@ -50,4 +51,12 @@ func (r *contactRepo) Update(ctx context.Context, contact *model.Contact) error 
 
 func (r *contactRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Contact{}, "id = ?", id).Error
+}
+
+func (r *contactRepo) GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Contact, error) {
+	var contact model.Contact
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyID).First(&contact).Error; err != nil {
+		return nil, err
+	}
+	return &contact, nil
 }

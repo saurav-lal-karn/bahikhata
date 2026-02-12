@@ -14,6 +14,7 @@ type ProjectRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Project, error)
 	Update(ctx context.Context, project *model.Project) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Project, error)
 }
 
 type projectRepo struct {
@@ -50,4 +51,12 @@ func (r *projectRepo) Update(ctx context.Context, project *model.Project) error 
 
 func (r *projectRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Project{}, "id = ?", id).Error
+}
+
+func (r *projectRepo) GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Project, error) {
+	var project model.Project
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyID).First(&project).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
 }

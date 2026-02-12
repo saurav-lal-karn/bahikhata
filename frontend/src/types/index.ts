@@ -266,6 +266,27 @@ export interface CreateTransactionPayload {
     items?: Partial<TransactionItem>[];
 }
 
+export interface BulkImportTransactionItem {
+    type: TransactionType;
+    amount: number;
+    description: string;
+    wallet_name: string;
+    category_name: string;
+    payment_method_name?: string;
+    vendor_name?: string;
+    project_name?: string;
+    location_name?: string;
+    transaction_date: string;
+    family_id: string;
+    tags?: string[];
+    items?: Array<{
+        name: string;
+        amount: number;
+        quantity: number;
+        unit_price: number;
+    }>;
+}
+
 export interface TransactionListResponse {
     transactions: Transaction[];
     total_count: number;

@@ -15,6 +15,7 @@ type LocationRepository interface {
 	Update(ctx context.Context, location *model.Location) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	ListByFamilyID(ctx context.Context, familyID uuid.UUID) ([]model.Location, error)
+	GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Location, error)
 }
 
 type locationRepo struct {
@@ -59,4 +60,12 @@ func (r *locationRepo) Update(ctx context.Context, location *model.Location) err
 
 func (r *locationRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Location{}, "id = ?", id).Error
+}
+
+func (r *locationRepo) GetByName(ctx context.Context, name string, familyID uuid.UUID) (*model.Location, error) {
+	var location model.Location
+	if err := r.db.WithContext(ctx).Where("name = ? AND family_id = ?", name, familyID).First(&location).Error; err != nil {
+		return nil, err
+	}
+	return &location, nil
 }

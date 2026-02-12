@@ -171,3 +171,27 @@ func (ctrl *TransactionController) GetStats(c *gin.Context) {
 
 	helper.SuccessResponse(c, http.StatusOK, "Transaction stats retrieved successfully", resp)
 }
+
+func (ctrl *TransactionController) BulkImport(c *gin.Context) {
+	familyID, err := parseUUIDParam(c, "family_id")
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	uid, _ := getUserIDFromContext(c)
+
+	var req dto.BulkImportTransactionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, helper.FormatValidationError(err))
+		return
+	}
+
+	resp, err := ctrl.svc.BulkImport(c, &req, familyID, uid)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusCreated, "Transactions imported successfully", resp)
+}

@@ -155,6 +155,26 @@ type UpdateTransactionRequest struct {
 	Items           []CreateTransactionItemRequest `json:"items"`
 }
 
+type BulkImportTransactionItemRequest struct {
+	Type              model.TransactionCategoryType `json:"type" binding:"required,oneof=INCOME EXPENSE"`
+	Amount            float64                       `json:"amount" binding:"required,gt=0"`
+	Description       string                        `json:"description" binding:"max=500"`
+	WalletName        string                        `json:"wallet_name" binding:"required"`
+	CategoryName      string                        `json:"category_name"`
+	PaymentMethodName string                        `json:"payment_method_name"`
+	VendorName        string                        `json:"vendor_name"`
+	LocationName      string                        `json:"location_name"`
+	ProjectName       string                        `json:"project_name"`
+	TransactionDate   time.Time                     `json:"transaction_date" binding:"required"`
+	FamilyID          string                        `json:"family_id" binding:"required,uuid"`
+	Tags              []string                      `json:"tags"`
+	Items             []CreateTransactionItemRequest `json:"items"`
+}
+
+type BulkImportTransactionsRequest struct {
+	Transactions []BulkImportTransactionItemRequest `json:"transactions" binding:"required"`
+}
+
 // ==================== Response DTOs ====================
 
 // TransactionResponse represents the API response for a transaction.
@@ -333,3 +353,15 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 	return resp
 }
 
+type BulkImportTransactionsResponse struct {
+	SuccessCount int                    `json:"success_count"`
+	FailedCount  int                    `json:"failed_count"`
+	Results      []BulkImportResult `json:"results"`
+}
+
+type BulkImportResult struct {
+	RowIndex int    `json:"row_index"`
+	Success  bool   `json:"success"`
+	Error    string `json:"error,omitempty"`
+	Data     *TransactionResponse `json:"data,omitempty"`
+}

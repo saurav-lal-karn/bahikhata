@@ -45,17 +45,17 @@ func SetupRouter(app *config.Application) *gin.Engine {
 	userRouter := protected.Group("/users")
 	RegisterUserRoutes(app, userRouter)
 
-	transactionRouter := protected.Group("/transactions")
-	RegisterTransactionRoutes(app, transactionRouter)
-
-	transactionCategoryRouter := protected.Group("/transaction-categories")
-	RegisterTransactionCategoryRoutes(app, transactionCategoryRouter)
-
 	familyRouter := protected.Group("/families")
 	RegisterFamilyRoutes(app, familyRouter)
 
 	familyMemberRouter := protected.Group("/family-members")
 	RegisterFamilyMemberRoutes(app, familyMemberRouter)
+
+	transactionRouter := protected.Group("/transactions")
+	RegisterTransactionRoutes(app, transactionRouter)
+
+	transactionCategoryRouter := protected.Group("/transaction-categories")
+	RegisterTransactionCategoryRoutes(app, transactionCategoryRouter)
 
 	paymentMethodRouter := protected.Group("/payment-methods")
 	RegisterPaymentMethodRoutes(app, paymentMethodRouter)
