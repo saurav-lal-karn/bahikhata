@@ -80,6 +80,56 @@ func NewTransactionService(
 }
 
 func (s *transactionService) Create(ctx context.Context, req *dto.CreateTransactionRequest, creatorID uuid.UUID) (*dto.TransactionResponse, error) {
+	familyID, err := uuid.Parse(req.FamilyID)
+	if err != nil {
+		return nil, NewValidationError(err.Error())
+	}
+
+	// Resolve Category ID
+	if req.CategoryID == "" {
+		categoryID, err := s.ResolveCategoryID(ctx, req.Category.Value, req.Type, familyID, creatorID)
+		if err != nil {
+			return nil, NewValidationError(err.Error())
+		}
+		req.CategoryID = categoryID.String()
+	}
+
+	// Resolve Payment Method ID
+	if req.PaymentMethodID == "" {
+		paymentMethodID, err := s.ResolvePaymentMethodID(ctx, req.PaymentMethod.Value, familyID, creatorID)
+		if err != nil {
+			return nil, NewValidationError(err.Error())
+		}
+		req.PaymentMethodID = paymentMethodID.String()
+	}
+
+	// Resolve Contact ID
+	if req.ContactID == "" {
+		contactID, err := s.ResolveContactID(ctx, req.Contact.Value, familyID, creatorID)
+		if err != nil {
+			return nil, NewValidationError(err.Error())
+		}
+		req.ContactID = contactID.String()
+	}
+
+	// Resolve Location ID
+	if req.LocationID == "" {
+		locationID, err := s.ResolveLocationID(ctx, req.Location.Value, familyID, creatorID)
+		if err != nil {
+			return nil, NewValidationError(err.Error())
+		}
+		req.LocationID = locationID.String()
+	}
+
+	// Resolve Project ID
+	if req.ProjectID == "" {
+		projectID, err := s.ResolveProjectID(ctx, req.Project.Value, familyID, creatorID)
+		if err != nil {
+			return nil, NewValidationError(err.Error())
+		}
+		req.ProjectID = projectID.String()
+	}
+
 	// 1. Convert DTO to Model
 	txModel, err := req.ToModel(creatorID)
 	if err != nil {
@@ -214,6 +264,7 @@ func (s *transactionService) Update(ctx context.Context, id uuid.UUID, req *dto.
 		// C. Update Record
 		existing.Amount = req.Amount
 		existing.Description = req.Description
+		existing.Title = req.Title
 		existing.WalletID = walletID
 		existing.TransactionDate = req.TransactionDate
 		
@@ -546,12 +597,13 @@ func (s *transactionService) BulkImport(ctx context.Context, req *dto.BulkImport
 				Type:            txReq.Type,
 				Amount:          txReq.Amount,
 				Description:     txReq.Description,
+				Title:           txReq.Title,
 				WalletID:        walletID.String(),
-				CategoryID:      categoryID,
-				PaymentMethodID: paymentMethodID,
-				ContactID:       contactID,
-				ProjectID:       projectID,
-				LocationID:      locationID,
+				CategoryID:      *categoryID,
+				PaymentMethodID: *paymentMethodID,
+				ContactID:       *contactID,
+				ProjectID:       *projectID,
+				LocationID:      *locationID,
 				TransactionDate: txReq.TransactionDate,
 				FamilyID:        fID.String(),
 				Tags:            txReq.Tags,

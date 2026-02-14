@@ -13,10 +13,8 @@ import {
   Trash2,
   Filter,
   ChevronDown,
-  X,
   Search
 } from "lucide-react";
-
 
 import toast from "react-hot-toast";
 

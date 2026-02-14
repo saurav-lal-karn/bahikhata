@@ -20,189 +20,191 @@ import { organizationService, Location } from "@/services/organizationService";
 import { Contact, Project, Tag } from "@/types";
 
 export default function ExpensesPageClient() {
-  const { user } = useAuth();
-  const familyDetails = user?.family;
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [isBulkLarge, setIsBulkLarge] = useState(false);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [wallets, setWallets] = useState<WalletInfoType[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
+    const { user } = useAuth();
+    const familyDetails = user?.family;
 
-  const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isModalLarge, setIsModalLarge] = useState<boolean>(false);
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
+    const [isBulkLarge, setIsBulkLarge] = useState<boolean>(false);
+    const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [wallets, setWallets] = useState<WalletInfoType[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => { setIsModalOpen(false); setEditingExpense(null); };
-  
-  const openBulkModal = () => setIsBulkModalOpen(true);
-  const closeBulkModal = () => { setIsBulkModalOpen(false); setIsBulkLarge(false); };
+    const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const handleExpenseAdded = () => {
-    setRefreshKey(prev => prev + 1);
-    closeModal();
-  };
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => { setIsModalOpen(false); setEditingExpense(null); setIsModalLarge(false); };
 
-  const handleEditExpense = (expense: Transaction) => {
-    setEditingExpense(expense);
-    setIsModalOpen(true);
-  };
+    const openBulkModal = () => setIsBulkModalOpen(true);
+    const closeBulkModal = () => { setIsBulkModalOpen(false); setIsBulkLarge(false); };
 
-  const handleDeleteExpense = (id: string) => {
-    setDeletingId(id);
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingId) return;
-    try {
-      setIsDeleting(true);
-      await transactionService.deleteTransaction(deletingId);
-      toast.success("Expense deleted");
-      setRefreshKey(prev => prev + 1);
-      setDeletingId(null);
-    } catch (error) {
-      toast.error("Failed to delete expense");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchData = async () => {
-      if (!familyDetails?.id) return;
-
-      try {
-        const [categoriesResponse, paymentMethodsResponse, walletResponse, contactsResponse, projectsResponse, tagsResponse, locationsResponse] = await Promise.all([
-          transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
-          paymentMethodService.getPaymentMethods(familyDetails.id),
-          walletService.getWallets(familyDetails.id, 1, 100),
-          contactService.getContacts(familyDetails.id),
-          organizationService.getProjects(familyDetails.id),
-          organizationService.getTags(familyDetails.id),
-          organizationService.getLocations(familyDetails.id).catch(() => [])
-        ]);
-
-        if (isMounted) {
-          setCategories(categoriesResponse);
-          setPaymentMethods(paymentMethodsResponse);
-          setWallets(walletResponse.wallets);
-          setContacts(contactsResponse);
-          setProjects(projectsResponse);
-          setTags(tagsResponse);
-          setLocations(locationsResponse);
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Failed to fetch categories or payment methods:', error);
-        }
-      }
+    const handleExpenseAdded = () => {
+        setRefreshKey(prev => prev + 1);
+        closeModal();
     };
 
-    fetchData();
-
-    return () => {
-      isMounted = false;
+    const handleEditExpense = (expense: Transaction) => {
+        setEditingExpense(expense);
+        setIsModalOpen(true);
     };
-  }, [familyDetails]);
 
-  return (
-    <div className="space-y-6">
-      {/* Header with Title and Add Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
-            Family Expenses
-          </h1>
-          <p className="text-gray-500 font-medium">
-            Manage and monitor your household spending.
-          </p>
+    const handleDeleteExpense = (id: string) => {
+        setDeletingId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deletingId) return;
+        try {
+            setIsDeleting(true);
+            await transactionService.deleteTransaction(deletingId);
+            toast.success("Expense deleted");
+            setRefreshKey(prev => prev + 1);
+            setDeletingId(null);
+        } catch (error) {
+            toast.error("Failed to delete expense");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchData = async () => {
+            if (!familyDetails?.id) return;
+
+            try {
+                const [categoriesResponse, paymentMethodsResponse, walletResponse, contactsResponse, projectsResponse, tagsResponse, locationsResponse] = await Promise.all([
+                    transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
+                    paymentMethodService.getPaymentMethods(familyDetails.id),
+                    walletService.getWallets(familyDetails.id, 1, 100),
+                    contactService.getContacts(familyDetails.id),
+                    organizationService.getProjects(familyDetails.id),
+                    organizationService.getTags(familyDetails.id),
+                    organizationService.getLocations(familyDetails.id).catch(() => [])
+                ]);
+
+                if (isMounted) {
+                    setCategories(categoriesResponse);
+                    setPaymentMethods(paymentMethodsResponse);
+                    setWallets(walletResponse.wallets);
+                    setContacts(contactsResponse);
+                    setProjects(projectsResponse);
+                    setTags(tagsResponse);
+                    setLocations(locationsResponse);
+                }
+            } catch (error) {
+                if (isMounted) {
+                    console.error('Failed to fetch categories or payment methods:', error);
+                }
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [familyDetails]);
+
+    return (
+        <div className="space-y-6">
+            {/* Header with Title and Add Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                        Family Expenses
+                    </h1>
+                    <p className="text-gray-500 font-medium">
+                        Manage and monitor your household spending.
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={openBulkModal}
+                        className="flex items-center justify-center gap-2 px-5 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm"
+                    >
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" /> Import
+                    </button>
+                    <button
+                        onClick={openModal}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
+                    >
+                        <Plus className="w-5 h-5" /> Add New Expense
+                    </button>
+                </div>
+            </div>
+
+            {/* Stats Summary Area */}
+            <ExpensesStats familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
+
+            {/* Main Table / List Area */}
+            <ExpensesList
+                familyId={familyDetails?.id || ""}
+                refreshKey={refreshKey}
+                onEdit={handleEditExpense}
+                onDelete={handleDeleteExpense}
+            />
+
+            {/* Add Expense Modal */}
+            <Modal isOpen={isModalOpen} onClose={closeModal} className={isModalLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-5xl p-10 transition-all duration-500 ease-in-out"}>
+                <div className="mb-10">
+                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingExpense ? "Edit Transaction" : "New Transaction"}</h3>
+                    <p className="text-sm text-gray-500 font-medium">{editingExpense ? "Update transaction details." : "Record a new expense or scan a receipt to auto-fill details."}</p>
+                </div>
+                <AddExpenseForm
+                    onSuccess={handleExpenseAdded}
+                    onCancel={closeModal}
+                    categories={categories}
+                    paymentMethods={paymentMethods}
+                    wallets={wallets}
+                    familyId={familyDetails?.id || ""}
+                    initialData={editingExpense}
+                    contacts={contacts}
+                    projects={projects}
+                    tags={tags}
+                    locations={locations}
+                    onFileSelect={(hasFile) => setIsModalLarge(hasFile)}
+                />
+            </Modal>
+
+            <DeleteConfirmationModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Expense"
+                description="Are you sure you want to delete this expense? This action cannot be undone."
+                isDeleting={isDeleting}
+            />
+
+            {/* Bulk Import Modal */}
+            <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className={isBulkLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-4xl p-10 transition-all duration-500 ease-in-out"}>
+                <div className="mb-10">
+                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Bulk Import</h3>
+                    <p className="text-sm text-gray-500 font-medium">Upload a CSV or Excel file to import multiple expenses at once.</p>
+                </div>
+                <BulkImportExpenses
+                    onSuccess={closeBulkModal}
+                    onCancel={closeBulkModal}
+                    onFileSelect={(hasFile) => setIsBulkLarge(hasFile)}
+                    familyId={familyDetails?.id || ""}
+                    categories={categories}
+                    wallets={wallets}
+                    paymentMethods={paymentMethods}
+                    contacts={contacts}
+                    projects={projects}
+                    tags={tags}
+                    locations={locations}
+                />
+            </Modal>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button 
-            onClick={openBulkModal}
-            className="flex items-center justify-center gap-2 px-5 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm"
-          >
-            <FileSpreadsheet className="w-5 h-5 text-green-600" /> Import
-          </button>
-          <button 
-            onClick={openModal}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
-          >
-            <Plus className="w-5 h-5" /> Add New Expense
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Summary Area */}
-      <ExpensesStats familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
-
-      {/* Main Table / List Area */}
-      <ExpensesList 
-        familyId={familyDetails?.id || ""} 
-        refreshKey={refreshKey} 
-        onEdit={handleEditExpense} 
-        onDelete={handleDeleteExpense}
-      />
-
-      {/* Add Expense Modal */}
-      <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
-        <div className="mb-10">
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingExpense ? "Edit Transaction" : "New Transaction"}</h3>
-          <p className="text-sm text-gray-500 font-medium">{editingExpense ? "Update transaction details." : "Record a new expense or scan a receipt to auto-fill details."}</p>
-        </div>
-        <AddExpenseForm 
-          onSuccess={handleExpenseAdded} 
-          onCancel={closeModal}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          wallets={wallets}
-          familyId={familyDetails?.id || ""}
-          initialData={editingExpense}
-          contacts={contacts}
-          projects={projects}
-          tags={tags}
-          locations={locations}
-        />
-      </Modal>
-
-      <DeleteConfirmationModal
-        isOpen={!!deletingId}
-        onClose={() => setDeletingId(null)}
-        onConfirm={confirmDelete}
-        title="Delete Expense"
-        description="Are you sure you want to delete this expense? This action cannot be undone."
-        isDeleting={isDeleting}
-      />
-
-      {/* Bulk Import Modal */}
-      <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className={isBulkLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-4xl p-10 transition-all duration-500 ease-in-out"}>
-        <div className="mb-10">
-          <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Bulk Import</h3>
-          <p className="text-sm text-gray-500 font-medium">Upload a CSV or Excel file to import multiple expenses at once.</p>
-        </div>
-        <BulkImportExpenses 
-          onSuccess={closeBulkModal} 
-          onCancel={closeBulkModal}
-          onFileSelect={(hasFile) => setIsBulkLarge(hasFile)}
-          familyId={familyDetails?.id || ""}
-          categories={categories}
-          wallets={wallets}
-          paymentMethods={paymentMethods}
-          contacts={contacts}
-          projects={projects}
-          tags={tags}
-          locations={locations}
-        />
-      </Modal>
-    </div>
-  );
+    );
 }

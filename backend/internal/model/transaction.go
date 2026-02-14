@@ -58,6 +58,7 @@ type Transaction struct {
 	ID                uuid.UUID               `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Type              TransactionCategoryType `json:"type" gorm:"type:public.enum_transaction_category_type;not null"`
 	Amount            float64                 `json:"amount" gorm:"type:numeric;not null"`
+	Title             string                  `json:"title,omitempty" gorm:"type:text"`
 	Description       string                  `json:"description,omitempty" gorm:"type:text"`
 	WalletID          uuid.UUID               `json:"wallet_id" gorm:"type:uuid;not null;index"`
 	CategoryID        *uuid.UUID              `json:"category_id,omitempty" gorm:"type:uuid;index"`
@@ -71,7 +72,6 @@ type Transaction struct {
 	ContactID         *uuid.UUID              `json:"contact_id,omitempty" gorm:"type:uuid;index"`
 	LocationID        *uuid.UUID              `json:"location_id,omitempty" gorm:"type:uuid;index"`
 	ProjectID         *uuid.UUID              `json:"project_id,omitempty" gorm:"type:uuid;index"`
-	Tags              JSONB                   `json:"tags,omitempty" gorm:"type:jsonb"`
 	Attachments       JSONB                   `json:"attachments,omitempty" gorm:"type:jsonb"`
 	FileID            *uuid.UUID              `json:"file_id,omitempty" gorm:"type:uuid"`
 	CreatedAt         time.Time               `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
@@ -90,6 +90,7 @@ type Transaction struct {
 	Location      *Location            `json:"location,omitempty" gorm:"foreignKey:LocationID"`
 	Project       *Project             `json:"project,omitempty" gorm:"foreignKey:ProjectID"`
 	Items         []TransactionItem    `json:"items,omitempty" gorm:"foreignKey:TransactionID"`
+	Tags          []Tag                `json:"tags,omitempty" gorm:"many2many:entity_tags;joinForeignKey:EntityID;joinReferences:TagID;polymorphic:Entity;polymorphicValue:transaction"`
 }
 
 // TransactionItem represents an individual item in a transaction (e.g., from a receipt).

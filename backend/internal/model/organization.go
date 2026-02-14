@@ -18,17 +18,14 @@ type Tag struct {
 	CreatedByID *uuid.UUID `json:"created_by_id,omitempty" gorm:"type:uuid"`
 	CreatedAt   time.Time  `json:"created_at" gorm:"type:timestamp;not null;default:now()"`
 
-	CreatedBy *User `json:"created_by,omitempty" gorm:"foreignKey:CreatedByID"`
-
-	Family *Family `json:"family,omitempty" gorm:"foreignKey:FamilyID"`
+	CreatedBy *User   `json:"created_by,omitempty" gorm:"foreignKey:CreatedByID"`
+	Family    *Family `json:"family,omitempty" gorm:"foreignKey:FamilyID"`
 }
 
 type EntityTag struct {
 	EntityID   uuid.UUID `json:"entity_id" gorm:"type:uuid;primaryKey"`
 	TagID      uuid.UUID `json:"tag_id" gorm:"type:uuid;primaryKey"`
 	EntityType string    `json:"entity_type" gorm:"type:text;primaryKey"`
-
-	Tag *Tag `json:"tag,omitempty" gorm:"foreignKey:TagID"`
 }
 
 type Project struct {

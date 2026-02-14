@@ -51,7 +51,7 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
   const filteredExpenses = expenses.filter(expense => {
     const search = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || (
-      (expense.name?.toLowerCase().includes(search) || false) ||
+      (expense.title?.toLowerCase().includes(search) || false) ||
       (expense.category?.name?.toLowerCase().includes(search) || false) ||
       (expense.contact?.name?.toLowerCase().includes(search) || false)
     );
@@ -254,10 +254,12 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
           <thead>
             <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Transaction</th>
+              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Details</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Category</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Method</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Date</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Amount</th>
+              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Tags</th>
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Actions</th>
             </tr>
           </thead>
@@ -272,9 +274,14 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
                     <div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white/90 leading-tight mb-1">
                         <Link href={`/transactions/${expense.id}`} className="hover:text-emerald-500 transition-colors">
-                          {expense.name}
+                          {expense.title}
                         </Link>
                       </h4>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                    <div className="flex items-center gap-4">
                         {(expense.contact?.name || expense.project?.name || expense.location?.name) && (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {expense.contact?.name && (
@@ -295,7 +302,6 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
                         </div>
                       )}
                     </div>
-                  </div>
                 </td>
                 <td className="py-4 px-6">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
@@ -310,6 +316,19 @@ export const ExpensesList = ({ familyId, refreshKey, onEdit, onDelete }: { famil
                 </td>
                 <td className="py-4 px-6 text-sm font-black text-right text-gray-900 dark:text-white">
                   - {formatCurrency(expense.amount, 'en-IN', 'INR')}
+                </td>
+                <td className="py-4 px-6">
+                    <div className="flex items-center gap-4">
+                        {(expense.tags && expense.tags.length > 0) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {expense.tags?.map((tag) => (
+                            <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                 </td>
                 <td className="py-4 px-6 text-center">
                   <div className="relative">

@@ -14,13 +14,14 @@ import (
 type CreateTransactionRequest struct {
 	Type            model.TransactionCategoryType `json:"type" binding:"required,oneof=INCOME EXPENSE"`
 	Amount          float64                       `json:"amount" binding:"required,gt=0"`
+	Title           string                        `json:"title" binding:"required,max=255"`
 	Description     string                        `json:"description" binding:"max=500"`
 	WalletID        string                        `json:"wallet_id" binding:"required,uuid"`
-	CategoryID      *string                       `json:"category_id" binding:"omitempty,uuid"`
-	PaymentMethodID *string                       `json:"payment_method_id" binding:"omitempty,uuid"`
-	ContactID       *string                       `json:"contact_id" binding:"omitempty,uuid"`
-	LocationID      *string                       `json:"location_id" binding:"omitempty,uuid"`
-	ProjectID       *string                       `json:"project_id" binding:"omitempty,uuid"`
+	CategoryID      string                       `json:"category_id" binding:"omitempty,uuid"`
+	PaymentMethodID string                       `json:"payment_method_id" binding:"omitempty,uuid"`
+	ContactID       string                       `json:"contact_id" binding:"omitempty,uuid"`
+	LocationID      string                       `json:"location_id" binding:"omitempty,uuid"`
+	ProjectID       string                       `json:"project_id" binding:"omitempty,uuid"`
 	TransactionDate time.Time                     `json:"transaction_date" binding:"required"`
 	FamilyID        string                        `json:"family_id" binding:"required,uuid"`
 	UserID          *string                       `json:"user_id" binding:"omitempty,uuid"`
@@ -28,6 +29,11 @@ type CreateTransactionRequest struct {
 	Attachments     interface{}                   `json:"attachments"`
 	FileID          *string                       `json:"file_id" binding:"omitempty,uuid"`
 	Items           []CreateTransactionItemRequest `json:"items"`
+	Category        CustomValueCreationPayload     `json:"category" binding:"omitempty"`
+	PaymentMethod   CustomValueCreationPayload     `json:"payment_method" binding:"omitempty"`
+	Contact         CustomValueCreationPayload     `json:"contact" binding:"omitempty"`
+	Location        CustomValueCreationPayload     `json:"location" binding:"omitempty"`
+	Project         CustomValueCreationPayload     `json:"project" binding:"omitempty"`
 }
 
 // CreateTransactionItemRequest represents an item within a transaction.
@@ -55,6 +61,7 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		Type:            r.Type,
 		Amount:          r.Amount,
 		Description:     r.Description,
+		Title:           r.Title,
 		WalletID:        walletID,
 		TransactionDate: r.TransactionDate,
 		FamilyID:        familyID,
@@ -68,36 +75,36 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		}
 	}
 
-	if r.CategoryID != nil {
-		catID, err := uuid.Parse(*r.CategoryID)
+	if r.CategoryID != "" {
+		catID, err := uuid.Parse(r.CategoryID)
 		if err == nil {
 			transaction.CategoryID = &catID
 		}
 	}
 
-	if r.PaymentMethodID != nil {
-		pmID, err := uuid.Parse(*r.PaymentMethodID)
+	if r.PaymentMethodID != "" {
+		pmID, err := uuid.Parse(r.PaymentMethodID)
 		if err == nil {
 			transaction.PaymentMethodID = &pmID
 		}
 	}
 
-	if r.ContactID != nil {
-		cID, err := uuid.Parse(*r.ContactID)
+	if r.ContactID != "" {
+		cID, err := uuid.Parse(r.ContactID)
 		if err == nil {
 			transaction.ContactID = &cID
 		}
 	}
 
-	if r.LocationID != nil {
-		lID, err := uuid.Parse(*r.LocationID)
+	if r.LocationID != "" {
+		lID, err := uuid.Parse(r.LocationID)
 		if err == nil {
 			transaction.LocationID = &lID
 		}
 	}
 
-	if r.ProjectID != nil {
-		pID, err := uuid.Parse(*r.ProjectID)
+	if r.ProjectID != "" {
+		pID, err := uuid.Parse(r.ProjectID)
 		if err == nil {
 			transaction.ProjectID = &pID
 		}
@@ -111,8 +118,13 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 	}
 
 	if len(r.Tags) > 0 {
-		tagsJSON, _ := json.Marshal(r.Tags)
-		transaction.Tags = model.JSONB(tagsJSON)
+		tags := make([]model.Tag, len(r.Tags))
+		for i, tag := range r.Tags {
+			tags[i] = model.Tag{
+				Name: tag,
+			}
+		}
+		transaction.Tags = tags
 	}
 
 	if r.Attachments != nil {
@@ -146,6 +158,7 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 type UpdateTransactionRequest struct {
 	Amount          float64   `json:"amount" binding:"required,gt=0"`
 	Description     string    `json:"description" binding:"max=500"`
+	Title           string    `json:"title" binding:"required,max=255"`
 	WalletID        string    `json:"wallet_id" binding:"required,uuid"`
 	CategoryID      *string   `json:"category_id" binding:"omitempty,uuid"`
 	PaymentMethodID *string   `json:"payment_method_id" binding:"omitempty,uuid"`
@@ -159,6 +172,7 @@ type BulkImportTransactionItemRequest struct {
 	Type              model.TransactionCategoryType `json:"type" binding:"required,oneof=INCOME EXPENSE"`
 	Amount            float64                       `json:"amount" binding:"required,gt=0"`
 	Description       string                        `json:"description" binding:"max=500"`
+	Title             string                        `json:"title" binding:"required,max=255"`
 	WalletName        string                        `json:"wallet_name" binding:"required"`
 	CategoryName      string                        `json:"category_name"`
 	PaymentMethodName string                        `json:"payment_method_name"`
@@ -183,6 +197,7 @@ type TransactionResponse struct {
 	Type              model.TransactionCategoryType `json:"type"`
 	Amount            float64                       `json:"amount"`
 	Description       string                        `json:"description,omitempty"`
+	Title             string                        `json:"title"`
 	WalletID          string                        `json:"wallet_id"`
 	CategoryID        *string                       `json:"category_id,omitempty"`
 	PaymentMethodID   *string                       `json:"payment_method_id,omitempty"`
@@ -251,6 +266,7 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 		Type:            m.Type,
 		Amount:          m.Amount,
 		Description:     m.Description,
+		Title:           m.Title,
 		WalletID:        m.WalletID.String(),
 		TransactionDate: m.TransactionDate.Format(time.RFC3339),
 		FamilyID:        m.FamilyID.String(),
@@ -296,8 +312,10 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 
 	// Handle Tags (JSONB to []string)
 	if m.Tags != nil {
-		var tags []string
-		_ = json.Unmarshal(m.Tags, &tags)
+		tags := make([]string, len(m.Tags))
+		for i, tag := range m.Tags {
+			tags[i] = tag.Name
+		}
 		resp.Tags = tags
 	}
 

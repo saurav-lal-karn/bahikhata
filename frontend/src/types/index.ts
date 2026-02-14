@@ -3,92 +3,64 @@ import { DebtRepayment, GoalContribution, InvestmentTransaction, RecurringInstan
 export * from './tracking';
 
 export interface Family {
-  id: string;
-  name: string;
-  currency: string;
-  locale: string;
-  budgetAlerts: boolean;
-  weeklyReport: boolean;
-  hidePortfolio: boolean;
-  restrictDeletion: boolean;
-  hideIncome: boolean;
+    id: string;
+    name: string;
+    currency: string;
+    locale: string;
+    budgetAlerts: boolean;
+    weeklyReport: boolean;
+    hidePortfolio: boolean;
+    restrictDeletion: boolean;
+    hideIncome: boolean;
 }
 
 export interface FamilySettings {
-  id: string;
-  name: string;
-  currency: string;
-  budgetAlerts: boolean;
-  weeklyReport: boolean;
-  hidePortfolio: boolean;
-  restrictDeletion: boolean;
+    id: string;
+    name: string;
+    currency: string;
+    budgetAlerts: boolean;
+    weeklyReport: boolean;
+    hidePortfolio: boolean;
+    restrictDeletion: boolean;
 }
 
 export interface UpdateFamilySettingsPayload {
-  name: string;
-  currency: string;
-  budgetAlerts: boolean;
-  weeklyReport: boolean;
-  hidePortfolio: boolean;
-  restrictDeletion: boolean;
+    name: string;
+    currency: string;
+    budgetAlerts: boolean;
+    weeklyReport: boolean;
+    hidePortfolio: boolean;
+    restrictDeletion: boolean;
 }
 
 export interface InviteMemberPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  familyId?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    familyId?: string;
 }
 
 export interface FamilyMember {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  created_at: string;
-  status: string;
-  avatar_url: string;
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    role: string;
+    created_at: string;
+    status: string;
+    avatar_url: string;
 }
 
 export interface FamilyStats {
-  total_members: number;
-  total_administrators: number;
-  total_active_now: number;
-  total_pending_invites: number;
-  total_amount: number;
-  total_ledgers: number;
-  total_users: number;
-  total_transactions: number;
-}
-
-// Types for expenses
-export interface CreateExpensePayload {
-    name: string;
-    amount: number;
-    category_id: string;
-    payment_method_id: string;
-    family_id: string;
-    transaction_date: string;
-    description: string;
-    is_custom_category: boolean;
-    is_custom_payment_method: boolean;
-    custom_category_name: string;
-    custom_payment_method_name: string;
-    wallet_id: string;
-}
-
-export interface Expense {
-    id?: string;
-    name: string;
-    amount: number;
-    category: string;
-    payment_method: string;
-    isCustomCategory: boolean;
-    isCustomPaymentMethod: boolean;
-    transaction_date: string;
-    description: string;
+    total_members: number;
+    total_administrators: number;
+    total_active_now: number;
+    total_pending_invites: number;
+    total_amount: number;
+    total_ledgers: number;
+    total_users: number;
+    total_transactions: number;
 }
 
 export interface ExpenseStats {
@@ -219,8 +191,8 @@ export interface TransactionItem {
 export interface Transaction {
     id: string;
     type: TransactionType;
-    name: string;
     amount: number;
+    title: string;
     description: string;
     transaction_date: string;
     wallet_id: string;
@@ -237,7 +209,7 @@ export interface Transaction {
     items?: TransactionItem[];
     created_at: string;
     updated_at: string;
-    
+
     // Associations
     wallet?: WalletInfoType;
     category?: TransactionCategory;
@@ -247,28 +219,39 @@ export interface Transaction {
     project?: Project;
 }
 
+export interface CustomValueCreationPayload {
+    id: string;
+    value: string;
+}
+
 export interface CreateTransactionPayload {
     type: TransactionType;
-    name: string;
+    title: string;
     amount: number;
     description: string;
     transaction_date: string;
     wallet_id: string;
-    category_id?: string;
-    payment_method_id?: string;
-    contact_id?: string;
-    location_id?: string;
-    project_id?: string;
     family_id: string;
     tags?: string[];
     attachments?: string[];
     file_id?: string;
+    category_id: string;
+    payment_method_id: string;
+    contact_id: string;
+    location_id: string;
+    project_id: string;
+    category: CustomValueCreationPayload;
+    payment_method: CustomValueCreationPayload;
+    contact: CustomValueCreationPayload;
+    location: CustomValueCreationPayload;
+    project: CustomValueCreationPayload;
     items?: Partial<TransactionItem>[];
 }
 
 export interface BulkImportTransactionItem {
     type: TransactionType;
     amount: number;
+    title: string;
     description: string;
     wallet_name: string;
     category_name: string;
@@ -371,37 +354,6 @@ export interface WalletTransfer {
 
 // Types for income types
 // IncomeType is now an alias for TransactionCategory
-
-export interface Income {
-    id: string;
-    name: string;
-    amount: number;
-    source_id: string;
-    wallet_id: string;
-    date: string;
-    description: string;
-    is_custom_source: boolean;
-    custom_source_name: string;
-    family_id: string;
-    created_by_id: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-    source?: IncomeType;
-    wallet?: WalletInfoType;
-}
-
-export interface CreateIncomePayload {
-    name: string;
-    amount: number;
-    source_id: string;
-    wallet_id: string;
-    date: string;
-    description: string;
-    is_custom_source: boolean;
-    custom_source_name: string;
-    family_id: string;
-}
 
 export interface CreateGoalPayload {
     name: string;

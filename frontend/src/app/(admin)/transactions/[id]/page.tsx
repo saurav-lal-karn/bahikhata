@@ -1,14 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
-    ArrowLeft, 
-    Calendar, 
-    Tag, 
-    CreditCard, 
-    MessageSquare, 
-    FileText, 
-    ExternalLink, 
+import {
+    ArrowLeft,
+    Calendar,
+    Tag,
+    CreditCard,
+    MessageSquare,
+    FileText,
+    ExternalLink,
     Image as ImageIcon,
     User,
     Building2,
@@ -33,7 +33,7 @@ export default function TransactionDetailPage() {
             try {
                 const tx = await transactionService.getTransactionById(id);
                 setTransaction(tx);
-                
+
                 if (tx.file_id) {
                     try {
                         const att = await attachmentService.getAttachmentById(tx.file_id);
@@ -72,7 +72,7 @@ export default function TransactionDetailPage() {
         <div className="max-w-6xl mx-auto space-y-8 pb-12">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <button 
+                <button
                     onClick={() => router.back()}
                     className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
@@ -80,9 +80,8 @@ export default function TransactionDetailPage() {
                     <span className="font-bold uppercase tracking-widest text-xs">Back to transactions</span>
                 </button>
                 <div className="flex items-center gap-3">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        isExpense ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'
-                    }`}>
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${isExpense ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'
+                        }`}>
                         {transaction.type}
                     </span>
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
@@ -96,13 +95,13 @@ export default function TransactionDetailPage() {
                 <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-10 shadow-sm overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03] dark:opacity-[0.1] -mr-10 -mt-10">
-                             <CreditCard className="w-64 h-64 text-gray-900 dark:text-white" />
+                            <CreditCard className="w-64 h-64 text-gray-900 dark:text-white" />
                         </div>
-                        
+
                         <div className="relative space-y-8">
                             <div>
                                 <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
-                                    {transaction.name}
+                                    {transaction.title}
                                 </h1>
                                 <p className="text-gray-500 font-medium text-lg">
                                     {transaction.description || "No description provided."}
@@ -237,7 +236,7 @@ export default function TransactionDetailPage() {
                             <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                             AI Document Attachment
                         </h3>
-                        
+
                         {attachment ? (
                             <div className="space-y-6">
                                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center gap-4 group">
@@ -256,18 +255,18 @@ export default function TransactionDetailPage() {
 
                                 {isImage && fileUrl && (
                                     <div className="rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
-                                        <img 
-                                            src={fileUrl} 
-                                            alt="Receipt Preview" 
+                                        <img
+                                            src={fileUrl}
+                                            alt="Receipt Preview"
                                             className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                                             onClick={() => window.open(fileUrl, '_blank')}
                                         />
                                     </div>
                                 )}
 
-                                <a 
-                                    href={fileUrl || '#'} 
-                                    target="_blank" 
+                                <a
+                                    href={fileUrl || '#'}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
                                 >
@@ -284,12 +283,12 @@ export default function TransactionDetailPage() {
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="p-8 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[2.5rem] text-white shadow-xl shadow-blue-500/20">
                         <MessageSquare className="w-8 h-8 mb-4 opacity-50" />
                         <h4 className="text-lg font-black mb-2">Need to adjust?</h4>
                         <p className="text-sm font-bold text-blue-100 mb-6">You can edit this transaction at any time from the main list.</p>
-                        <button 
+                        <button
                             onClick={() => router.back()}
                             className="text-xs font-black uppercase tracking-widest bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl transition-all"
                         >

@@ -116,6 +116,7 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 		Preload("Location").
 		Preload("Project").
 		Preload("Items").
+		Preload("Tags").
 		Preload("Items.Category").
 		Order("created_at DESC").
 		Limit(pageSize).
