@@ -90,7 +90,6 @@ type Transaction struct {
 	Location      *Location            `json:"location,omitempty" gorm:"foreignKey:LocationID"`
 	Project       *Project             `json:"project,omitempty" gorm:"foreignKey:ProjectID"`
 	Items         []TransactionItem    `json:"items,omitempty" gorm:"foreignKey:TransactionID"`
-	Tags          []Tag                `json:"tags,omitempty" gorm:"many2many:entity_tags;joinForeignKey:EntityID;joinReferences:TagID;polymorphic:Entity;polymorphicValue:transaction"`
 }
 
 // TransactionItem represents an individual item in a transaction (e.g., from a receipt).

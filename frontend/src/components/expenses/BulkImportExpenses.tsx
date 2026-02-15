@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, Fragment, FC } from "react";
 import { useDropzone } from "react-dropzone";
 import {
     FileSpreadsheet,
@@ -47,7 +47,7 @@ interface Item {
 
 interface ImportedExpense {
     id: string;
-    name: string;
+    title: string;
     amount: string;
     category: string;
     date: string;
@@ -65,7 +65,7 @@ interface ImportedExpense {
     isExpanded?: boolean;
 }
 
-export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
+export const BulkImportExpenses: FC<BulkImportExpensesProps> = ({
     onSuccess,
     onCancel,
     onFileSelect,
@@ -112,7 +112,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
 
     const validateRow = (row: any, index: number): ImportedExpense => {
         const id = `row-${index}-${Date.now()}`;
-        const name = row.name || row.Name || '';
+        const title = row.title || row.Title || '';
         const amountStr = row.amount || row.Amount || '';
         const categoryName = row.category || row.Category || 'Uncategorized';
         let dateStr = row.date || row.Date || '';
@@ -137,9 +137,9 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
         const warnings: Record<string, string> = {};
 
         // Validate Name
-        if (!name || typeof name !== 'string' || name.trim() === '') {
+        if (!title || typeof title !== 'string' || title.trim() === '') {
             status = 'invalid';
-            error = 'Missing name';
+            error = 'Missing title';
         }
 
         // Validate Amount
@@ -198,7 +198,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
 
         return {
             id,
-            name,
+            title,
             amount: amountStr.toString(),
             category: categoryName,
             date: dateStr,
@@ -288,26 +288,6 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
         ));
     };
 
-    const getOrCreateEntity = async <T extends { id: string, name: string }>(
-        name: string,
-        existingList: T[],
-        createFn: (name: string) => Promise<T | { id: string }>
-    ): Promise<string> => {
-        if (!name) return "";
-        const existing = existingList.find(e => e.name.toLowerCase() === name.toLowerCase());
-        if (existing) return existing.id;
-        try {
-            const created = await createFn(name);
-            // Optimistically add to list or let parent re-fetch? 
-            // Ideally we should update local state but prop update is better.
-            // For now, simpler to just get ID.
-            return (created as any).id || (created as any).data?.id;
-        } catch (error) {
-            console.error(`Failed to create entity: ${name}`, error);
-            return ""; // Or throw?
-        }
-    };
-
     const handleImport = async () => {
         const validData = importedData.filter(row => row.status === 'valid');
         if (validData.length === 0) return;
@@ -321,6 +301,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
             const transactions = validData.map((row) => ({
                 type: 'EXPENSE',
                 amount: parseFloat(row.amount),
+                title: row.title,
                 description: row.description || `Imported from ${file?.name}`,
                 wallet_name: row.account || "",
                 category_name: row.category,
@@ -509,7 +490,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
                                             </tr>
                                         ))
                                     ) : importedData.map((row) => (
-                                        <React.Fragment key={row.id}>
+                                        <Fragment key={row.id}>
                                             <tr className={`text-sm group hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${row.isExpanded ? 'bg-gray-50/80 dark:bg-gray-800/80' : ''}`}>
                                                 <td className="px-5 py-4 text-center">
                                                     {row.items && row.items.length > 0 && (
@@ -532,7 +513,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-4 font-black text-gray-900 dark:text-white max-w-[200px] truncate" title={row.name}>{row.name}</td>
+                                                <td className="px-5 py-4 font-black text-gray-900 dark:text-white max-w-[200px] truncate" title={row.title}>{row.title}</td>
                                                 <td className="px-5 py-4 font-black text-brand-600">₹{row.amount}</td>
                                                 <td className="px-5 py-4 text-gray-500 font-medium whitespace-nowrap">{row.date}</td>
                                                 <td className="px-5 py-4 text-gray-600 dark:text-gray-300 text-xs">
@@ -620,7 +601,7 @@ export const BulkImportExpenses: React.FC<BulkImportExpensesProps> = ({
                                                     </td>
                                                 </tr>
                                             )}
-                                        </React.Fragment>
+                                        </Fragment>
                                     ))}
                                 </tbody>
                             </table>

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/sauravkarn541/bahikhata/internal/constants"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/model"
 	"github.com/sauravkarn541/bahikhata/internal/repository"
@@ -169,6 +170,15 @@ func (s *transactionService) Create(ctx context.Context, req *dto.CreateTransact
 		}
 
 		txModel.ID = created.ID
+
+		// Create Tags if provided
+		if len(req.Tags) > 0 {
+			err = s.tagRepo.AttachTags(ctx, txModel.ID, string(constants.EntityTransaction), req.Tags)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 
@@ -178,7 +188,11 @@ func (s *transactionService) Create(ctx context.Context, req *dto.CreateTransact
 
 	// 4. Fetch with relations for response
 	fullTx, _ := s.txRepo.GetByID(ctx, txModel.ID)
-	return dto.ToTransactionResponse(fullTx), nil
+	tags, err := s.tagRepo.GetTagsByEntity(ctx, txModel.ID, string(constants.EntityTransaction))
+	if err != nil {
+		return nil, NewInternalError("get tags", err)
+	}
+	return dto.ToTransactionResponse(fullTx, tags), nil
 }
 
 func (s *transactionService) GetByID(ctx context.Context, id uuid.UUID, userID uuid.UUID) (*dto.TransactionResponse, error) {
@@ -190,11 +204,16 @@ func (s *transactionService) GetByID(ctx context.Context, id uuid.UUID, userID u
 		return nil, NewInternalError("get transaction", err)
 	}
 
+	tags, err := s.tagRepo.GetTagsByEntity(ctx, id, string(constants.EntityTransaction))
+	if err != nil {
+		return nil, NewInternalError("get tags", err)
+	}
+
 	// Basic authorization check (can be expanded to family-based check if needed)
 	// For now, if user created it or is in the same family, it's okay.
 	// But let's stick to family check if the context permits.
 
-	return dto.ToTransactionResponse(tx), nil
+	return dto.ToTransactionResponse(tx, tags), nil
 }
 
 func (s *transactionService) List(ctx context.Context, familyID uuid.UUID, userID uuid.UUID, filters map[string]interface{}) (*dto.TransactionListResponse, error) {
@@ -205,7 +224,11 @@ func (s *transactionService) List(ctx context.Context, familyID uuid.UUID, userI
 
 	responses := make([]dto.TransactionResponse, len(txs))
 	for i := range txs {
-		responses[i] = *dto.ToTransactionResponse(&txs[i])
+		tags, err := s.tagRepo.GetTagsByEntity(ctx, txs[i].ID, string(constants.EntityTransaction))
+		if err != nil {
+			return nil, NewInternalError("get tags", err)
+		}
+		responses[i] = *dto.ToTransactionResponse(&txs[i], tags)
 	}
 
 	page := 1

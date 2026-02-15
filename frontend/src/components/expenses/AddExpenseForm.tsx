@@ -76,7 +76,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
         contact_id: initialData?.contact_id || prefilledData?.contact_id || "",
         project_id: initialData?.project_id || prefilledData?.project_id || "",
         location_id: initialData?.location_id || prefilledData?.location_id || "",
-        tag_ids: initialData?.tags || [] as string[],
+        tags: initialData?.tags || [] as string[],
         family_id: familyId,
         file_id: initialData?.file_id || prefilledData?.file_id || "",
         items: initialData?.items || [] as any[]
@@ -229,7 +229,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                     id: formData.location_id,
                     value: customLocationName || ""
                 },
-                tags: formData.tag_ids,
+                tags: formData.tags,
                 items: formData.items.map(item => ({
                     name: item.name,
                     amount: Number(item.amount),
@@ -602,11 +602,11 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                 <MultiSelect
                                     label=""
                                     options={tags.map(t => ({
-                                        value: t.id,
+                                        value: t.name,
                                         text: t.name,
-                                        selected: formData.tag_ids.includes(t.id)
+                                        selected: formData.tags.includes(t.name)
                                     }))}
-                                    onChange={(selected) => setFormData({ ...formData, tag_ids: selected })}
+                                    onChange={(selected) => setFormData({ ...formData, tags: selected })}
                                 />
                             </div>
                         </div>

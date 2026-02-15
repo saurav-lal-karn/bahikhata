@@ -117,15 +117,15 @@ func (r *CreateTransactionRequest) ToModel(creatorID uuid.UUID) (*model.Transact
 		}
 	}
 
-	if len(r.Tags) > 0 {
-		tags := make([]model.Tag, len(r.Tags))
-		for i, tag := range r.Tags {
-			tags[i] = model.Tag{
-				Name: tag,
-			}
-		}
-		transaction.Tags = tags
-	}
+	// if len(r.Tags) > 0 {
+	// 	tags := make([]model.Tag, len(r.Tags))
+	// 	for i, tag := range r.Tags {
+	// 		tags[i] = model.Tag{
+	// 			Name: tag,
+	// 		}
+	// 	}
+	// 	transaction.Tags = tags
+	// }
 
 	if r.Attachments != nil {
 		attachmentsJSON, _ := json.Marshal(r.Attachments)
@@ -256,7 +256,7 @@ type TransactionStatsResponse struct {
 
 // ToTransactionResponse converts a model.Transaction to TransactionResponse.
 // Note: This requires the nested models to be preloaded if they are to be included in the response.
-func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
+func ToTransactionResponse(m *model.Transaction, tags []string) *TransactionResponse {
 	if m == nil {
 		return nil
 	}
@@ -311,13 +311,13 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 	}
 
 	// Handle Tags (JSONB to []string)
-	if m.Tags != nil {
-		tags := make([]string, len(m.Tags))
-		for i, tag := range m.Tags {
-			tags[i] = tag.Name
-		}
-		resp.Tags = tags
-	}
+	// if m.Tags != nil {
+	// 	tags := make([]string, len(m.Tags))
+	// 	for i, tag := range m.Tags {
+	// 		tags[i] = tag.Name
+	// 	}
+	// 	resp.Tags = tags
+	// }
 
 	// Handle Attachments (JSONB to interface{})
 	if m.Attachments != nil {
@@ -345,6 +345,10 @@ func ToTransactionResponse(m *model.Transaction) *TransactionResponse {
 
 	if m.Project != nil {
 		resp.Project = ToProjectResponse(m.Project)
+	}
+
+	if len(tags) > 0 {
+		resp.Tags = tags
 	}
 
 	if len(m.Items) > 0 {
