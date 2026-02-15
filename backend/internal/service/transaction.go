@@ -173,7 +173,7 @@ func (s *transactionService) Create(ctx context.Context, req *dto.CreateTransact
 
 		// Create Tags if provided
 		if len(req.Tags) > 0 {
-			err = s.tagRepo.AttachTags(ctx, txModel.ID, string(constants.EntityTransaction), req.Tags)
+			err = s.tagRepo.AttachTags(ctx, txModel.ID, string(constants.EntityTransaction), req.Tags, familyID, creatorID)
 			if err != nil {
 				return err
 			}
@@ -258,6 +258,8 @@ func (s *transactionService) Update(ctx context.Context, id uuid.UUID, req *dto.
 		return nil, NewInternalError("get transaction", err)
 	}
 
+	familyID := existing.FamilyID
+
 	// 2. Prepare Updates
 	walletID, err := uuid.Parse(req.WalletID)
 	if err != nil {
@@ -329,11 +331,20 @@ func (s *transactionService) Update(ctx context.Context, id uuid.UUID, req *dto.
 				newItems[i] = mItem
 			}
 			if err := dbTx.Create(&newItems).Error; err != nil {
-				return err
+					return err
+				}
 			}
-		}
-		return nil
-	})
+
+			// Update Tags
+			if req.Tags != nil {
+				err = s.tagRepo.AttachTags(ctx, id, string(constants.EntityTransaction), req.Tags, familyID, userID)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
 
 	if err != nil {
 		return nil, NewInternalError("update transaction", err)

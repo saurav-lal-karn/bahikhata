@@ -15,7 +15,7 @@ type TagRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Tag, error)
 	Update(ctx context.Context, tag *model.Tag) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tags []string) error
+	AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tags []string, familyID uuid.UUID, userID uuid.UUID) error
 	GetTagsByEntity(ctx context.Context, entityID uuid.UUID, entityType string) ([]string, error)
 }
 
@@ -55,7 +55,7 @@ func (r *tagRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Tag{}, "id = ?", id).Error
 }
 
-func (r *tagRepo) AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tags []string) error {
+func (r *tagRepo) AttachTags(ctx context.Context, entityID uuid.UUID, entityType string, tags []string, familyID uuid.UUID, userID uuid.UUID) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Check if the tags are there
 		if len(tags) == 0 {
@@ -66,11 +66,12 @@ func (r *tagRepo) AttachTags(ctx context.Context, entityID uuid.UUID, entityType
 		var tagIDs []uuid.UUID
 		for _, tag := range tags {
 			var existingTag model.Tag
-			if err := tx.Where("name = ?", tag).First(&existingTag).Error; err != nil {
+			if err := tx.Where("name = ? AND family_id = ?", tag, familyID).First(&existingTag).Error; err != nil {
 				if err == gorm.ErrRecordNotFound {
 					t := &model.Tag{
-						Name:     tag,
-						FamilyID: entityID,
+						Name:        tag,
+						FamilyID:    familyID,
+						CreatedByID: &userID,
 					}
 					if err := tx.Create(t).Error; err != nil {
 						return err

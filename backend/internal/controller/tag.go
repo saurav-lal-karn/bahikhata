@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sauravkarn541/bahikhata/internal/dto"
 	"github.com/sauravkarn541/bahikhata/internal/helper"
 	"github.com/sauravkarn541/bahikhata/internal/service"
@@ -36,10 +35,9 @@ func (ctrl *TagController) Create(c *gin.Context) {
 }
 
 func (ctrl *TagController) List(c *gin.Context) {
-	familyIDStr := c.Param("family_id")
-	familyID, err := uuid.Parse(familyIDStr)
+	familyID, err := parseUUIDParam(c, "family_id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid family ID")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -53,10 +51,9 @@ func (ctrl *TagController) List(c *gin.Context) {
 }
 
 func (ctrl *TagController) Update(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUIDParam(c, "id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid tag ID")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -76,10 +73,9 @@ func (ctrl *TagController) Update(c *gin.Context) {
 }
 
 func (ctrl *TagController) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUIDParam(c, "id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid tag ID")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -92,10 +88,9 @@ func (ctrl *TagController) Delete(c *gin.Context) {
 }
 
 func (ctrl *TagController) GetByID(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUIDParam(c, "id")
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "Invalid tag ID")
+		helper.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 

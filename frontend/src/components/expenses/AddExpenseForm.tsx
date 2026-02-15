@@ -109,6 +109,23 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
         }
     }, [prefilledData]);
 
+    // Sync props with state
+    useEffect(() => {
+        if (propContacts) setContacts(propContacts);
+    }, [propContacts]);
+
+    useEffect(() => {
+        if (propProjects) setProjects(propProjects);
+    }, [propProjects]);
+
+    useEffect(() => {
+        if (propTags) setTags(propTags);
+    }, [propTags]);
+
+    useEffect(() => {
+        if (propLocations) setLocations(propLocations);
+    }, [propLocations]);
+
     useEffect(() => {
         // Only fetch if props are not provided
         if (propContacts && propProjects && propTags && propLocations) return;
@@ -410,6 +427,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                     placeholder="Where did the money go from?"
                                     onChange={(value: string) => setFormData({ ...formData, wallet_id: value })}
                                     className="rounded-2xl h-14 pl-11"
+                                    value={formData.wallet_id}
                                 />
                                 <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
                             </div>
@@ -441,6 +459,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                     setFormData({ ...formData, category_id: value });
                                 }
                             }}
+                            value={formData.category_id}
                             className="rounded-2xl h-14"
                         />
                     </div>
@@ -475,6 +494,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                     setFormData({ ...formData, payment_method_id: value });
                                 }
                             }}
+                            value={formData.payment_method_id}
                             className="rounded-2xl h-14"
                         />
                     </div>
@@ -506,6 +526,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                     setFormData({ ...formData, contact_id: value });
                                 }
                             }}
+                            value={formData.contact_id}
                             className="rounded-2xl h-14"
                         />
                     </div>
@@ -538,6 +559,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                         setFormData({ ...formData, project_id: value });
                                     }
                                 }}
+                                value={formData.project_id}
                                 className="rounded-2xl h-14 pl-11"
                             />
                             <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
@@ -572,6 +594,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                         setFormData({ ...formData, location_id: value });
                                     }
                                 }}
+                                value={formData.location_id}
                                 className="rounded-2xl h-14 pl-11"
                             />
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
@@ -607,6 +630,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                         selected: formData.tags.includes(t.name)
                                     }))}
                                     onChange={(selected) => setFormData({ ...formData, tags: selected })}
+                                    defaultSelected={formData.tags}
                                 />
                             </div>
                         </div>
