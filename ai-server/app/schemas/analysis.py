@@ -20,6 +20,9 @@ class AnalysisResult(BaseModel):
     bill_number: Optional[str] = None
     due_date: Optional[Any] = None
     invoice_number: Optional[str] = None
+    location: Optional[str] = None
+    vendor: Optional[str] = None
+    payment_method: Optional[str] = None
     document_type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, INVOICE
     # Field-level confidence
     field_confidence: Optional[Dict[str, float]] = None

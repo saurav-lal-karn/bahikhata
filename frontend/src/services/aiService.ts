@@ -9,6 +9,9 @@ export interface AnalysisResponse {
         description: string;
         tags: string[];
         merchant_name: string;
+        vendor?: string;
+        location?: string;
+        payment_method?: string;
         amount: number;
         date: string;
         currency: string;
@@ -35,13 +38,25 @@ export const aiService = {
     analyzeFile: async (file: File, familyId: string): Promise<AnalysisResponse> => {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         const response = await apiClient.post(`/ai/analyze?family_id=${familyId}`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
         });
-        
+
+        return response.data.data as AnalysisResponse;
+    },
+    analyzeExpenseFile: async (file: File, familyId: string): Promise<AnalysisResponse> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await apiClient.post(`/ai/analyze-expense?family_id=${familyId}`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
         return response.data.data as AnalysisResponse;
     }
 };

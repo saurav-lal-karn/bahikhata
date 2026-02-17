@@ -14,5 +14,6 @@ func RegisterAIRoutes(app *config.Application, group *gin.RouterGroup) {
 	aiCtrl := controller.NewAIController(aiSvc)
 
 	group.POST("/analyze", aiCtrl.Analyze)
+	group.POST("/analyze-expense", aiCtrl.AnalyzeExpense)
 	group.GET("/details/:id", aiCtrl.GetDetails)
 }

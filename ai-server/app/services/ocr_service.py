@@ -107,7 +107,7 @@ class OCRService:
         
         return max(scores, key=scores.get) if max(scores.values()) > 0 else 'RECEIPT'
 
-    async def process_receipt(self, file_contents: bytes, filename: str = "") -> OCRResponse:
+    async def process_receipt(self, file_contents: bytes, filename: str = "", document_type: str = "") -> OCRResponse:
         """
         Process document (receipt, bill, or invoice) and extract structured data
         """
@@ -129,7 +129,8 @@ class OCRService:
             )
 
         # 2. Detect document type
-        document_type = await self.detect_document_type(extracted_text)
+        if not document_type or document_type == "":
+            document_type = await self.detect_document_type(extracted_text)
 
         # 3. Store in Vector DB
         doc_id = str(uuid.uuid4())
@@ -199,12 +200,17 @@ class OCRService:
         
         base_fields = """
             "merchant_name": "string",
+            "vendor": "string (the brand or person paid)",
+            "location": "string (city or address)",
+            "payment_method": "string (e.g. Cash, Card, UPI, Amazon Pay)",
             "transaction_date": "YYYY-MM-DD",
             "total_amount": float,
             "tax_amount": float,
             "currency": "string",
-            "category": "string",
+            "category": "string (suggest a relevant category)",
             "transaction_type": "EXPENSE or INCOME",
+            "description": "string (short 1-line summary)",
+            "tags": ["tag1", "tag2"],
             "line_items": [
                 {"description": "string", "amount": float, "quantity": int}
             ]
@@ -222,6 +228,12 @@ class OCRService:
             "due_date": "YYYY-MM-DD",
             "payment_terms": "string (optional)"
             """
+        elif document_type == "EXPENSE":
+            specific_fields = """
+            "bill_number": "string",
+            "due_date": "YYYY-MM-DD",
+            "account_number": "string (optional)"
+            """
         else:  # RECEIPT
             specific_fields = ""
         
@@ -237,7 +249,12 @@ class OCRService:
                 "total_amount": float (0.0-1.0),
                 "tax_amount": float (0.0-1.0),
                 "category": float (0.0-1.0),
-                "transaction_type": float (0.0-1.0)
+                "transaction_type": float (0.0-1.0),
+                "vendor": float (0.0-1.0),
+                "location": float (0.0-1.0),
+                "payment_method": float (0.0-1.0),
+                "tags": float (0.0-1.0),
+                "description": float (0.0-1.0)
                 {', "bill_number": float (0.0-1.0), "due_date": float (0.0-1.0)' if document_type == "BILL" else ''}
                 {', "invoice_number": float (0.0-1.0), "due_date": float (0.0-1.0)' if document_type == "INVOICE" else ''}
             }}

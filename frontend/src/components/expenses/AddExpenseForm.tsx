@@ -28,6 +28,7 @@ import toast from "react-hot-toast";
 import { ExpenseCategory, PaymentMethod, WalletInfoType, TransactionType, Contact, Project, Tag as TagType, Transaction } from "@/types";
 import type { Location } from "@/services/organizationService";
 import { FieldConfidenceIndicator } from "@/components/shared/FieldConfidenceIndicator";
+import { aiService } from "@/services/aiService";
 
 interface AddExpenseFormProps {
     onSuccess?: () => void;
@@ -86,28 +87,81 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
     const [scannedFileUrl, setScannedFileUrl] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scanComplete, setScanComplete] = useState(!!prefilledData);
+    const [analysisData, setAnalysisData] = useState<any>(prefilledData);
+
+    const hasAppliedPrefill = React.useRef(false);
 
     // Initial pre-fill logic
     useEffect(() => {
-        if (prefilledData) {
+        if (prefilledData && !hasAppliedPrefill.current && (categories.length > 0 || contacts.length > 0)) {
+            const analysis = prefilledData;
+
+            // Find matching entities
+            const categoryMatch = categories.find(c =>
+                c.name.toLowerCase() === analysis.category?.toLowerCase() ||
+                analysis.category?.toLowerCase().includes(c.name.toLowerCase())
+            );
+
+            const contactMatch = contacts.find(c =>
+                c.name.toLowerCase() === analysis.merchant_name?.toLowerCase() ||
+                c.name.toLowerCase() === analysis.vendor?.toLowerCase()
+            );
+
+            const paymentMatch = paymentMethods.find(p =>
+                p.name.toLowerCase() === analysis.payment_method?.toLowerCase() ||
+                analysis.payment_method?.toLowerCase().includes(p.name.toLowerCase())
+            );
+
+            const locationMatch = locations.find(l =>
+                l.name.toLowerCase() === analysis.location?.toLowerCase() ||
+                analysis.location?.toLowerCase().includes(l.name.toLowerCase())
+            );
+
             setFormData(prev => ({
                 ...prev,
-                title: prefilledData.merchant_name || prev.title,
-                amount: prefilledData.amount || prev.amount,
-                transaction_date: prefilledData.date ? new Date(prefilledData.date).toISOString().split('T')[0] : prev.transaction_date,
-                category_id: initialData?.category_id || prefilledData?.category_id || prev.category_id,
-                description: initialData?.description || prefilledData.description || prev.description,
-                file_id: initialData?.file_id || prefilledData.file_id || prev.file_id,
-                items: initialData?.items || prefilledData.line_items?.map((item: any) => ({
+                title: analysis.merchant_name || analysis.vendor || prev.title,
+                amount: analysis.amount || prev.amount,
+                transaction_date: analysis.date ? new Date(analysis.date).toISOString().split('T')[0] : prev.transaction_date,
+                category_id: initialData?.category_id || categoryMatch?.id || (analysis.category ? "" : prev.category_id),
+                contact_id: initialData?.contact_id || contactMatch?.id || (analysis.merchant_name || analysis.vendor ? "" : prev.contact_id),
+                payment_method_id: initialData?.payment_method_id || paymentMatch?.id || (analysis.payment_method ? "" : prev.payment_method_id),
+                location_id: initialData?.location_id || locationMatch?.id || (analysis.location ? "" : prev.location_id),
+                description: initialData?.description || analysis.description || prev.description,
+                tags: Array.from(new Set([...prev.tags, ...(analysis.tags || [])])),
+                file_id: initialData?.file_id || analysis.file_id || prev.file_id,
+                items: initialData?.items || analysis.line_items?.map((item: any) => ({
                     name: item.description,
                     amount: item.amount,
                     quantity: item.quantity || 1,
-                    unit_price: item.amount / (item.quantity || 1)
+                    unit_price: (item.amount || 0) / (item.quantity || 1)
                 })) || prev.items
             }));
+
+            if (!initialData?.category_id && !categoryMatch && analysis.category) {
+                setIsCustomCategory(true);
+                setCustomCategoryName(analysis.category || "");
+            }
+
+            if (!initialData?.contact_id && !contactMatch && (analysis.merchant_name || analysis.vendor)) {
+                setIsCustomContact(true);
+                setCustomContactName(analysis.merchant_name || analysis.vendor || "");
+            }
+
+            if (!initialData?.payment_method_id && !paymentMatch && analysis.payment_method) {
+                setIsCustomPaymentMethod(true);
+                setCustomPaymentMethodName(analysis.payment_method || "");
+            }
+
+            if (!initialData?.location_id && !locationMatch && analysis.location) {
+                setIsCustomLocation(true);
+                setCustomLocationName(analysis.location || "");
+            }
+
             setScanComplete(true);
+            setAnalysisData(analysis);
+            hasAppliedPrefill.current = true;
         }
-    }, [prefilledData]);
+    }, [prefilledData, categories, contacts, paymentMethods, locations, initialData]);
 
     // Sync props with state
     useEffect(() => {
@@ -162,7 +216,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
     const onDrop = (acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
             setScannedFile(acceptedFiles[0]);
-            handleMockOCR(acceptedFiles[0]);
+            handleAnalyzeExpense(acceptedFiles[0]);
             setScannedFileUrl(URL.createObjectURL(acceptedFiles[0]));
             if (onFileSelect) onFileSelect(true);
         }
@@ -177,24 +231,100 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
         multiple: false
     });
 
-    const handleMockOCR = (file: File) => {
-        console.log(file);
+    const handleAnalyzeExpense = async (file: File) => {
         setIsScanning(true);
         setScanComplete(false);
 
-        // Simulate OCR delay
-        setTimeout(() => {
-            setIsScanning(false);
-            setScanComplete(true);
+        try {
+            const result = await aiService.analyzeExpenseFile(file, familyId);
+            console.log("Analysis result:", result);
+            const analysis = result.analysis;
+            setAnalysisData(analysis);
 
-            // Auto-populate with mock data
-            setFormData(prev => ({
-                ...prev,
-                name: "BigBasket Groceries (Scanned)",
-                amount: 1540.50,
-                category: "food"
-            }));
-        }, 2000);
+            if (analysis) {
+                // Find matching entities
+                const categoryMatch = categories.find(c =>
+                    c.name.toLowerCase() === analysis.category?.toLowerCase() ||
+                    analysis.category?.toLowerCase().includes(c.name.toLowerCase())
+                );
+
+                const contactMatch = contacts.find(c =>
+                    c.name.toLowerCase() === analysis.merchant_name?.toLowerCase() ||
+                    c.name.toLowerCase() === analysis.vendor?.toLowerCase()
+                );
+
+                const paymentMatch = paymentMethods.find(p =>
+                    p.name.toLowerCase() === analysis.payment_method?.toLowerCase() ||
+                    analysis.payment_method?.toLowerCase().includes(p.name.toLowerCase())
+                );
+
+                const locationMatch = locations.find(l =>
+                    l.name.toLowerCase() === analysis.location?.toLowerCase() ||
+                    analysis.location?.toLowerCase().includes(l.name.toLowerCase())
+                );
+
+                setFormData(prev => ({
+                    ...prev,
+                    title: analysis.merchant_name || analysis.vendor || prev.title,
+                    amount: analysis.amount || prev.amount,
+                    transaction_date: analysis.date ? new Date(analysis.date).toISOString().split('T')[0] : prev.transaction_date,
+                    category_id: categoryMatch ? categoryMatch.id : (analysis.category ? "" : prev.category_id),
+                    contact_id: contactMatch ? contactMatch.id : (analysis.merchant_name || analysis.vendor ? "" : prev.contact_id),
+                    payment_method_id: paymentMatch ? paymentMatch.id : (analysis.payment_method ? "" : prev.payment_method_id),
+                    location_id: locationMatch ? locationMatch.id : (analysis.location ? "" : prev.location_id),
+                    description: analysis.description || prev.description,
+                    tags: Array.from(new Set([...prev.tags, ...(analysis.tags || [])])),
+                    file_id: result.file_id || prev.file_id,
+                    items: analysis.line_items?.map((item: any) => ({
+                        name: item.description,
+                        amount: item.amount,
+                        quantity: item.quantity || 1,
+                        unit_price: (item.amount || 0) / (item.quantity || 1)
+                    })) || prev.items
+                }));
+
+                // Set custom fields if no match
+                if (!categoryMatch && analysis.category) {
+                    setIsCustomCategory(true);
+                    setCustomCategoryName(analysis.category || "");
+                } else {
+                    setIsCustomCategory(false);
+                    setCustomCategoryName("");
+                }
+
+                if (!contactMatch && (analysis.merchant_name || analysis.vendor)) {
+                    setIsCustomContact(true);
+                    setCustomContactName(analysis.merchant_name || analysis.vendor || "");
+                } else {
+                    setIsCustomContact(false);
+                    setCustomContactName("");
+                }
+
+                if (!paymentMatch && analysis.payment_method) {
+                    setIsCustomPaymentMethod(true);
+                    setCustomPaymentMethodName(analysis.payment_method || "");
+                } else {
+                    setIsCustomPaymentMethod(false);
+                    setCustomPaymentMethodName("");
+                }
+
+                if (!locationMatch && analysis.location) {
+                    setIsCustomLocation(true);
+                    setCustomLocationName(analysis.location || "");
+                } else {
+                    setIsCustomLocation(false);
+                    setCustomLocationName("");
+                }
+            }
+
+            setScanComplete(true);
+            toast.success("Analysis complete! Form updated.");
+        } catch (error) {
+            console.error("Analysis failed:", error);
+            toast.error("Failed to analyze receipt");
+        } finally {
+            setIsScanning(false);
+        }
     };
 
     const removeFile = () => {
@@ -348,7 +478,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                 {scanComplete && (
                                     <Button
                                         variant="outline"
-                                        onClick={() => handleMockOCR(scannedFile)}
+                                        onClick={() => handleAnalyzeExpense(scannedFile)}
                                         className="w-full rounded-2xl border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 flex gap-2 font-bold text-xs uppercase"
                                     >
                                         <RefreshCcw className="w-4 h-4" /> Re-scan Receipt
@@ -375,9 +505,9 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             />
                             <FileSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                         </div>
-                        {prefilledData?.field_confidence?.merchant_name !== undefined && (
+                        {analysisData?.field_confidence?.merchant_name !== undefined && (
                             <FieldConfidenceIndicator
-                                confidence={prefilledData.field_confidence.merchant_name}
+                                confidence={analysisData.field_confidence.merchant_name}
                                 fieldName="merchant_name"
                             />
                         )}
@@ -393,9 +523,9 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, amount: Number(e.target.value) })}
                             className="rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-purple-500 transition-all font-black text-lg h-14"
                         />
-                        {prefilledData?.field_confidence?.total_amount !== undefined && (
+                        {analysisData?.field_confidence?.total_amount !== undefined && (
                             <FieldConfidenceIndicator
-                                confidence={prefilledData.field_confidence.total_amount}
+                                confidence={analysisData.field_confidence.total_amount}
                                 fieldName="total_amount"
                             />
                         )}
@@ -497,6 +627,12 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             value={formData.payment_method_id}
                             className="rounded-2xl h-14"
                         />
+                        {analysisData?.field_confidence?.payment_method !== undefined && (
+                            <FieldConfidenceIndicator
+                                confidence={analysisData.field_confidence.payment_method}
+                                fieldName="payment_method"
+                            />
+                        )}
                     </div>
 
                     {isCustomPaymentMethod && (
@@ -529,6 +665,12 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             value={formData.contact_id}
                             className="rounded-2xl h-14"
                         />
+                        {analysisData?.field_confidence?.vendor !== undefined && (
+                            <FieldConfidenceIndicator
+                                confidence={analysisData.field_confidence.vendor}
+                                fieldName="vendor"
+                            />
+                        )}
                     </div>
 
                     {isCustomContact && (
@@ -598,6 +740,12 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                 className="rounded-2xl h-14 pl-11"
                             />
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10" />
+                            {analysisData?.field_confidence?.location !== undefined && (
+                                <FieldConfidenceIndicator
+                                    confidence={analysisData.field_confidence.location}
+                                    fieldName="location"
+                                />
+                            )}
                         </div>
                     </div>
 

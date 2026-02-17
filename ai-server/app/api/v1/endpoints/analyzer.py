@@ -13,6 +13,7 @@ class AnalyzeRequest(BaseModel):
     file_url: str
     user_id: UUID
     family_id: UUID
+    document_type: str
 
 from app.services.notification import notification_service
 import asyncio
@@ -49,7 +50,7 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
         )
         
         # 4. Run OCR and Extraction with enhanced service
-        ocr_result = await ocr_service.process_receipt(file_contents, filename=f"file_{request.file_id}")
+        ocr_result = await ocr_service.process_receipt(file_contents, filename=f"file_{request.file_id}", document_type=request.document_type)
         
         # 5. Map OCR results to AnalysisResult with field confidence
         field_confidence_dict = {}
@@ -63,9 +64,12 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
         analysis = AnalysisResult(
             category=ocr_result.extracted_data.category or "Uncategorized",
             confidence=ocr_result.confidence_score,
-            description=f"AI extracted details for merchant: {ocr_result.extracted_data.merchant_name}",
-            tags=["ai-extracted"],
+            description=ocr_result.extracted_data.description or f"AI extracted details for merchant: {ocr_result.extracted_data.merchant_name}",
+            tags=list(set(["ai-extracted"] + ocr_result.extracted_data.tags)),
             merchant_name=ocr_result.extracted_data.merchant_name,
+            vendor=ocr_result.extracted_data.vendor,
+            location=ocr_result.extracted_data.location,
+            payment_method=ocr_result.extracted_data.payment_method,
             amount=ocr_result.extracted_data.total_amount,
             date=ocr_result.extracted_data.transaction_date,
             currency=ocr_result.extracted_data.currency or "INR",

@@ -18,6 +18,11 @@ class FieldConfidence(BaseModel):
     bill_number: Optional[float] = None
     due_date: Optional[float] = None
     invoice_number: Optional[float] = None
+    location: Optional[float] = None
+    vendor: Optional[float] = None
+    payment_method: Optional[float] = None
+    tags: Optional[float] = None
+    description: Optional[float] = None
 
 class ReceiptData(BaseModel):
     merchant_name: Optional[str] = None
@@ -27,6 +32,11 @@ class ReceiptData(BaseModel):
     currency: str = "INR"
     category: Optional[str] = "Uncategorized"
     transaction_type: Optional[str] = "EXPENSE"  # EXPENSE or INCOME
+    location: Optional[str] = None
+    vendor: Optional[str] = None
+    payment_method: Optional[str] = None
+    tags: List[str] = []
+    description: Optional[str] = None
     line_items: List[LineItem] = []
     # Bill/Invoice specific fields
     bill_number: Optional[str] = None

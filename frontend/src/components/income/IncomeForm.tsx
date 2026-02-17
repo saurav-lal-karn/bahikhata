@@ -49,19 +49,6 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
         file_id: income?.file_id || prefilledData?.file_id || "",
     });
 
-    // AI pre-fill effect
-    React.useEffect(() => {
-        if (prefilledData) {
-            setFormData(prev => ({
-                ...prev,
-                title: prefilledData.merchant_name || prev.title,
-                amount: prefilledData.amount || prev.amount,
-                date: prefilledData.date ? new Date(prefilledData.date).toISOString().split('T')[0] : prev.date,
-                description: prefilledData.description || prev.description,
-                file_id: prefilledData.file_id || prev.file_id,
-            }));
-        }
-    }, [prefilledData]);
 
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -84,6 +71,50 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
         };
         fetchData();
     }, [familyId]);
+
+    // AI pre-fill effect
+    React.useEffect(() => {
+        if (prefilledData && incomeTypes.length > 0) {
+            const analysis = prefilledData.analysis || prefilledData;
+
+            // Find matching entities
+            const sourceMatch = incomeTypes.find(t =>
+                t.name.toLowerCase() === analysis.category?.toLowerCase() ||
+                analysis.category?.toLowerCase().includes(t.name.toLowerCase())
+            );
+
+            const contactMatch = contacts.find(c =>
+                c.name.toLowerCase() === analysis.merchant_name?.toLowerCase() ||
+                c.name.toLowerCase() === analysis.vendor?.toLowerCase()
+            );
+
+            const projectMatch = projects.find(p =>
+                p.name.toLowerCase() === analysis.location?.toLowerCase() ||
+                analysis.location?.toLowerCase().includes(p.name.toLowerCase())
+            );
+
+            setFormData(prev => ({
+                ...prev,
+                title: analysis.merchant_name || analysis.vendor || prev.title,
+                amount: analysis.amount || prev.amount,
+                date: analysis.date ? new Date(analysis.date).toISOString().split('T')[0] : prev.date,
+                source_id: sourceMatch?.id || (analysis.category ? "custom" : prev.source_id),
+                contact_id: contactMatch?.id || prev.contact_id,
+                project_id: projectMatch?.id || prev.project_id,
+                description: analysis.description || prev.description,
+                file_id: prefilledData.file_id || prev.file_id || prev.file_id,
+            }));
+
+            if (analysis.category && !sourceMatch) {
+                setIsCustomSource(true);
+                setCustomSourceName(analysis.category || "");
+            }
+
+            if (analysis.merchant_name && !contactMatch) {
+                // For income, we might not want to auto-create contact but for now just pre-fill title
+            }
+        }
+    }, [prefilledData, incomeTypes, contacts, projects]);
 
     const [isCustomSource, setIsCustomSource] = useState(false);
     const [customSourceName, setCustomSourceName] = useState("");
@@ -110,11 +141,22 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                 transaction_date: new Date(formData.date).toISOString(),
                 wallet_id: formData.wallet_id,
                 category_id: categoryId,
-                contact_id: formData.contact_id || undefined,
-                project_id: formData.project_id || undefined,
+                payment_method_id: "",
+                contact_id: formData.contact_id || "",
+                project_id: formData.project_id || "",
+                location_id: "",
                 tags: formData.tag_ids,
                 family_id: familyId,
                 file_id: formData.file_id || undefined,
+                category: {
+                    id: categoryId,
+                    value: customSourceName || ""
+                },
+                payment_method: { id: "", value: "" },
+                contact: { id: formData.contact_id || "", value: "" },
+                project: { id: formData.project_id || "", value: "" },
+                location: { id: "", value: "" },
+                items: []
             };
 
             if (isEditing && income?.id) {

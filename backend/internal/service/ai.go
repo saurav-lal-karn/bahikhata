@@ -20,7 +20,7 @@ import (
 )
 
 type AIService interface {
-	AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID) (interface{}, error)
+	AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID, documentType string) (interface{}, error)
 }
 
 type aiService struct {
@@ -105,7 +105,7 @@ func (s *aiService) callAIServerWithRetry(ctx context.Context, requestBody []byt
 	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries+1, lastErr)
 }
 
-func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID) (interface{}, error) {
+func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID, documentType string) (interface{}, error) {
 	// 0. Validate file
 	if err := s.ValidateFile(fileHeader); err != nil {
 		return nil, fmt.Errorf("file validation failed: %w", err)
@@ -155,6 +155,7 @@ func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.F
 		"file_url":  fileURL,
 		"user_id":   userID,
 		"family_id": familyID,
+		"document_type": documentType,
 	})
 	if err != nil {
 		return nil, err
