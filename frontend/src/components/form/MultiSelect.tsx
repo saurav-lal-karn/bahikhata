@@ -62,8 +62,8 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             <div className="relative z-20 inline-block w-full">
                 <div className="relative flex flex-col items-center">
                     <div onClick={toggleDropdown} className="w-full">
-                        <div className="mb-2 flex h-11 rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300">
-                            <div className="flex flex-wrap flex-auto gap-2">
+                        <div className="mb-2 flex min-h-[2.75rem] max-h-40 overflow-y-auto rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300 custom-scrollbar scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 scrollbar-track-transparent">
+                            <div className="flex flex-wrap flex-auto gap-2 h-max">
                                 {selectedValuesText.length > 0 ? (
                                     selectedValuesText.map((text, index) => (
                                         <div
@@ -73,9 +73,10 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                                             <span className="flex-initial max-w-full">{text}</span>
                                             <div className="flex flex-row-reverse flex-auto">
                                                 <div
-                                                    onClick={() =>
-                                                        removeOption(index, selectedOptions[index])
-                                                    }
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        removeOption(index, selectedOptions[index]);
+                                                    }}
                                                     className="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400 dark:text-gray-400"
                                                 >
                                                     <svg
@@ -134,7 +135,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
                     {isOpen && (
                         <div
-                            className="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-sm top-full max-h-select dark:bg-gray-900"
+                            className="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-sm top-full max-h-60 custom-scrollbar dark:bg-gray-900"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex flex-col">

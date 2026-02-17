@@ -11,8 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import { transactionService } from "@/services/transactionService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { walletService } from "@/services/walletService";
-import { Transaction, TransactionCategory, WalletInfoType } from "@/types";
+import { Location, Tag, Transaction, TransactionCategory, WalletInfoType } from "@/types";
 import toast from "react-hot-toast";
+import { organizationService } from "@/services/organizationService";
 
 export default function IncomePageClient() {
     const { user } = useAuth();
@@ -21,6 +22,9 @@ export default function IncomePageClient() {
     const [incomeTypes, setIncomeTypes] = useState<TransactionCategory[]>([]);
     const [wallets, setWallets] = useState<WalletInfoType[]>([]);
     const [incomes, setIncomes] = useState<Transaction[]>([]);
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [locations, setLocations] = useState<Location[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,14 +93,16 @@ export default function IncomePageClient() {
 
             setIsLoading(true);
             try {
-                const [walletResponse, incomeTypeResponse, response] = await Promise.all([
+                const [walletResponse, incomeTypeResponse, response, tagResponse, locationResponse] = await Promise.all([
                     walletService.getWallets(familyDetails.id, 1, 100),
                     transactionCategoryService.getCategories(familyDetails.id, true, 'INCOME'),
                     transactionService.getTransactions(familyDetails.id, {
                         type: 'INCOME',
                         page: currentPage,
                         page_size: pageSize
-                    })
+                    }),
+                    organizationService.getTags(familyDetails.id),
+                    organizationService.getLocations(familyDetails.id).catch(() => []),
                 ]);
 
                 if (isMounted) {
@@ -104,6 +110,8 @@ export default function IncomePageClient() {
                     setIncomeTypes(incomeTypeResponse);
                     setIncomes(response.transactions);
                     setTotalCount(response.total_count);
+                    setTags(tagResponse);
+                    setLocations(locationResponse);
                 }
             } catch (error) {
                 if (isMounted) {
@@ -145,7 +153,7 @@ export default function IncomePageClient() {
                         onClick={openModal}
                         className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20"
                     >
-                        <Plus className="w-5 h-5" /> Record Income
+                        <Plus className="w-5 h-5" /> Add Income
                     </button>
                 </div>
             </div>
@@ -168,7 +176,7 @@ export default function IncomePageClient() {
             <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
                 <div className="mb-10">
                     <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-                        <TrendingUp className="text-green-500 w-8 h-8" /> {selectedIncome ? 'Update Transaction' : 'New Transaction'}
+                        <TrendingUp className="text-green-500 w-8 h-8" /> {selectedIncome ? 'Update Income' : 'New Income'}
                     </h3>
                     <p className="text-sm text-gray-500 font-medium">
                         {selectedIncome ? 'Modify the details of this income record.' : 'Add a new income source or payment to your records.'}
@@ -184,6 +192,8 @@ export default function IncomePageClient() {
                     incomeTypes={incomeTypes}
                     familyId={familyDetails?.id || ""}
                     income={selectedIncome || undefined}
+                    tags={tags}
+                    locations={locations}
                 />
             </Modal>
 

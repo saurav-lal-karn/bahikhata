@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { ChangeEvent, FC, useEffect, useState } from "react";
 import {
     Clock,
     Plus,
@@ -11,7 +11,7 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import Button from "@/components/ui/button/Button";
-import { WalletInfoType, TransactionType, Transaction, TransactionCategory } from "@/types";
+import { WalletInfoType, TransactionType, Transaction, TransactionCategory, Tag as TagType, Location, } from "@/types";
 import toast from "react-hot-toast";
 import { transactionService } from "@/services/transactionService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
@@ -28,11 +28,18 @@ interface IncomeFormProps {
     wallets: WalletInfoType[];
     incomeTypes: TransactionCategory[];
     familyId: string;
+    tags: TagType[];
+    locations: Location[];
     income?: Transaction; // Updated to Transaction
     prefilledData?: any; // AI pre-fill data
 }
 
-export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income, prefilledData }) => {
+export const IncomeForm: FC<IncomeFormProps> = ({ onSuccess, onCancel, wallets, incomeTypes, familyId, income, prefilledData, tags: propTags, locations: propLocations }) => {
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [tags, setTags] = useState<TagType[]>(propTags || []);
+    const [locations, setLocations] = useState<Location[]>([]);
+
     const isEditing = !!income;
 
     const [formData, setFormData] = useState({
@@ -44,27 +51,24 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
         description: income?.description || "",
         contact_id: income?.contact_id || "",
         project_id: income?.project_id || "",
-        tag_ids: income?.tags || [] as string[],
+        tags: income?.tags || [] as string[],
         family_id: familyId,
         file_id: income?.file_id || prefilledData?.file_id || "",
     });
 
-
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [tags, setTags] = useState<Tag[]>([]);
-
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchData = async () => {
             try {
-                const [fetchedContacts, fetchedProjects, fetchedTags] = await Promise.all([
+                const [fetchedContacts, fetchedProjects, fetchedTags, fetchedLocations] = await Promise.all([
                     contactService.getContacts(familyId),
                     organizationService.getProjects(familyId),
-                    organizationService.getTags(familyId)
+                    organizationService.getTags(familyId),
+                    organizationService.getLocations(familyId)
                 ]);
                 setContacts(fetchedContacts);
                 setProjects(fetchedProjects);
                 setTags(fetchedTags);
+                setLocations(fetchedLocations);
             } catch (error) {
                 console.error("Failed to fetch organizational data", error);
             }
@@ -73,7 +77,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
     }, [familyId]);
 
     // AI pre-fill effect
-    React.useEffect(() => {
+    useEffect(() => {
         if (prefilledData && incomeTypes.length > 0) {
             const analysis = prefilledData.analysis || prefilledData;
 
@@ -116,8 +120,8 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
         }
     }, [prefilledData, incomeTypes, contacts, projects]);
 
-    const [isCustomSource, setIsCustomSource] = useState(false);
-    const [customSourceName, setCustomSourceName] = useState("");
+    const [isCustomSource, setIsCustomSource] = useState<boolean>(false);
+    const [customSourceName, setCustomSourceName] = useState<string>("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -145,7 +149,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                 contact_id: formData.contact_id || "",
                 project_id: formData.project_id || "",
                 location_id: "",
-                tags: formData.tag_ids,
+                tags: formData.tags,
                 family_id: familyId,
                 file_id: formData.file_id || undefined,
                 category: {
@@ -234,29 +238,24 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                             className="rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 focus:border-green-500 transition-all font-black text-lg h-14"
                         />
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Income Source</Label>
-                        <Select
-                            value={isCustomSource ? "custom" : formData.source_id}
-                            options={[
-                                ...incomeTypes.map((type) => ({ value: type.id, label: type.name })),
-                                { value: "custom", label: "+ Add Custom Source" }
-                            ]}
-                            placeholder="Pick a source"
-                            onChange={(value: string) => {
-                                if (value === "custom") {
-                                    setIsCustomSource(true);
-                                } else {
-                                    setIsCustomSource(false);
-                                    setFormData({ ...formData, source_id: value });
-                                }
-                            }}
-                            className="rounded-2xl h-14"
-                        />
+                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Transaction date</Label>
+                        <div className="[&_input]:rounded-2xl [&_input]:border-gray-200 [&_input]:dark:border-gray-800 [&_input]:bg-gray-50 [&_input]:dark:bg-gray-900 [&_input]:focus:border-purple-500 [&_input]:transition-all [&_input]:h-14 [&_input]:font-medium [&_input]:text-sm [&_input]:px-5">
+                            <DatePicker
+                                id="transaction-date-picker"
+                                mode="single"
+                                defaultDate={formData.date}
+                                placeholder="Select transaction date"
+                                onChange={(selectedDates, dateStr) => {
+                                    if (dateStr) {
+                                        setFormData({ ...formData, date: dateStr });
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
+
                     <div className="space-y-2">
                         <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Deposit To</Label>
                         <div className="flex items-center gap-2">
@@ -281,9 +280,42 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Income Source</Label>
+                        <Select
+                            value={isCustomSource ? "custom" : formData.source_id}
+                            options={[
+                                ...incomeTypes.map((type) => ({ value: type.id, label: type.name })),
+                                { value: "custom", label: "+ Add Custom Source" }
+                            ]}
+                            placeholder="Pick a source"
+                            onChange={(value: string) => {
+                                if (value === "custom") {
+                                    setIsCustomSource(true);
+                                } else {
+                                    setIsCustomSource(false);
+                                    setFormData({ ...formData, source_id: value });
+                                }
+                            }}
+                            className="rounded-2xl h-14"
+                        />
+                    </div>
+
+                    {/* Conditional Custom Fields */}
+                    {isCustomSource && (
+                        <div className="space-y-2">
+                            <Label className="text-green-600 dark:text-green-400 font-bold text-[10px] uppercase tracking-widest">New Source Name</Label>
+                            <Input
+                                required
+                                placeholder="e.g. Dividend Yield"
+                                value={customSourceName}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomSourceName(e.target.value)}
+                                className="rounded-2xl border-green-100 dark:border-green-900/30 bg-green-50/20 dark:bg-green-900/10 focus:border-green-500 transition-all h-14"
+                            />
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Payer / Employer</Label>
                         <Select
@@ -311,62 +343,35 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Tags</Label>
-                    <MultiSelect
-                        label=""
-                        options={tags.map(t => ({
-                            value: t.id,
-                            text: t.name,
-                            selected: formData.tag_ids.includes(t.id)
-                        }))}
-                        onChange={(selected) => setFormData({ ...formData, tag_ids: selected })}
-                    />
-                </div>
 
-                {/* Conditional Custom Fields */}
-                {(isCustomSource) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-400">
-                        {isCustomSource && (
-                            <div className="space-y-2">
-                                <Label className="text-green-600 dark:text-green-400 font-bold text-[10px] uppercase tracking-widest">New Source Name</Label>
-                                <Input
-                                    required
-                                    placeholder="e.g. Dividend Yield"
-                                    value={customSourceName}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomSourceName(e.target.value)}
-                                    className="rounded-2xl border-green-100 dark:border-green-900/30 bg-green-50/20 dark:bg-green-900/10 focus:border-green-500 transition-all h-14"
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-6">
-                    <div className="sm:col-span-5 space-y-2">
-                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Transaction date</Label>
-                        <div className="[&_input]:rounded-2xl [&_input]:border-gray-200 [&_input]:dark:border-gray-800 [&_input]:bg-gray-50 [&_input]:dark:bg-gray-900 [&_input]:focus:border-purple-500 [&_input]:transition-all [&_input]:h-14 [&_input]:font-medium [&_input]:text-sm [&_input]:px-5">
-                            <DatePicker
-                                id="transaction-date-picker"
-                                mode="single"
-                                defaultDate={formData.date}
-                                placeholder="Select transaction date"
-                                onChange={(selectedDates, dateStr) => {
-                                    if (dateStr) {
-                                        setFormData({ ...formData, date: dateStr });
-                                    }
-                                }}
-                            />
+                    <div className="sm:col-span-12">
+                        <div className="space-y-2">
+                            <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Tags</Label>
+                            <div className="relative group">
+                                <MultiSelect
+                                    label=""
+                                    options={tags.map(t => ({
+                                        value: t.name,
+                                        text: t.name,
+                                        selected: formData.tags.includes(t.name)
+                                    }))}
+                                    onChange={(selected) => setFormData({ ...formData, tags: selected })}
+                                    defaultSelected={formData.tags}
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div className="sm:col-span-7 space-y-2">
-                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Remarks (Optional)</Label>
+                    <div className="sm:col-span-12 space-y-2">
+                        <Label className="text-gray-700 dark:text-gray-300 font-bold text-[10px] uppercase tracking-widest">Description (Optional)</Label>
                         <textarea
-                            rows={1}
-                            placeholder="Any notes?"
+                            rows={4}
+                            placeholder="Any extra context?"
                             value={formData.description}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-4 px-5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 transition-all min-h-[56px] resize-none"
+                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
+                            className="w-full rounded-2xl border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-4 px-5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all min-h-[56px] resize-none"
+
                         />
                     </div>
                 </div>
@@ -389,7 +394,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, wal
                         {isEditing ? 'Save Changes' : 'Add to Balance'}
                     </Button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
