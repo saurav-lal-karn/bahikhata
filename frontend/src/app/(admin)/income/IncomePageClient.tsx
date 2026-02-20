@@ -35,15 +35,17 @@ export default function IncomePageClient() {
     const familyDetails = user?.family;
     const queryClient = useQueryClient();
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
+    const [isBulkLarge, setIsBulkLarge] = useState<boolean>(false);
+
     const [selectedIncome, setSelectedIncome] = useState<Transaction | null>(
         null
     );
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(50);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(50);
 
     // Queries
     const { data: walletsData } = useWallets(familyDetails?.id || "", 1, 100);
@@ -85,7 +87,10 @@ export default function IncomePageClient() {
     };
 
     const openBulkModal = () => setIsBulkModalOpen(true);
-    const closeBulkModal = () => setIsBulkModalOpen(false);
+    const closeBulkModal = () => {
+        setIsBulkModalOpen(false);
+        setIsBulkLarge(false);
+    };
 
     const handleEdit = (income: Transaction) => {
         setSelectedIncome(income);
@@ -105,6 +110,9 @@ export default function IncomePageClient() {
             queryClient.invalidateQueries({
                 queryKey: [QUERY_KEYS.INCOMES, familyDetails?.id],
             });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOME_STATS, familyDetails?.id],
+            });
             setIsDeleteModalOpen(false);
         } catch (error) {
             toast.error("Failed to delete record");
@@ -114,6 +122,9 @@ export default function IncomePageClient() {
     const refreshIncomes = () => {
         queryClient.invalidateQueries({
             queryKey: [QUERY_KEYS.INCOMES, familyDetails?.id],
+        });
+        queryClient.invalidateQueries({
+            queryKey: [QUERY_KEYS.INCOME_STATS, familyDetails?.id],
         });
     };
 
@@ -233,7 +244,11 @@ export default function IncomePageClient() {
             <Modal
                 isOpen={isBulkModalOpen}
                 onClose={closeBulkModal}
-                className="max-w-4xl p-10"
+                className={
+                    isBulkLarge
+                        ? "max-w-[95vw] p-5 transition-all duration-500 ease-in-out md:p-10"
+                        : "max-w-4xl p-10 transition-all duration-500 ease-in-out"
+                }
             >
                 <div className="mb-10">
                     <h3 className="mb-2 text-2xl font-black text-gray-800 dark:text-white">
@@ -247,13 +262,15 @@ export default function IncomePageClient() {
                 <BulkImportIncome
                     onSuccess={closeBulkModal}
                     onCancel={closeBulkModal}
+                    onFileSelect={(hasFile) => setIsBulkLarge(hasFile)}
                     familyId={familyDetails?.id || ""}
-                    incomeTypes={incomeTypes || []}
-                    wallets={wallets || []}
+                    incomeTypes={availableIncomeTypes}
+                    wallets={wallets}
                     contacts={availableContacts}
                     projects={availableProjects}
                     tags={availableTags}
                     locations={availableLocations}
+                    paymentMethods={availablePaymentMethods}
                 />
             </Modal>
         </div>

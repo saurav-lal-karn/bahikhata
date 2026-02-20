@@ -9,8 +9,6 @@ import {
     AlertCircle,
     Download,
     Trash2,
-    ChevronRight,
-    ChevronUp,
     ChevronDown,
     AlertTriangle,
 } from "lucide-react";
@@ -29,6 +27,8 @@ import {
 import { Location } from "@/services/organizationService";
 import { transactionService } from "@/services/transactionService";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 interface BulkImportIncomeProps {
     onSuccess?: () => void;
@@ -41,13 +41,7 @@ interface BulkImportIncomeProps {
     projects: Project[];
     tags: Tag[];
     locations: Location[];
-}
-
-interface Item {
-    itemname: string;
-    quantity: number;
-    unitprice: number;
-    total: number;
+    paymentMethods: any[]; // Changed from PaymentMethod[] to any[] for simplicity or use specific type if available
 }
 
 interface ImportedIncome {
@@ -57,12 +51,12 @@ interface ImportedIncome {
     source: string;
     date: string;
     account?: string;
+    paymentMethod?: string;
     payer?: string;
     project?: string;
     location?: string;
     description?: string;
     tags?: string[];
-    items?: Item[];
     status: "valid" | "invalid";
     error?: string;
     warnings?: Record<string, string>;
@@ -80,7 +74,9 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
     projects,
     tags,
     locations,
+    paymentMethods,
 }) => {
+    const queryClient = useQueryClient();
     const [importedData, setImportedData] = useState<ImportedIncome[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [file, setFile] = useState<File | null>(null);
@@ -128,6 +124,8 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
 
         // Optional fields
         const accountName = row.account || row.Account;
+        const paymentMethodName =
+            row.payment_method || row.PaymentMethod || row.paymentMethod;
         const payerName = row.payer || row.Payer || row.vendor || row.Vendor;
         const projectName = row.project || row.Project;
         const locationName = row.location || row.Location;
@@ -135,13 +133,9 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
 
         // Complex fields
         const tagsRaw = row.tags || row.Tags;
-        const itemsRaw = row.items || row.Items;
 
         const rowTags = Array.isArray(parseJsonField(tagsRaw))
             ? parseJsonField(tagsRaw)
-            : [];
-        const items = Array.isArray(parseJsonField(itemsRaw))
-            ? parseJsonField(itemsRaw)
             : [];
 
         let status: "valid" | "invalid" = "valid";
@@ -195,6 +189,14 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
         ) {
             warnings["account"] = `New wallet will be created`;
         }
+        if (
+            paymentMethodName &&
+            !paymentMethods.some(
+                (p) => p.name.toLowerCase() === paymentMethodName.toLowerCase()
+            )
+        ) {
+            warnings["paymentMethod"] = `New payment method will be created`;
+        }
 
         if (
             payerName &&
@@ -244,16 +246,15 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
             source: sourceName,
             date: dateStr,
             account: accountName,
+            paymentMethod: paymentMethodName,
             payer: payerName,
             project: projectName,
             location: locationName,
             description,
             tags: rowTags,
-            items,
             status,
             error,
             warnings,
-            isExpanded: false,
         };
     };
 
@@ -320,14 +321,6 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
         setImportedData((prev) => prev.filter((row) => row.id !== id));
     };
 
-    const toggleRowExpansion = (id: string) => {
-        setImportedData((prev) =>
-            prev.map((row) =>
-                row.id === id ? { ...row, isExpanded: !row.isExpanded } : row
-            )
-        );
-    };
-
     const handleImport = async () => {
         const validData = importedData.filter((row) => row.status === "valid");
         if (validData.length === 0) return;
@@ -349,13 +342,7 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                 transaction_date: new Date(row.date).toISOString(),
                 family_id: familyId,
                 tags: row.tags || [],
-                items:
-                    row.items?.map((item) => ({
-                        name: item.itemname,
-                        amount: item.total,
-                        quantity: item.quantity,
-                        unit_price: item.unitprice,
-                    })) || [],
+                payment_method_name: row.paymentMethod || "",
             }));
 
             const validTransactions = transactions.filter((t) => t.wallet_name);
@@ -392,6 +379,14 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                     );
                 }
             }
+
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOMES, familyId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOME_STATS, familyId],
+            });
 
             if (onSuccess) onSuccess();
         } catch (error: any) {
@@ -537,9 +532,9 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                     <div className="max-w-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
                         <div className="max-h-[500px] overflow-auto">
                             <table className="w-full min-w-[1200px] border-collapse text-left">
-                                <thead className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-800/50">
+                                <thead className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-800/80">
                                     <tr>
-                                        <th className="w-10 px-5 py-4 text-[10px] font-black tracking-widest text-gray-500 uppercase"></th>
+                                        <th className="w-12 px-5 py-4 text-[10px] font-black tracking-widest text-gray-400 uppercase"></th>
                                         <th className="px-5 py-4 text-[10px] font-black tracking-widest text-gray-500 uppercase">
                                             Status
                                         </th>
@@ -557,6 +552,9 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                         </th>
                                         <th className="px-5 py-4 text-[10px] font-black tracking-widest text-gray-500 uppercase">
                                             Account
+                                        </th>
+                                        <th className="px-5 py-4 text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                                            Payment
                                         </th>
                                         <th className="px-5 py-4 text-[10px] font-black tracking-widest text-gray-500 uppercase">
                                             Payer
@@ -589,43 +587,26 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                         : importedData.map((row) => (
                                               <Fragment key={row.id}>
                                                   <tr
-                                                      className={`group text-sm transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${row.isExpanded ? "bg-gray-50/80 dark:bg-gray-800/80" : ""}`}
+                                                      className={`group text-sm transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50`}
                                                   >
                                                       <td className="px-5 py-4 text-center">
-                                                          {row.items &&
-                                                              row.items.length >
-                                                                  0 && (
-                                                                  <button
-                                                                      onClick={() =>
-                                                                          toggleRowExpansion(
-                                                                              row.id
-                                                                          )
-                                                                      }
-                                                                      className="text-gray-400 transition-colors hover:text-green-600"
-                                                                  >
-                                                                      {row.isExpanded ? (
-                                                                          <ChevronUp className="h-4 w-4" />
-                                                                      ) : (
-                                                                          <ChevronRight className="h-4 w-4" />
-                                                                      )}
-                                                                  </button>
-                                                              )}
+                                                          {/* Removed expansion toggle */}
                                                       </td>
                                                       <td className="px-5 py-4">
                                                           {row.status ===
                                                           "valid" ? (
-                                                              <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase">
-                                                                  <CheckCircle2 className="h-3.5 w-3.5" />{" "}
+                                                              <div className="flex items-center gap-1.5 rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400">
+                                                                  <CheckCircle2 className="h-3 w-3" />{" "}
                                                                   Valid
                                                               </div>
                                                           ) : (
                                                               <div
-                                                                  className="flex items-center gap-2 text-[10px] font-bold text-red-500 uppercase"
+                                                                  className="flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[10px] font-black text-red-500 uppercase dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400"
                                                                   title={
                                                                       row.error
                                                                   }
                                                               >
-                                                                  <AlertCircle className="h-3.5 w-3.5" />{" "}
+                                                                  <AlertCircle className="h-3 w-3" />{" "}
                                                                   Error
                                                               </div>
                                                           )}
@@ -636,14 +617,14 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                                       >
                                                           {row.title}
                                                       </td>
-                                                      <td className="px-5 py-4 font-black text-green-600">
-                                                          ₹{row.amount}
+                                                      <td className="px-5 py-4 font-black text-green-600 dark:text-green-400">
+                                                          + ₹{row.amount}
                                                       </td>
                                                       <td className="px-5 py-4 font-medium whitespace-nowrap text-gray-500">
                                                           {row.date}
                                                       </td>
-                                                      <td className="px-5 py-4 text-xs text-gray-600 dark:text-gray-300">
-                                                          <span className="flex items-center">
+                                                      <td className="px-5 py-4">
+                                                          <span className="inline-flex items-center rounded-full border border-green-100 bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700 dark:border-green-900/30 dark:bg-green-900/10 dark:text-green-400">
                                                               {row.source}
                                                               {row.warnings
                                                                   ?.source && (
@@ -668,6 +649,22 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                                                           row
                                                                               .warnings
                                                                               .account
+                                                                      }
+                                                                  />
+                                                              )}
+                                                          </span>
+                                                      </td>
+                                                      <td className="px-5 py-4 text-xs text-gray-500">
+                                                          <span className="flex items-center">
+                                                              {row.paymentMethod ||
+                                                                  "-"}
+                                                              {row.warnings
+                                                                  ?.paymentMethod && (
+                                                                  <WarningIcon
+                                                                      title={
+                                                                          row
+                                                                              .warnings
+                                                                              .paymentMethod
                                                                       }
                                                                   />
                                                               )}
@@ -736,7 +733,6 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                                           </button>
                                                       </td>
                                                   </tr>
-                                                  {/* Items expansion could be added here if needed, mirroring expenses */}
                                               </Fragment>
                                           ))}
                                 </tbody>
@@ -785,11 +781,11 @@ export const BulkImportIncome: FC<BulkImportIncomeProps> = ({
                                         (r) => r.status === "valid"
                                     ).length === 0
                                 }
-                                className="h-auto rounded-2xl bg-green-600 px-12 py-3 font-bold text-white shadow-xl shadow-green-500/20 hover:bg-green-500"
+                                className="h-auto transform rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-12 py-3 font-bold text-white shadow-xl shadow-green-500/20 transition-all hover:scale-105 hover:from-green-500 hover:to-emerald-500 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:grayscale"
                             >
                                 {isProcessing
                                     ? "Processing..."
-                                    : `Confirm Import (${importedData.filter((r) => r.status === "valid").length})`}
+                                    : `Import ${importedData.filter((r) => r.status === "valid").length} Records`}
                             </Button>
                         </div>
                     </div>

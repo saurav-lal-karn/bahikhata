@@ -131,14 +131,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
             const contactMatch = contacts.find(
                 (c) =>
                     c.name.toLowerCase() ===
-                    analysis.merchant_name?.toLowerCase() ||
+                        analysis.merchant_name?.toLowerCase() ||
                     c.name.toLowerCase() === analysis.vendor?.toLowerCase()
             );
 
             const paymentMatch = paymentMethods.find(
                 (p) =>
                     p.name.toLowerCase() ===
-                    analysis.payment_method?.toLowerCase() ||
+                        analysis.payment_method?.toLowerCase() ||
                     analysis.payment_method
                         ?.toLowerCase()
                         .includes(p.name.toLowerCase())
@@ -274,7 +274,6 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
 
         try {
             const result = await aiService.analyzeExpenseFile(file, familyId);
-            console.log("Analysis result:", result);
             const analysis = result.analysis;
             setAnalysisData(analysis);
 
@@ -283,7 +282,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                 const categoryMatch = categories.find(
                     (c) =>
                         c.name.toLowerCase() ===
-                        analysis.category?.toLowerCase() ||
+                            analysis.category?.toLowerCase() ||
                         analysis.category
                             ?.toLowerCase()
                             .includes(c.name.toLowerCase())
@@ -292,14 +291,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                 const contactMatch = contacts.find(
                     (c) =>
                         c.name.toLowerCase() ===
-                        analysis.merchant_name?.toLowerCase() ||
+                            analysis.merchant_name?.toLowerCase() ||
                         c.name.toLowerCase() === analysis.vendor?.toLowerCase()
                 );
 
                 const paymentMatch = paymentMethods.find(
                     (p) =>
                         p.name.toLowerCase() ===
-                        analysis.payment_method?.toLowerCase() ||
+                            analysis.payment_method?.toLowerCase() ||
                         analysis.payment_method
                             ?.toLowerCase()
                             .includes(p.name.toLowerCase())
@@ -308,7 +307,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                 const locationMatch = locations.find(
                     (l) =>
                         l.name.toLowerCase() ===
-                        analysis.location?.toLowerCase() ||
+                            analysis.location?.toLowerCase() ||
                         analysis.location
                             ?.toLowerCase()
                             .includes(l.name.toLowerCase())
@@ -325,23 +324,23 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                     category_id: categoryMatch
                         ? categoryMatch.id
                         : analysis.category
-                            ? ""
-                            : prev.category_id,
+                          ? ""
+                          : prev.category_id,
                     contact_id: contactMatch
                         ? contactMatch.id
                         : analysis.merchant_name || analysis.vendor
-                            ? ""
-                            : prev.contact_id,
+                          ? ""
+                          : prev.contact_id,
                     payment_method_id: paymentMatch
                         ? paymentMatch.id
                         : analysis.payment_method
-                            ? ""
-                            : prev.payment_method_id,
+                          ? ""
+                          : prev.payment_method_id,
                     location_id: locationMatch
                         ? locationMatch.id
                         : analysis.location
-                            ? ""
-                            : prev.location_id,
+                          ? ""
+                          : prev.location_id,
                     description: analysis.description || prev.description,
                     tags: Array.from(
                         new Set([...prev.tags, ...(analysis.tags || [])])
@@ -416,7 +415,7 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!formData.wallet_id) {
-            toast.error("Please select a wallet");
+            toast.error("Please select a wallet.");
             return;
         }
         try {
@@ -428,9 +427,9 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                 transaction_date: new Date(
                     formData.transaction_date
                 ).toISOString(),
-                wallet_id: formData.wallet_id,
                 family_id: familyId,
                 file_id: formData.file_id || undefined,
+                wallet_id: formData.wallet_id,
                 category_id: formData.category_id,
                 payment_method_id: formData.payment_method_id,
                 contact_id: formData.contact_id,
@@ -650,14 +649,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             </div>
                             {analysisData?.field_confidence?.merchant_name !==
                                 undefined && (
-                                    <FieldConfidenceIndicator
-                                        confidence={
-                                            analysisData.field_confidence
-                                                .merchant_name
-                                        }
-                                        fieldName="merchant_name"
-                                    />
-                                )}
+                                <FieldConfidenceIndicator
+                                    confidence={
+                                        analysisData.field_confidence
+                                            .merchant_name
+                                    }
+                                    fieldName="merchant_name"
+                                />
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold tracking-widest text-gray-700 uppercase dark:text-gray-300">
@@ -679,14 +678,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             />
                             {analysisData?.field_confidence?.total_amount !==
                                 undefined && (
-                                    <FieldConfidenceIndicator
-                                        confidence={
-                                            analysisData.field_confidence
-                                                .total_amount
-                                        }
-                                        fieldName="total_amount"
-                                    />
-                                )}
+                                <FieldConfidenceIndicator
+                                    confidence={
+                                        analysisData.field_confidence
+                                            .total_amount
+                                    }
+                                    fieldName="total_amount"
+                                />
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -836,14 +835,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             />
                             {analysisData?.field_confidence?.payment_method !==
                                 undefined && (
-                                    <FieldConfidenceIndicator
-                                        confidence={
-                                            analysisData.field_confidence
-                                                .payment_method
-                                        }
-                                        fieldName="payment_method"
-                                    />
-                                )}
+                                <FieldConfidenceIndicator
+                                    confidence={
+                                        analysisData.field_confidence
+                                            .payment_method
+                                    }
+                                    fieldName="payment_method"
+                                />
+                            )}
                         </div>
 
                         {isCustomPaymentMethod && (
@@ -903,13 +902,13 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                             />
                             {analysisData?.field_confidence?.vendor !==
                                 undefined && (
-                                    <FieldConfidenceIndicator
-                                        confidence={
-                                            analysisData.field_confidence.vendor
-                                        }
-                                        fieldName="vendor"
-                                    />
-                                )}
+                                <FieldConfidenceIndicator
+                                    confidence={
+                                        analysisData.field_confidence.vendor
+                                    }
+                                    fieldName="vendor"
+                                />
+                            )}
                         </div>
 
                         {isCustomContact && (
@@ -1023,14 +1022,14 @@ export const AddExpenseForm: FC<AddExpenseFormProps> = ({
                                 <MapPin className="absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-purple-500" />
                                 {analysisData?.field_confidence?.location !==
                                     undefined && (
-                                        <FieldConfidenceIndicator
-                                            confidence={
-                                                analysisData.field_confidence
-                                                    .location
-                                            }
-                                            fieldName="location"
-                                        />
-                                    )}
+                                    <FieldConfidenceIndicator
+                                        confidence={
+                                            analysisData.field_confidence
+                                                .location
+                                        }
+                                        fieldName="location"
+                                    />
+                                )}
                             </div>
                         </div>
 

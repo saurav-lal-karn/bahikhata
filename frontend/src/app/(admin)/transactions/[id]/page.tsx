@@ -14,47 +14,108 @@ import {
     Building2,
     MapPin,
     Briefcase,
+    Pencil,
+    Trash2,
+    AlertTriangle,
 } from "lucide-react";
 import { transactionService } from "@/services/transactionService";
 import { attachmentService } from "@/services/attachmentService";
 import { Transaction, Attachment } from "@/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { toast } from "react-hot-toast";
+import { Modal } from "@/components/ui/modal";
+import { DeleteConfirmationModal } from "@/components/ui/modal/DeleteConfirmationModal";
+import { AddExpenseForm } from "@/components/expenses/AddExpenseForm";
+import { IncomeForm } from "@/components/income/IncomeForm";
+import { useAuth } from "@/context/AuthContext";
+import { useWallets } from "@/hooks/useWallets";
+import { useCategories } from "@/hooks/useCategories";
+import { useTags } from "@/hooks/useOrganization";
+import { useLocations } from "@/hooks/useOrganization";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useContacts } from "@/hooks/useContacts";
+import { useProjects } from "@/hooks/useOrganization";
+import { useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 export default function TransactionDetailPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
+    const { user } = useAuth();
+    const familyId = user?.family?.id || "";
+    const queryClient = useQueryClient();
+
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [attachment, setAttachment] = useState<Attachment | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Supporting Data Hooks
+    const { data: walletsResponse } = useWallets(familyId, 1, 100);
+    const { data: expenseCategories } = useCategories(familyId, "EXPENSE");
+    const { data: incomeCategories } = useCategories(familyId, "INCOME");
+    const { data: tags } = useTags(familyId);
+    const { data: locations } = useLocations(familyId);
+    const { data: paymentMethods } = usePaymentMethods(familyId);
+    const { data: contacts } = useContacts(familyId);
+    const { data: projects } = useProjects(familyId);
+
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const tx = await transactionService.getTransactionById(id);
+            setTransaction(tx);
+
+            if (tx.file_id) {
+                try {
+                    const att = await attachmentService.getAttachmentById(
+                        tx.file_id
+                    );
+                    setAttachment(att);
+                } catch (err) {
+                    console.error("Failed to fetch attachment", err);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch transaction details", error);
+            toast.error("Transaction not found");
+            router.push("/expenses");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const tx = await transactionService.getTransactionById(id);
-                setTransaction(tx);
-
-                if (tx.file_id) {
-                    try {
-                        const att = await attachmentService.getAttachmentById(
-                            tx.file_id
-                        );
-                        setAttachment(att);
-                    } catch (err) {
-                        console.error("Failed to fetch attachment", err);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch transaction details", error);
-                toast.error("Transaction not found");
-                router.push("/expenses");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         if (id) fetchData();
     }, [id, router]);
+
+    const handleDelete = async () => {
+        try {
+            setIsDeleting(true);
+            await transactionService.deleteTransaction(id);
+            toast.success("Transaction deleted successfully");
+
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXPENSES] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.INCOMES] });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.EXPENSE_STATS],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOME_STATS],
+            });
+
+            router.back();
+        } catch (error) {
+            console.error("Failed to delete transaction", error);
+            toast.error("Failed to delete transaction");
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -86,6 +147,19 @@ export default function TransactionDetailPage() {
                     </span>
                 </button>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                        <Pencil className="h-4 w-4" /> Edit
+                    </button>
+                    <button
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                    >
+                        <Trash2 className="h-4 w-4" /> Delete
+                    </button>
+                    <div className="mx-2 h-8 w-px bg-gray-200 dark:bg-gray-800" />
                     <span
                         className={`rounded-full px-4 py-1.5 text-[10px] font-black tracking-widest uppercase ${
                             isExpense
@@ -94,9 +168,6 @@ export default function TransactionDetailPage() {
                         }`}
                     >
                         {transaction.type}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1.5 text-[10px] font-black tracking-widest text-gray-400 uppercase dark:bg-gray-800">
-                        ID: {transaction.id.slice(0, 8)}...
                     </span>
                 </div>
             </div>
@@ -395,6 +466,66 @@ export default function TransactionDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                className="max-w-5xl p-10"
+            >
+                <div className="mb-6">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">
+                        Edit {isExpense ? "Expense" : "Income"}
+                    </h3>
+                </div>
+                {isExpense ? (
+                    <AddExpenseForm
+                        familyId={familyId}
+                        initialData={transaction}
+                        categories={expenseCategories || []}
+                        paymentMethods={paymentMethods || []}
+                        wallets={walletsResponse?.wallets || []}
+                        contacts={contacts || []}
+                        projects={projects || []}
+                        tags={tags || []}
+                        locations={locations || []}
+                        onSuccess={() => {
+                            setIsEditModalOpen(false);
+                            fetchData();
+                            toast.success("Expense updated");
+                        }}
+                        onCancel={() => setIsEditModalOpen(false)}
+                    />
+                ) : (
+                    <IncomeForm
+                        familyId={familyId}
+                        income={transaction}
+                        incomeTypes={incomeCategories || []}
+                        paymentMethods={paymentMethods || []}
+                        wallets={walletsResponse?.wallets || []}
+                        contacts={contacts || []}
+                        projects={projects || []}
+                        tags={tags || []}
+                        locations={locations || []}
+                        onSuccess={() => {
+                            setIsEditModalOpen(false);
+                            fetchData();
+                            toast.success("Income updated");
+                        }}
+                        onCancel={() => setIsEditModalOpen(false)}
+                    />
+                )}
+            </Modal>
+
+            {/* Delete Modal */}
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Delete Transaction"
+                description="Are you sure you want to delete this transaction? This action cannot be undone."
+                isDeleting={isDeleting}
+            />
         </div>
     );
 }

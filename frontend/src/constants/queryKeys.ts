@@ -9,4 +9,6 @@ export const QUERY_KEYS = {
     EXPENSE_TYPES: "expenseTypes",
     INCOMES: "incomes",
     EXPENSES: "expenses",
+    INCOME_STATS: "incomeStats",
+    EXPENSE_STATS: "expenseStats",
 } as const;

@@ -13,7 +13,10 @@ import {
     Pencil,
     MoreVertical,
     ChevronDown,
+    Eye,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
@@ -41,6 +44,7 @@ export const IncomeList = ({
     totalCount,
     onPageChange,
 }: IncomeListProps) => {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -255,7 +259,12 @@ export const IncomeList = ({
                                         </div>
                                         <div>
                                             <h4 className="mb-1 text-sm leading-tight font-bold text-gray-800 dark:text-white/90">
-                                                {item.title}
+                                                <Link
+                                                    href={`/transactions/${item.id}`}
+                                                    className="transition-colors hover:text-green-500"
+                                                >
+                                                    {item.title}
+                                                </Link>
                                             </h4>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
@@ -310,6 +319,19 @@ export const IncomeList = ({
                                             onClose={() => setActiveMenu(null)}
                                             className="w-32"
                                         >
+                                            <DropdownItem
+                                                onClick={() => {
+                                                    setActiveMenu(null);
+                                                    router.push(
+                                                        `/transactions/${item.id}`
+                                                    );
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                                    <Eye className="h-4 w-4" />
+                                                    <span>View</span>
+                                                </div>
+                                            </DropdownItem>
                                             <DropdownItem
                                                 onClick={() => {
                                                     onEdit(item);

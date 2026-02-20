@@ -372,16 +372,9 @@ export const IncomeForm: FC<IncomeFormProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            let categoryId = formData.source_id;
-
-            if (isCustomSource && customSourceName) {
-                const newCategory =
-                    await transactionCategoryService.createCategory({
-                        name: customSourceName,
-                        type: "INCOME" as TransactionType,
-                        family_id: familyId,
-                    });
-                categoryId = newCategory.id;
+            if (!formData.wallet_id) {
+                toast.error("Please select a wallet.");
+                return;
             }
 
             const payload = {
@@ -390,17 +383,17 @@ export const IncomeForm: FC<IncomeFormProps> = ({
                 amount: Number(formData.amount),
                 description: formData.description,
                 transaction_date: new Date(formData.date).toISOString(),
+                family_id: familyId,
+                file_id: formData.file_id || undefined,
                 wallet_id: formData.wallet_id,
-                category_id: categoryId,
+                category_id: formData.source_id,
                 payment_method_id: formData.payment_method_id || "",
                 contact_id: formData.contact_id || "",
                 project_id: formData.project_id || "",
                 location_id: formData.location_id || "",
                 tags: formData.tags,
-                family_id: familyId,
-                file_id: formData.file_id || undefined,
                 category: {
-                    id: categoryId,
+                    id: formData.source_id,
                     value: customSourceName || "",
                 },
                 payment_method: {
@@ -419,7 +412,6 @@ export const IncomeForm: FC<IncomeFormProps> = ({
                     id: formData.location_id || "",
                     value: customLocationName || "",
                 },
-                items: [],
             };
 
             if (isEditing && income?.id) {
@@ -433,6 +425,9 @@ export const IncomeForm: FC<IncomeFormProps> = ({
             // Invalidate queries to refresh data
             queryClient.invalidateQueries({
                 queryKey: [QUERY_KEYS.INCOMES, familyId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOME_STATS, familyId],
             });
             if (isCustomSource)
                 queryClient.invalidateQueries({
