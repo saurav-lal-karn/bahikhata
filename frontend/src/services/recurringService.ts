@@ -19,11 +19,16 @@ export const recurringService = {
         await apiClient.delete(`/recurring/${id}`);
     },
     getInstances: async (recurringId: string) => {
-        const response = await apiClient.get(`/recurring/${recurringId}/instances`);
+        const response = await apiClient.get(
+            `/recurring/${recurringId}/instances`
+        );
         return response.data.data;
     },
     addInstance: async (recurringId: string, payload: any) => {
-        const response = await apiClient.post(`/recurring/${recurringId}/instances`, payload);
+        const response = await apiClient.post(
+            `/recurring/${recurringId}/instances`,
+            payload
+        );
         return response.data.data;
-    }
+    },
 };

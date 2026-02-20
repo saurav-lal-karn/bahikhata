@@ -54,11 +54,13 @@ export interface ReportData {
 
 export const analyticsService = {
     getDashboardSummary: async (familyId: string) => {
-        const response = await apiClient.get(`/analytics/dashboard/${familyId}`);
+        const response = await apiClient.get(
+            `/analytics/dashboard/${familyId}`
+        );
         return response.data.data as DashboardSummary;
     },
     getReportData: async (familyId: string) => {
         const response = await apiClient.get(`/analytics/reports/${familyId}`);
         return response.data.data as ReportData;
-    }
+    },
 };

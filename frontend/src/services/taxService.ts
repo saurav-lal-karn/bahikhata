@@ -30,5 +30,5 @@ export const taxService = {
     },
     deleteDeduction: async (id: string) => {
         await apiClient.delete(`/tax/deductions/${id}`);
-    }
+    },
 };

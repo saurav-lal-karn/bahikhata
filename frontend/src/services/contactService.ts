@@ -1,10 +1,10 @@
 import apiClient from "@/lib/axios";
-import { Contact } from '@/types';
+import { Contact } from "@/types";
 
 export interface CreateContactRequest {
     family_id: string;
     name: string;
-    type: 'VENDOR' | 'LENDER' | 'EMPLOYER' | 'OTHER';
+    type: "VENDOR" | "LENDER" | "EMPLOYER" | "OTHER";
     email?: string;
     phone?: string;
     address?: string;
@@ -13,7 +13,7 @@ export interface CreateContactRequest {
 
 export interface UpdateContactRequest {
     name?: string;
-    type?: 'VENDOR' | 'LENDER' | 'EMPLOYER' | 'OTHER';
+    type?: "VENDOR" | "LENDER" | "EMPLOYER" | "OTHER";
     email?: string;
     phone?: string;
     address?: string;
@@ -32,11 +32,14 @@ export const contactService = {
     },
 
     createContact: async (data: CreateContactRequest): Promise<Contact> => {
-        const response = await apiClient.post('/contacts', data);
+        const response = await apiClient.post("/contacts", data);
         return response.data.data;
     },
 
-    updateContact: async (id: string, data: UpdateContactRequest): Promise<Contact> => {
+    updateContact: async (
+        id: string,
+        data: UpdateContactRequest
+    ): Promise<Contact> => {
         const response = await apiClient.patch(`/contacts/${id}`, data);
         return response.data.data;
     },

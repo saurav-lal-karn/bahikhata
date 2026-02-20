@@ -1,9 +1,9 @@
 import apiClient from "@/lib/axios";
-import { InsurancePolicy, CreateInsurancePolicyPayload } from '../types';
+import { InsurancePolicy, CreateInsurancePolicyPayload } from "../types";
 
 export const insuranceService = {
     async getPolicies(): Promise<InsurancePolicy[]> {
-        const response = await apiClient.get('/insurance');
+        const response = await apiClient.get("/insurance");
         return response.data;
     },
 
@@ -12,12 +12,14 @@ export const insuranceService = {
         return response.data;
     },
 
-    async createPolicy(payload: CreateInsurancePolicyPayload): Promise<InsurancePolicy> {
-        const response = await apiClient.post('/insurance', payload);
+    async createPolicy(
+        payload: CreateInsurancePolicyPayload
+    ): Promise<InsurancePolicy> {
+        const response = await apiClient.post("/insurance", payload);
         return response.data;
     },
 
     async deletePolicy(id: string): Promise<void> {
         await apiClient.delete(`/insurance/${id}`);
-    }
+    },
 };

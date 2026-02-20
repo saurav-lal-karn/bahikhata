@@ -9,37 +9,38 @@ import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
 import { InvestmentSummary } from "@/components/dashboard/InvestmentSummary";
 
 export const metadata: Metadata = {
-  title: "Bahikhata Dashboard | Personal Expense Tracker",
-  description: "Monitor your family ledgers, track expenses, and manage your budget with Bahikhata.",
+    title: "Bahikhata Dashboard | Personal Expense Tracker",
+    description:
+        "Monitor your family ledgers, track expenses, and manage your budget with Bahikhata.",
 };
 
 export default function Dashboard() {
-  return (
-    <div className="space-y-6">
-      {/* Top Metrics Row */}
-      <FinancialMetrics />
+    return (
+        <div className="space-y-6">
+            {/* Top Metrics Row */}
+            <FinancialMetrics />
 
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {/* Main Charts & Progress */}
-        <div className="col-span-12 xl:col-span-8 space-y-6">
-          <CashFlowChart />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <ExpenseTrends />
-            <ExpenseBreakdown />
-          </div>
-        </div>
+            <div className="grid grid-cols-12 gap-4 md:gap-6">
+                {/* Main Charts & Progress */}
+                <div className="col-span-12 space-y-6 xl:col-span-8">
+                    <CashFlowChart />
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                        <ExpenseTrends />
+                        <ExpenseBreakdown />
+                    </div>
+                </div>
 
-        {/* Sidebar Widgets */}
-        <div className="col-span-12 xl:col-span-4 space-y-6">
-          <InvestmentSummary />
-          <BudgetProgress />
-        </div>
+                {/* Sidebar Widgets */}
+                <div className="col-span-12 space-y-6 xl:col-span-4">
+                    <InvestmentSummary />
+                    <BudgetProgress />
+                </div>
 
-        {/* Recent Activity */}
-        <div className="col-span-12">
-          <RecentTransactions />
+                {/* Recent Activity */}
+                <div className="col-span-12">
+                    <RecentTransactions />
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

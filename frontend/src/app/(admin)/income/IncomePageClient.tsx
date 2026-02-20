@@ -11,30 +11,69 @@ import { useAuth } from "@/context/AuthContext";
 import { transactionService } from "@/services/transactionService";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { walletService } from "@/services/walletService";
-import { Location, Tag, Transaction, TransactionCategory, WalletInfoType } from "@/types";
+import {
+    Location,
+    Tag,
+    Transaction,
+    TransactionCategory,
+    WalletInfoType,
+} from "@/types";
 import toast from "react-hot-toast";
 import { organizationService } from "@/services/organizationService";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
+import { useWallets } from "@/hooks/useWallets";
+import { useCategories } from "@/hooks/useCategories";
+import { useTags, useLocations, useProjects } from "@/hooks/useOrganization";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useIncomes } from "@/hooks/useIncomes";
+import { useContacts } from "@/hooks/useContacts";
 
 export default function IncomePageClient() {
     const { user } = useAuth();
     const familyDetails = user?.family;
-
-    const [incomeTypes, setIncomeTypes] = useState<TransactionCategory[]>([]);
-    const [wallets, setWallets] = useState<WalletInfoType[]>([]);
-    const [incomes, setIncomes] = useState<Transaction[]>([]);
-    const [tags, setTags] = useState<Tag[]>([]);
-    const [locations, setLocations] = useState<Location[]>([]);
-
-    const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-    const [selectedIncome, setSelectedIncome] = useState<Transaction | null>(null);
+    const [selectedIncome, setSelectedIncome] = useState<Transaction | null>(
+        null
+    );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
-    const [totalCount, setTotalCount] = useState(0);
+
+    // Queries
+    const { data: walletsData } = useWallets(familyDetails?.id || "", 1, 100);
+    const { data: incomeTypes } = useCategories(
+        familyDetails?.id || "",
+        "INCOME"
+    );
+
+    const { data: incomesData, isLoading: isIncomesLoading } = useIncomes(
+        familyDetails?.id || "",
+        currentPage,
+        pageSize
+    );
+
+    const { data: tags } = useTags(familyDetails?.id || "");
+    const { data: locations } = useLocations(familyDetails?.id || "");
+    const { data: paymentMethods } = usePaymentMethods(familyDetails?.id || "");
+    const { data: contactsData } = useContacts(familyDetails?.id || "");
+    const { data: projectsData } = useProjects(familyDetails?.id || "");
+
+    const wallets = walletsData?.wallets || [];
+    const incomes = incomesData?.transactions || [];
+    const totalCount = incomesData?.total_count || 0;
+    const isLoading = isIncomesLoading;
+    const availableIncomeTypes = incomeTypes || [];
+    const availableTags = tags || [];
+    const availableLocations = locations || [];
+    const availablePaymentMethods = paymentMethods || [];
+    const availableContacts = contactsData || [];
+    const availableProjects = projectsData || [];
 
     const openModal = () => {
         setSelectedIncome(null);
@@ -63,97 +102,46 @@ export default function IncomePageClient() {
         try {
             await transactionService.deleteTransaction(incomeToDelete);
             toast.success("Income record deleted");
-            setIncomes(incomes.filter(i => i.id !== incomeToDelete));
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.INCOMES, familyDetails?.id],
+            });
             setIsDeleteModalOpen(false);
         } catch (error) {
             toast.error("Failed to delete record");
         }
     };
 
-    const refreshIncomes = async () => {
-        if (!familyDetails?.id) return;
-        try {
-            const response = await transactionService.getTransactions(familyDetails.id, {
-                type: 'INCOME',
-                page: currentPage,
-                page_size: pageSize
-            });
-            setIncomes(response.transactions);
-            setTotalCount(response.total_count);
-        } catch (error) {
-            console.error('Failed to refresh incomes:', error);
-        }
+    const refreshIncomes = () => {
+        queryClient.invalidateQueries({
+            queryKey: [QUERY_KEYS.INCOMES, familyDetails?.id],
+        });
     };
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchData = async () => {
-            if (!familyDetails?.id) return;
-
-            setIsLoading(true);
-            try {
-                const [walletResponse, incomeTypeResponse, response, tagResponse, locationResponse] = await Promise.all([
-                    walletService.getWallets(familyDetails.id, 1, 100),
-                    transactionCategoryService.getCategories(familyDetails.id, true, 'INCOME'),
-                    transactionService.getTransactions(familyDetails.id, {
-                        type: 'INCOME',
-                        page: currentPage,
-                        page_size: pageSize
-                    }),
-                    organizationService.getTags(familyDetails.id),
-                    organizationService.getLocations(familyDetails.id).catch(() => []),
-                ]);
-
-                if (isMounted) {
-                    setWallets(walletResponse.wallets);
-                    setIncomeTypes(incomeTypeResponse);
-                    setIncomes(response.transactions);
-                    setTotalCount(response.total_count);
-                    setTags(tagResponse);
-                    setLocations(locationResponse);
-                }
-            } catch (error) {
-                if (isMounted) {
-                    console.error('Failed to fetch wallets, income types or incomes:', error);
-                    toast.error("Failed to load data");
-                }
-            } finally {
-                if (isMounted) setIsLoading(false);
-            }
-        };
-
-        fetchData();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [familyDetails, currentPage, pageSize]);
 
     return (
         <div className="space-y-6">
             {/* Header with Title and Add Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                    <h1 className="text-3xl leading-tight font-black text-gray-900 dark:text-white">
                         Family Income
                     </h1>
-                    <p className="text-gray-500 font-medium">
+                    <p className="font-medium text-gray-500">
                         Monitor inflows and track your earning sources.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <button
                         onClick={openBulkModal}
-                        className="flex items-center justify-center gap-2 px-5 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm"
+                        className="flex items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white px-5 py-3 font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
-                        <FileSpreadsheet className="w-5 h-5 text-green-600" /> Import
+                        <FileSpreadsheet className="h-5 w-5 text-green-600" />{" "}
+                        Import
                     </button>
                     <button
                         onClick={openModal}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20"
+                        className="flex transform items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 font-bold text-white shadow-lg shadow-green-500/20 transition-all hover:scale-105 hover:from-green-500 hover:to-emerald-500 active:scale-95"
                     >
-                        <Plus className="w-5 h-5" /> Add Income
+                        <Plus className="h-5 w-5" /> Add Income
                     </button>
                 </div>
             </div>
@@ -173,13 +161,20 @@ export default function IncomePageClient() {
             />
 
             {/* Add/Edit Income Modal */}
-            <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-5xl p-10">
+            <Modal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                className="max-w-5xl p-10"
+            >
                 <div className="mb-10">
-                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-                        <TrendingUp className="text-green-500 w-8 h-8" /> {selectedIncome ? 'Update Income' : 'New Income'}
+                    <h3 className="mb-2 flex items-center gap-3 text-2xl font-black text-gray-800 dark:text-white">
+                        <TrendingUp className="h-8 w-8 text-green-500" />{" "}
+                        {selectedIncome ? "Update Income" : "New Income"}
                     </h3>
-                    <p className="text-sm text-gray-500 font-medium">
-                        {selectedIncome ? 'Modify the details of this income record.' : 'Add a new income source or payment to your records.'}
+                    <p className="text-sm font-medium text-gray-500">
+                        {selectedIncome
+                            ? "Modify the details of this income record."
+                            : "Add a new income source or payment to your records."}
                     </p>
                 </div>
                 <IncomeForm
@@ -189,34 +184,44 @@ export default function IncomePageClient() {
                     }}
                     onCancel={closeModal}
                     wallets={wallets}
-                    incomeTypes={incomeTypes}
+                    incomeTypes={availableIncomeTypes}
                     familyId={familyDetails?.id || ""}
                     income={selectedIncome || undefined}
-                    tags={tags}
-                    locations={locations}
+                    tags={availableTags}
+                    locations={availableLocations}
+                    paymentMethods={availablePaymentMethods}
+                    contacts={availableContacts}
+                    projects={availableProjects}
                 />
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="max-w-md p-8">
-                <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto">
-                        <AlertTriangle className="w-8 h-8" />
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                className="max-w-md p-8"
+            >
+                <div className="space-y-4 text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                        <AlertTriangle className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white">Delete Record?</h3>
-                    <p className="text-gray-500 font-medium leading-relaxed">
-                        Are you sure you want to delete this income record? This action cannot be undone and will affect your balance.
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white">
+                        Delete Record?
+                    </h3>
+                    <p className="leading-relaxed font-medium text-gray-500">
+                        Are you sure you want to delete this income record? This
+                        action cannot be undone and will affect your balance.
                     </p>
                     <div className="flex gap-3 pt-4">
                         <button
                             onClick={() => setIsDeleteModalOpen(false)}
-                            className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                            className="flex-1 rounded-xl bg-gray-100 py-3 font-bold text-gray-700 transition-all hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleDelete}
-                            className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all"
+                            className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white shadow-lg shadow-red-500/20 transition-all hover:bg-red-500"
                         >
                             Confirm Delete
                         </button>
@@ -225,12 +230,31 @@ export default function IncomePageClient() {
             </Modal>
 
             {/* Bulk Import Modal */}
-            <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className="max-w-4xl p-10">
+            <Modal
+                isOpen={isBulkModalOpen}
+                onClose={closeBulkModal}
+                className="max-w-4xl p-10"
+            >
                 <div className="mb-10">
-                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Bulk Import Income</h3>
-                    <p className="text-sm text-gray-500 font-medium">Upload a CSV or Excel file to batch import income records.</p>
+                    <h3 className="mb-2 text-2xl font-black text-gray-800 dark:text-white">
+                        Bulk Import Income
+                    </h3>
+                    <p className="text-sm font-medium text-gray-500">
+                        Upload a CSV or Excel file to batch import income
+                        records.
+                    </p>
                 </div>
-                <BulkImportIncome onSuccess={closeBulkModal} onCancel={closeBulkModal} />
+                <BulkImportIncome
+                    onSuccess={closeBulkModal}
+                    onCancel={closeBulkModal}
+                    familyId={familyDetails?.id || ""}
+                    incomeTypes={incomeTypes || []}
+                    wallets={wallets || []}
+                    contacts={availableContacts}
+                    projects={availableProjects}
+                    tags={availableTags}
+                    locations={availableLocations}
+                />
             </Modal>
         </div>
     );

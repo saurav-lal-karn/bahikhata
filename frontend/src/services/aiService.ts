@@ -10,6 +10,8 @@ export interface AnalysisResponse {
         tags: string[];
         merchant_name: string;
         vendor?: string;
+        payer?: string;
+        project?: string;
         location?: string;
         payment_method?: string;
         amount: number;
@@ -35,28 +37,42 @@ export interface AnalysisResponse {
 }
 
 export const aiService = {
-    analyzeFile: async (file: File, familyId: string): Promise<AnalysisResponse> => {
+    analyzeFile: async (
+        file: File,
+        familyId: string
+    ): Promise<AnalysisResponse> => {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await apiClient.post(`/ai/analyze?family_id=${familyId}`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
+        const response = await apiClient.post(
+            `/ai/analyze?family_id=${familyId}`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
 
         return response.data.data as AnalysisResponse;
     },
-    analyzeExpenseFile: async (file: File, familyId: string): Promise<AnalysisResponse> => {
+    analyzeExpenseFile: async (
+        file: File,
+        familyId: string
+    ): Promise<AnalysisResponse> => {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await apiClient.post(`/ai/analyze-expense?family_id=${familyId}`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
+        const response = await apiClient.post(
+            `/ai/analyze-expense?family_id=${familyId}`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
 
         return response.data.data as AnalysisResponse;
-    }
+    },
 };

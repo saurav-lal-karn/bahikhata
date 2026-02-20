@@ -7,7 +7,9 @@ export const goalService = {
         return response.data.data;
     },
     getGoals: async (familyId: string) => {
-        const response = await apiClient.get(`/goals`, { params: { family_id: familyId } });
+        const response = await apiClient.get(`/goals`, {
+            params: { family_id: familyId },
+        });
         return response.data.data;
     },
     getContributions: async (goalId: string) => {
@@ -15,7 +17,10 @@ export const goalService = {
         return response.data.data;
     },
     addContribution: async (goalId: string, payload: any) => {
-        const response = await apiClient.post(`/goals/${goalId}/contributions`, payload);
+        const response = await apiClient.post(
+            `/goals/${goalId}/contributions`,
+            payload
+        );
         return response.data.data;
     },
     updateGoal: async (goalId: string, goal: CreateGoalPayload) => {
@@ -25,5 +30,5 @@ export const goalService = {
     deleteGoal: async (goalId: string) => {
         const response = await apiClient.delete(`/goals/${goalId}`);
         return response.data.data;
-    }
-}
+    },
+};

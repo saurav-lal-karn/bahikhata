@@ -8,7 +8,12 @@ import { AddExpenseForm } from "@/components/expenses/AddExpenseForm";
 import { BulkImportExpenses } from "@/components/expenses/BulkImportExpenses";
 import { FileSpreadsheet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { WalletInfoType, Transaction, ExpenseCategory, PaymentMethod } from "@/types";
+import {
+    WalletInfoType,
+    Transaction,
+    ExpenseCategory,
+    PaymentMethod,
+} from "@/types";
 import { transactionCategoryService } from "@/services/transactionCategoryService";
 import { paymentMethodService } from "@/services/paymentMethodService";
 import { walletService } from "@/services/walletService";
@@ -36,18 +41,27 @@ export default function ExpensesPageClient() {
     const [locations, setLocations] = useState<Location[]>([]);
     const [refreshKey, setRefreshKey] = useState<number>(0);
 
-    const [editingExpense, setEditingExpense] = useState<Transaction | null>(null);
+    const [editingExpense, setEditingExpense] = useState<Transaction | null>(
+        null
+    );
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
     const openModal = () => setIsModalOpen(true);
-    const closeModal = () => { setIsModalOpen(false); setEditingExpense(null); setIsModalLarge(false); };
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingExpense(null);
+        setIsModalLarge(false);
+    };
 
     const openBulkModal = () => setIsBulkModalOpen(true);
-    const closeBulkModal = () => { setIsBulkModalOpen(false); setIsBulkLarge(false); };
+    const closeBulkModal = () => {
+        setIsBulkModalOpen(false);
+        setIsBulkLarge(false);
+    };
 
     const handleExpenseAdded = () => {
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey((prev) => prev + 1);
         closeModal();
     };
 
@@ -66,7 +80,7 @@ export default function ExpensesPageClient() {
             setIsDeleting(true);
             await transactionService.deleteTransaction(deletingId);
             toast.success("Expense deleted");
-            setRefreshKey(prev => prev + 1);
+            setRefreshKey((prev) => prev + 1);
             setDeletingId(null);
         } catch (error) {
             toast.error("Failed to delete expense");
@@ -82,14 +96,28 @@ export default function ExpensesPageClient() {
             if (!familyDetails?.id) return;
 
             try {
-                const [categoriesResponse, paymentMethodsResponse, walletResponse, contactsResponse, projectsResponse, tagsResponse, locationsResponse] = await Promise.all([
-                    transactionCategoryService.getCategories(familyDetails.id, true, 'EXPENSE'),
+                const [
+                    categoriesResponse,
+                    paymentMethodsResponse,
+                    walletResponse,
+                    contactsResponse,
+                    projectsResponse,
+                    tagsResponse,
+                    locationsResponse,
+                ] = await Promise.all([
+                    transactionCategoryService.getCategories(
+                        familyDetails.id,
+                        true,
+                        "EXPENSE"
+                    ),
                     paymentMethodService.getPaymentMethods(familyDetails.id),
                     walletService.getWallets(familyDetails.id, 1, 100),
                     contactService.getContacts(familyDetails.id),
                     organizationService.getProjects(familyDetails.id),
                     organizationService.getTags(familyDetails.id),
-                    organizationService.getLocations(familyDetails.id).catch(() => [])
+                    organizationService
+                        .getLocations(familyDetails.id)
+                        .catch(() => []),
                 ]);
 
                 if (isMounted) {
@@ -103,7 +131,10 @@ export default function ExpensesPageClient() {
                 }
             } catch (error) {
                 if (isMounted) {
-                    console.error('Failed to fetch categories or payment methods:', error);
+                    console.error(
+                        "Failed to fetch categories or payment methods:",
+                        error
+                    );
                 }
             }
         };
@@ -118,33 +149,37 @@ export default function ExpensesPageClient() {
     return (
         <div className="space-y-6">
             {/* Header with Title and Add Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                    <h1 className="text-3xl leading-tight font-black text-gray-900 dark:text-white">
                         Family Expenses
                     </h1>
-                    <p className="text-gray-500 font-medium">
+                    <p className="font-medium text-gray-500">
                         Manage and monitor your household spending.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <button
                         onClick={openBulkModal}
-                        className="flex items-center justify-center gap-2 px-5 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm"
+                        className="flex items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white px-5 py-3 font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
-                        <FileSpreadsheet className="w-5 h-5 text-green-600" /> Import
+                        <FileSpreadsheet className="h-5 w-5 text-green-600" />{" "}
+                        Import
                     </button>
                     <button
                         onClick={openModal}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
+                        className="flex transform items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-500/20 transition-all hover:scale-105 hover:from-purple-500 hover:to-blue-500 active:scale-95"
                     >
-                        <Plus className="w-5 h-5" /> Add New Expense
+                        <Plus className="h-5 w-5" /> Add New Expense
                     </button>
                 </div>
             </div>
 
             {/* Stats Summary Area */}
-            <ExpensesStats familyId={familyDetails?.id || ""} refreshKey={refreshKey} />
+            <ExpensesStats
+                familyId={familyDetails?.id || ""}
+                refreshKey={refreshKey}
+            />
 
             {/* Main Table / List Area */}
             <ExpensesList
@@ -155,10 +190,26 @@ export default function ExpensesPageClient() {
             />
 
             {/* Add Expense Modal */}
-            <Modal isOpen={isModalOpen} onClose={closeModal} className={isModalLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-5xl p-10 transition-all duration-500 ease-in-out"}>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                className={
+                    isModalLarge
+                        ? "max-w-[95vw] p-5 transition-all duration-500 ease-in-out md:p-10"
+                        : "max-w-5xl p-10 transition-all duration-500 ease-in-out"
+                }
+            >
                 <div className="mb-10">
-                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{editingExpense ? "Edit Transaction" : "New Transaction"}</h3>
-                    <p className="text-sm text-gray-500 font-medium">{editingExpense ? "Update transaction details." : "Record a new expense or scan a receipt to auto-fill details."}</p>
+                    <h3 className="mb-2 text-2xl font-black text-gray-800 dark:text-white">
+                        {editingExpense
+                            ? "Edit Transaction"
+                            : "New Transaction"}
+                    </h3>
+                    <p className="text-sm font-medium text-gray-500">
+                        {editingExpense
+                            ? "Update transaction details."
+                            : "Record a new expense or scan a receipt to auto-fill details."}
+                    </p>
                 </div>
                 <AddExpenseForm
                     onSuccess={handleExpenseAdded}
@@ -186,10 +237,23 @@ export default function ExpensesPageClient() {
             />
 
             {/* Bulk Import Modal */}
-            <Modal isOpen={isBulkModalOpen} onClose={closeBulkModal} className={isBulkLarge ? "max-w-[95vw] p-5 md:p-10 transition-all duration-500 ease-in-out" : "max-w-4xl p-10 transition-all duration-500 ease-in-out"}>
+            <Modal
+                isOpen={isBulkModalOpen}
+                onClose={closeBulkModal}
+                className={
+                    isBulkLarge
+                        ? "max-w-[95vw] p-5 transition-all duration-500 ease-in-out md:p-10"
+                        : "max-w-4xl p-10 transition-all duration-500 ease-in-out"
+                }
+            >
                 <div className="mb-10">
-                    <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-2">Bulk Import</h3>
-                    <p className="text-sm text-gray-500 font-medium">Upload a CSV or Excel file to import multiple expenses at once.</p>
+                    <h3 className="mb-2 text-2xl font-black text-gray-800 dark:text-white">
+                        Bulk Import
+                    </h3>
+                    <p className="text-sm font-medium text-gray-500">
+                        Upload a CSV or Excel file to import multiple expenses
+                        at once.
+                    </p>
                 </div>
                 <BulkImportExpenses
                     onSuccess={closeBulkModal}

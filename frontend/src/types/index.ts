@@ -1,6 +1,11 @@
-import { DebtRepayment, GoalContribution, InvestmentTransaction, RecurringInstance } from './tracking';
+import {
+    DebtRepayment,
+    GoalContribution,
+    InvestmentTransaction,
+    RecurringInstance,
+} from "./tracking";
 
-export * from './tracking';
+export * from "./tracking";
 
 export interface Family {
     id: string;
@@ -83,7 +88,7 @@ export interface ExpenseStatsResponse {
 }
 
 // Unified Transaction Types
-export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
+export type TransactionType = "INCOME" | "EXPENSE" | "TRANSFER";
 
 export interface TransactionCategory {
     id: string;
@@ -112,7 +117,7 @@ export interface PaymentMethod {
 }
 
 // Phase 4: Contacts & Organization Types
-export type ContactType = 'VENDOR' | 'LENDER' | 'EMPLOYER' | 'OTHER';
+export type ContactType = "VENDOR" | "LENDER" | "EMPLOYER" | "OTHER";
 
 export interface Contact {
     id: string;
@@ -403,8 +408,8 @@ export interface Budget {
     // For now we assume the frontend might calculate spent from expenses list OR backend sends it
     // Based on budget.go model, these aren't there, so we might need to fetch expenses to calc 'spent'.
     // To keep it simple, let's assume for now we only get the config.
-    // Wait, the UI shows 'spent'. I'll need to calculate that or ask backend to send it. 
-    // Backend model doesn't seem to have 'spent' or 'current_amount'. 
+    // Wait, the UI shows 'spent'. I'll need to calculate that or ask backend to send it.
+    // Backend model doesn't seem to have 'spent' or 'current_amount'.
     // I will check if backend sends 'spent'. If not, I will just put the interface as is.
     // The previous mockup had 'spent'.
 }
@@ -512,9 +517,25 @@ export interface TaxDeduction {
 }
 
 // Phase 5: Insurance & Subscriptions
-export type InsurancePolicyType = 'LIFE' | 'HEALTH' | 'MOTOR' | 'TRAVEL' | 'PROPERTY' | 'OTHER';
-export type InsurancePolicyStatus = 'ACTIVE' | 'EXPIRED' | 'LAPSED' | 'CANCELLED';
-export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+export type InsurancePolicyType =
+    | "LIFE"
+    | "HEALTH"
+    | "MOTOR"
+    | "TRAVEL"
+    | "PROPERTY"
+    | "OTHER";
+export type InsurancePolicyStatus =
+    | "ACTIVE"
+    | "EXPIRED"
+    | "LAPSED"
+    | "CANCELLED";
+export type RecurringFrequency =
+    | "DAILY"
+    | "WEEKLY"
+    | "BIWEEKLY"
+    | "MONTHLY"
+    | "QUARTERLY"
+    | "YEARLY";
 
 export interface InsurancePolicy {
     id: string;
@@ -545,7 +566,7 @@ export interface CreateInsurancePolicyPayload {
     contact_id?: string;
 }
 
-export type SubscriptionStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED';
+export type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELLED";
 
 export interface Subscription {
     id: string;
@@ -577,7 +598,7 @@ export interface CreateSubscriptionPayload {
 }
 
 // Phase 6: Split Expenses & Advanced Tracking
-export type SplitMethod = 'EQUAL' | 'PERCENTAGE' | 'EXACT';
+export type SplitMethod = "EQUAL" | "PERCENTAGE" | "EXACT";
 
 export interface ExpenseSplit {
     id: string;
@@ -593,7 +614,7 @@ export interface SplitParticipant {
     contact_id?: string;
     amount_owed: number;
     amount_paid: number;
-    status: 'UNPAID' | 'PARTIAL' | 'SETTLED';
+    status: "UNPAID" | "PARTIAL" | "SETTLED";
     user?: FamilyMember;
     contact?: Contact;
 }

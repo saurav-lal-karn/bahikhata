@@ -1,13 +1,23 @@
 import apiClient from "@/lib/axios";
-import { CreateWalletPayload, CreateWalletTransferPayload, WalletInfoType } from "@/types";
+import {
+    CreateWalletPayload,
+    CreateWalletTransferPayload,
+    WalletInfoType,
+} from "@/types";
 
 export const walletService = {
     createWallet: async (wallet: CreateWalletPayload) => {
         const walletResponse = await apiClient.post("/wallets", wallet);
         return walletResponse.data.data;
     },
-    getWallets: async (familyId: string, page: number = 1, pageSize: number = 10) => {
-        const walletResponse = await apiClient.get(`/wallets/family/${familyId}?page=${page}&page_size=${pageSize}`);
+    getWallets: async (
+        familyId: string,
+        page: number = 1,
+        pageSize: number = 10
+    ) => {
+        const walletResponse = await apiClient.get(
+            `/wallets/family/${familyId}?page=${page}&page_size=${pageSize}`
+        );
         return walletResponse.data.data;
     },
     getWallet: async (id: string) => {
@@ -29,5 +39,5 @@ export const walletService = {
     getWalletTransfers: async (familyId: string) => {
         const response = await apiClient.get(`/wallet-transfers/${familyId}`);
         return response.data.data;
-    }
-}
+    },
+};

@@ -1,5 +1,5 @@
 import apiClient from "@/lib/axios";
-import { Tag, Project } from '@/types';
+import { Tag, Project } from "@/types";
 
 export interface Location {
     id: string;
@@ -81,7 +81,7 @@ export const organizationService = {
     },
 
     createTag: async (data: CreateTagRequest): Promise<Tag> => {
-        const response = await apiClient.post('/tags', data);
+        const response = await apiClient.post("/tags", data);
         return response.data.data;
     },
 
@@ -101,11 +101,14 @@ export const organizationService = {
     },
 
     createProject: async (data: CreateProjectRequest): Promise<Project> => {
-        const response = await apiClient.post('/projects', data);
+        const response = await apiClient.post("/projects", data);
         return response.data.data;
     },
 
-    updateProject: async (id: string, data: UpdateProjectRequest): Promise<Project> => {
+    updateProject: async (
+        id: string,
+        data: UpdateProjectRequest
+    ): Promise<Project> => {
         const response = await apiClient.patch(`/projects/${id}`, data);
         return response.data.data;
     },
@@ -126,11 +129,14 @@ export const organizationService = {
     },
 
     createLocation: async (data: CreateLocationRequest): Promise<Location> => {
-        const response = await apiClient.post('/locations', data);
+        const response = await apiClient.post("/locations", data);
         return response.data.data;
     },
 
-    updateLocation: async (id: string, data: UpdateLocationRequest): Promise<Location> => {
+    updateLocation: async (
+        id: string,
+        data: UpdateLocationRequest
+    ): Promise<Location> => {
         const response = await apiClient.patch(`/locations/${id}`, data);
         return response.data.data;
     },

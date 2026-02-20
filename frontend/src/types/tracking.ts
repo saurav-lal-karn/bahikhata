@@ -34,7 +34,7 @@ export interface InvestmentTransaction {
     id: string;
     investment_id: string;
     transaction_id?: string;
-    type: 'BUY' | 'SELL' | 'DIVIDEND';
+    type: "BUY" | "SELL" | "DIVIDEND";
     quantity: number;
     price_per_unit: number;
     transaction_date: string;
@@ -42,7 +42,7 @@ export interface InvestmentTransaction {
 }
 
 export interface AddInvestmentTransactionPayload {
-    type: 'BUY' | 'SELL' | 'DIVIDEND';
+    type: "BUY" | "SELL" | "DIVIDEND";
     quantity: number;
     price_per_unit: number;
     transaction_id?: string;
@@ -54,7 +54,7 @@ export interface RecurringInstance {
     recurring_id: string;
     transaction_id?: string;
     execution_date: string;
-    status: 'SUCCESS' | 'FAILED';
+    status: "SUCCESS" | "FAILED";
     error_message?: string;
     transaction?: Transaction;
 }

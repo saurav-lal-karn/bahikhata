@@ -42,7 +42,9 @@ export const budgetService = {
         return response.data.data;
     },
     getAlerts: async (familyId: string): Promise<BudgetAlert[]> => {
-        const response = await apiClient.get(`/budgets/alerts?family_id=${familyId}`);
+        const response = await apiClient.get(
+            `/budgets/alerts?family_id=${familyId}`
+        );
         return response.data.data;
     },
     acknowledgeAlert: async (alertId: string): Promise<void> => {

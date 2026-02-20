@@ -2,36 +2,36 @@ import React from "react";
 
 export const GoalSkeleton = () => {
     return (
-      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm flex flex-col h-full animate-pulse">
-        <div className="flex items-center justify-between mb-6">
-          {/* Icon Skeleton */}
-          <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800" />
-          
-          {/* Date Skeleton */}
-          <div className="w-20 h-6 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+        <div className="flex h-full animate-pulse flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-6 flex items-center justify-between">
+                {/* Icon Skeleton */}
+                <div className="h-12 w-12 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+
+                {/* Date Skeleton */}
+                <div className="h-6 w-20 rounded-lg bg-gray-100 dark:bg-gray-800" />
+            </div>
+
+            <div className="mb-6 flex-grow">
+                {/* Title Skeleton */}
+                <div className="mb-4 h-6 w-3/4 rounded bg-gray-100 dark:bg-gray-800" />
+
+                <div className="mb-2 flex items-baseline justify-between">
+                    {/* Current Amount Skeleton */}
+                    <div className="h-8 w-24 rounded bg-gray-100 dark:bg-gray-800" />
+                    {/* Target Amount Skeleton */}
+                    <div className="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800" />
+                </div>
+
+                {/* Progress Bar Skeleton */}
+                <div className="h-3 w-full rounded-full bg-gray-100 dark:bg-gray-800" />
+            </div>
+
+            <div className="flex items-center justify-between border-t border-gray-50 pt-4 dark:border-gray-800">
+                {/* Percentage Skeleton */}
+                <div className="h-4 w-16 rounded bg-gray-100 dark:bg-gray-800" />
+                {/* Remaining Amount Badge Skeleton */}
+                <div className="h-6 w-24 rounded-full bg-gray-100 dark:bg-gray-800" />
+            </div>
         </div>
-  
-        <div className="flex-grow mb-6">
-          {/* Title Skeleton */}
-          <div className="h-6 w-3/4 bg-gray-100 dark:bg-gray-800 rounded mb-4" />
-          
-          <div className="flex justify-between items-baseline mb-2">
-             {/* Current Amount Skeleton */}
-             <div className="h-8 w-24 bg-gray-100 dark:bg-gray-800 rounded" />
-             {/* Target Amount Skeleton */}
-             <div className="h-4 w-20 bg-gray-100 dark:bg-gray-800 rounded" />
-          </div>
-          
-          {/* Progress Bar Skeleton */}
-          <div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full" />
-        </div>
-  
-        <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-800">
-           {/* Percentage Skeleton */}
-           <div className="h-4 w-16 bg-gray-100 dark:bg-gray-800 rounded" />
-           {/* Remaining Amount Badge Skeleton */}
-           <div className="h-6 w-24 bg-gray-100 dark:bg-gray-800 rounded-full" />
-        </div>
-      </div>
     );
 };
