@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import date
 
 class LineItem(BaseModel):
@@ -29,7 +29,7 @@ class ReceiptData(BaseModel):
     transaction_date: Optional[date] = None
     total_amount: Optional[float] = None
     tax_amount: Optional[float] = None
-    currency: str = "INR"
+    currency: Optional[str] = "INR"
     category: Optional[str] = "Uncategorized"
     transaction_type: Optional[str] = "EXPENSE"  # EXPENSE or INCOME
     location: Optional[str] = None
@@ -43,6 +43,16 @@ class ReceiptData(BaseModel):
     due_date: Optional[date] = None
     invoice_number: Optional[str] = None
     document_type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, INVOICE
+
+    @field_validator("currency", "category", "transaction_type", "document_type", mode="before")
+    @classmethod
+    def set_defaults(cls, v, info):
+        if v is None:
+            if info.field_name == "currency": return "INR"
+            if info.field_name == "category": return "Uncategorized"
+            if info.field_name == "transaction_type": return "EXPENSE"
+            if info.field_name == "document_type": return "RECEIPT"
+        return v
 
 class ClassificationResult(BaseModel):
     ocr_text: str
