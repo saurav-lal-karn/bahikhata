@@ -32,7 +32,8 @@ export default function Dashboard() {
 
                 {/* Sidebar Widgets */}
                 <div className="col-span-12 space-y-6 xl:col-span-4">
-                    <InvestmentSummary />
+                    {/* Postponed to v2 */}
+                    {/* <InvestmentSummary /> */}
                     <BudgetProgress />
                 </div>
 

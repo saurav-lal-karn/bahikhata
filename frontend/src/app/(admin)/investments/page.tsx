@@ -1,12 +1,16 @@
 import { Metadata } from "next";
-import InvestmentsPageClient from "./InvestmentsPageClient";
+import { UnderConstruction } from "@/components/UnderConstruction";
 
 export const metadata: Metadata = {
-    title: "Investments",
-    description:
-        "Track and manage your family's investment portfolio and long-term wealth with Bahikhata.",
+    title: "Investments | Bahikhata",
+    description: "Investment portfolio tracking coming in v2.",
 };
 
 export default function InvestmentsPage() {
-    return <InvestmentsPageClient />;
+    return (
+        <UnderConstruction
+            featureName="Investment Portfolio Tracking"
+            description="Monitor your stocks, crypto, and mutual funds in real-time. This feature will be available in Bahikhata v2."
+        />
+    );
 }

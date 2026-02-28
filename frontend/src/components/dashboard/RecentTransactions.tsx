@@ -6,19 +6,20 @@ import {
     Car,
     Utensils,
     Zap,
-    Plus,
-    TrendingUp,
     TrendingDown,
     Target,
     Landmark,
+    View,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { analyticsService, Activity } from "@/services/analyticsService";
 import { useAuth } from "@/context/AuthContext";
 
-const getIcon = (type: string, category: string) => {
+const getIcon = (type: string, category: any) => {
     const className = "w-5 h-5";
-    const cat = category.toLowerCase();
+    const categoryName = typeof category === "string" ? category : (category as any)?.name || "";
+    const cat = categoryName.toLowerCase();
 
     if (type === "INCOME" || type === "income")
         return {
@@ -90,9 +91,12 @@ export const RecentTransactions = () => {
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">
                     Latest Activity
                 </h3>
-                <button className="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300">
+                <Link
+                    href="/transactions"
+                    className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                >
                     View All
-                </button>
+                </Link>
             </div>
 
             <div className="overflow-x-auto">
@@ -110,6 +114,9 @@ export const RecentTransactions = () => {
                             </th>
                             <th className="px-4 pb-3 text-right text-xs font-semibold tracking-wider text-gray-500 uppercase">
                                 Amount
+                            </th>
+                            <th className="px-4 pb-3 text-right text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                Actions
                             </th>
                         </tr>
                     </thead>
@@ -141,7 +148,9 @@ export const RecentTransactions = () => {
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        {activity.category}
+                                        {typeof activity.category === "string"
+                                            ? activity.category
+                                            : (activity.category as any)?.name || "General"}
                                     </td>
                                     <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                                         {new Date(
@@ -153,6 +162,14 @@ export const RecentTransactions = () => {
                                     >
                                         {activity.type === "INCOME" ? "+" : "-"}
                                         ₹{activity.amount.toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <Link
+                                            href={`/transactions/${activity.id}`}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-500 hover:text-brand-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-brand-400 dark:hover:text-brand-400"
+                                        >
+                                            <View className="h-4 w-4" />
+                                        </Link>
                                     </td>
                                 </tr>
                             );

@@ -19,6 +19,7 @@ export interface Activity {
     title: string;
     amount: number;
     date: string;
+    transaction_date: string;
     status: string;
     category: string;
 }
@@ -62,5 +63,21 @@ export const analyticsService = {
     getReportData: async (familyId: string) => {
         const response = await apiClient.get(`/analytics/reports/${familyId}`);
         return response.data.data as ReportData;
+    },
+    getTransactions: async (familyId: string, page = 1, pageSize = 10, filters = {}) => {
+        const params = {
+            page,
+            page_size: pageSize,
+            ...filters,
+        };
+        const response = await apiClient.get(`/transactions/${familyId}`, {
+            params,
+        });
+        return response.data.data as {
+            transactions: Activity[];
+            total_count: number;
+            page: number;
+            page_size: number;
+        };
     },
 };

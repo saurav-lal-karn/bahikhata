@@ -1,12 +1,16 @@
 import { Metadata } from "next";
-import SubscriptionPageClient from "./SubscriptionPageClient";
+import { UnderConstruction } from "@/components/UnderConstruction";
 
 export const metadata: Metadata = {
     title: "Subscriptions & Recurrences | Bahikhata",
-    description:
-        "Manage your digital subscriptions and monthly burn rate in one place.",
+    description: "Subscription management coming in v2.",
 };
 
 export default function SubscriptionPage() {
-    return <SubscriptionPageClient />;
+    return (
+        <UnderConstruction
+            featureName="Subscription Management"
+            description="Manage your digital subscriptions and monthly burn rate in one place. This feature will be available in Bahikhata v2."
+        />
+    );
 }

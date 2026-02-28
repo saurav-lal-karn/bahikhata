@@ -88,6 +88,9 @@ func (ctrl *TransactionController) List(c *gin.Context) {
 	if locationID := c.Query("location_id"); locationID != "" {
 		filters["location_id"] = locationID
 	}
+	if search := c.Query("search"); search != "" {
+		filters["search"] = search
+	}
 	if page := c.Query("page"); page != "" {
 		if p, err := strconv.Atoi(page); err == nil {
 			filters["page"] = p

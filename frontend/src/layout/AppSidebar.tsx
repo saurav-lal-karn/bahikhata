@@ -22,6 +22,7 @@ import {
     ShieldAlert,
     ContactRound,
     Tags,
+    Rocket,
 } from "lucide-react";
 
 type NavItem = {
@@ -50,6 +51,11 @@ const navigation: NavSection[] = [
                 name: "Reports",
                 path: "/reports",
             },
+            {
+                icon: <Rocket className="h-5 w-5 text-brand-500" />,
+                name: "v2 Roadmap",
+                path: "/v2-roadmap",
+            },
         ],
     },
     {
@@ -70,11 +76,13 @@ const navigation: NavSection[] = [
                 name: "Wallets",
                 path: "/accounts",
             },
+            /* Postponed to v2
             {
                 icon: <RepeatIcon className="h-5 w-5" />,
                 name: "Subscriptions",
                 path: "/subscriptions",
             },
+            */
             {
                 icon: <ContactRound className="h-5 w-5" />,
                 name: "Contacts",
@@ -92,6 +100,7 @@ const navigation: NavSection[] = [
             },
         ],
     },
+    /* Postponed to v2
     {
         title: "Planning & Goals",
         items: [
@@ -127,6 +136,7 @@ const navigation: NavSection[] = [
             },
         ],
     },
+    */
     {
         title: "House, Tax & Safety",
         items: [
@@ -135,6 +145,7 @@ const navigation: NavSection[] = [
                 name: "Family Ledger",
                 path: "/family",
             },
+            /* Postponed to v2
             {
                 icon: <TableIcon />,
                 name: "Tax Center",
@@ -145,6 +156,7 @@ const navigation: NavSection[] = [
                 name: "Insurance",
                 path: "/insurance",
             },
+            */
         ],
     },
     {
@@ -173,24 +185,21 @@ const AppSidebar: React.FC = () => {
                     {nav.subItems ? (
                         <button
                             onClick={() => handleSubmenuToggle(index, menuType)}
-                            className={`menu-item group ${
-                                openSubmenu?.type === menuType &&
-                                openSubmenu?.index === index
+                            className={`menu-item group ${openSubmenu?.type === menuType &&
+                                    openSubmenu?.index === index
                                     ? "menu-item-active"
                                     : "menu-item-inactive"
-                            } cursor-pointer ${
-                                !isExpanded && !isHovered
+                                } cursor-pointer ${!isExpanded && !isHovered
                                     ? "lg:justify-center"
                                     : "lg:justify-start"
-                            }`}
+                                }`}
                         >
                             <span
-                                className={` ${
-                                    openSubmenu?.type === menuType &&
-                                    openSubmenu?.index === index
+                                className={` ${openSubmenu?.type === menuType &&
+                                        openSubmenu?.index === index
                                         ? "menu-item-icon-active"
                                         : "menu-item-icon-inactive"
-                                }`}
+                                    }`}
                             >
                                 {nav.icon}
                             </span>
@@ -201,12 +210,11 @@ const AppSidebar: React.FC = () => {
                             )}
                             {(isExpanded || isHovered || isMobileOpen) && (
                                 <ChevronDownIcon
-                                    className={`ml-auto h-5 w-5 transition-transform duration-200 ${
-                                        openSubmenu?.type === menuType &&
-                                        openSubmenu?.index === index
+                                    className={`ml-auto h-5 w-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
+                                            openSubmenu?.index === index
                                             ? "text-brand-500 rotate-180"
                                             : ""
-                                    }`}
+                                        }`}
                                 />
                             )}
                         </button>
@@ -214,18 +222,16 @@ const AppSidebar: React.FC = () => {
                         nav.path && (
                             <Link
                                 href={nav.path}
-                                className={`menu-item group ${
-                                    isActive(nav.path)
+                                className={`menu-item group ${isActive(nav.path)
                                         ? "menu-item-active"
                                         : "menu-item-inactive"
-                                }`}
+                                    }`}
                             >
                                 <span
-                                    className={`${
-                                        isActive(nav.path)
+                                    className={`${isActive(nav.path)
                                             ? "menu-item-icon-active"
                                             : "menu-item-icon-inactive"
-                                    }`}
+                                        }`}
                                 >
                                     {nav.icon}
                                 </span>
@@ -249,7 +255,7 @@ const AppSidebar: React.FC = () => {
                                 style={{
                                     height:
                                         openSubmenu?.type === menuType &&
-                                        openSubmenu?.index === index
+                                            openSubmenu?.index === index
                                             ? `${subMenuHeight[`${menuType}-${index}`]}px`
                                             : "0px",
                                 }}
@@ -259,36 +265,33 @@ const AppSidebar: React.FC = () => {
                                         <li key={subItem.name}>
                                             <Link
                                                 href={subItem.path}
-                                                className={`menu-dropdown-item ${
-                                                    isActive(subItem.path)
+                                                className={`menu-dropdown-item ${isActive(subItem.path)
                                                         ? "menu-dropdown-item-active"
                                                         : "menu-dropdown-item-inactive"
-                                                }`}
+                                                    }`}
                                             >
                                                 {subItem.name}
                                                 <span className="ml-auto flex items-center gap-1">
                                                     {subItem.new && (
                                                         <span
-                                                            className={`ml-auto ${
-                                                                isActive(
-                                                                    subItem.path
-                                                                )
+                                                            className={`ml-auto ${isActive(
+                                                                subItem.path
+                                                            )
                                                                     ? "menu-dropdown-badge-active"
                                                                     : "menu-dropdown-badge-inactive"
-                                                            } menu-dropdown-badge`}
+                                                                } menu-dropdown-badge`}
                                                         >
                                                             new
                                                         </span>
                                                     )}
                                                     {subItem.pro && (
                                                         <span
-                                                            className={`ml-auto ${
-                                                                isActive(
-                                                                    subItem.path
-                                                                )
+                                                            className={`ml-auto ${isActive(
+                                                                subItem.path
+                                                            )
                                                                     ? "menu-dropdown-badge-active"
                                                                     : "menu-dropdown-badge-inactive"
-                                                            } menu-dropdown-badge`}
+                                                                } menu-dropdown-badge`}
                                                         >
                                                             pro
                                                         </span>
@@ -378,22 +381,20 @@ const AppSidebar: React.FC = () => {
 
     return (
         <aside
-            className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out lg:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
-                isExpanded || isMobileOpen
+            className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out lg:mt-0 dark:border-gray-800 dark:bg-gray-900 ${isExpanded || isMobileOpen
                     ? "w-[290px]"
                     : isHovered
-                      ? "w-[290px]"
-                      : "w-[90px]"
-            } ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+                        ? "w-[290px]"
+                        : "w-[90px]"
+                } ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
             onMouseEnter={() => !isExpanded && setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <div
-                className={`flex py-8 ${
-                    !isExpanded && !isHovered
+                className={`flex py-8 ${!isExpanded && !isHovered
                         ? "lg:justify-center"
                         : "justify-start"
-                }`}
+                    }`}
             >
                 <Link href="/dashboard">
                     {isExpanded || isHovered || isMobileOpen ? (
@@ -429,11 +430,10 @@ const AppSidebar: React.FC = () => {
                         {navigation.map((section) => (
                             <div key={section.title}>
                                 <h2
-                                    className={`mb-4 flex text-xs leading-[20px] font-black tracking-[0.15em] text-gray-400/80 uppercase dark:text-gray-500 ${
-                                        !isExpanded && !isHovered
+                                    className={`mb-4 flex text-xs leading-[20px] font-black tracking-[0.15em] text-gray-400/80 uppercase dark:text-gray-500 ${!isExpanded && !isHovered
                                             ? "lg:justify-center"
                                             : "justify-start"
-                                    }`}
+                                        }`}
                                 >
                                     {isExpanded || isHovered || isMobileOpen ? (
                                         section.title

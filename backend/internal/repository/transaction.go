@@ -91,6 +91,10 @@ func (r *transactionRepository) List(ctx context.Context, familyID uuid.UUID, us
 	if locationID, ok := filters["location_id"]; ok {
 		query = query.Where("location_id = ?", locationID)
 	}
+	if search, ok := filters["search"].(string); ok && search != "" {
+		searchTerm := fmt.Sprintf("%%%s%%", search)
+		query = query.Where("title ILIKE ? OR description ILIKE ?", searchTerm, searchTerm)
+	}
 
 	// Count total records
 	if err := query.Model(&model.Transaction{}).Count(&total).Error; err != nil {

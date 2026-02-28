@@ -1,12 +1,16 @@
 import { Metadata } from "next";
-import DebtsPageClient from "./DebtsPageClient";
+import { UnderConstruction } from "@/components/UnderConstruction";
 
 export const metadata: Metadata = {
-    title: "Liabilities & Debts",
-    description:
-        "Track your loans, credit card dues, and plan your debt repayment strategy with Bahikhata.",
+    title: "Liabilities & Debts | Bahikhata",
+    description: "Debt and loan tracking coming in v2.",
 };
 
 export default function DebtsPage() {
-    return <DebtsPageClient />;
+    return (
+        <UnderConstruction
+            featureName="Debts & Loans Management"
+            description="Track your loans and plan repayment strategies. This feature will be available in Bahikhata v2."
+        />
+    );
 }
