@@ -15,5 +15,8 @@ func RegisterAIRoutes(app *config.Application, group *gin.RouterGroup) {
 
 	group.POST("/analyze", aiCtrl.Analyze)
 	group.POST("/analyze-expense", aiCtrl.AnalyzeExpense)
+	group.POST("/ocr-classify", aiCtrl.OCRClassify)
+	group.POST("/extract-structured", aiCtrl.ExtractStructured)
+	group.POST("/store-document", aiCtrl.StoreDocument)
 	group.GET("/details/:id", aiCtrl.GetDetails)
 }

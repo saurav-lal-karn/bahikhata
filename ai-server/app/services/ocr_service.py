@@ -107,48 +107,78 @@ class OCRService:
         
         return max(scores, key=scores.get) if max(scores.values()) > 0 else 'RECEIPT'
 
-    async def process_receipt(self, file_contents: bytes, filename: str = "", document_type: str = "") -> OCRResponse:
+    async def extract_and_classify(self, file_contents: bytes, filename: str = "") -> Dict:
         """
-        Process document (receipt, bill, or invoice) and extract structured data
+        Step 1: Extract text and classify transaction type/category
         """
-        # 1. Extract text using Tesseract
         extracted_text, is_high_quality = await self.extract_text_from_image(file_contents, filename)
         
         if not extracted_text.strip():
-            # Return empty response with low confidence
-            return OCRResponse(
-                extracted_data=ReceiptData(
-                    merchant_name="Unknown",
-                    total_amount=0.0,
-                    currency="INR",
-                    category="Uncategorized",
-                    document_type="RECEIPT"
-                ),
-                confidence_score=0.0,
-                field_confidence=FieldConfidence()
+            return {
+                "ocr_text": "",
+                "transaction_type": "EXPENSE",
+                "category": "Uncategorized",
+                "confidence_score": 0.0
+            }
+
+        document_type = await self.detect_document_type(extracted_text)
+        
+        # Use a lightweight Groq call for classification
+        prompt = f"""
+        Classify this document text. 
+        1. Determine if it's an EXPENSE (money out) or INCOME (money in).
+        2. Suggest a category (e.g. Groceries, Dining, Salary, etc.).
+        
+        Return ONLY JSON:
+        {{
+            "transaction_type": "EXPENSE or INCOME",
+            "category": "string",
+            "confidence": float (0.0-1.0)
+        }}
+
+        Text:
+        {extracted_text[:2000]} 
+        """
+        
+        try:
+            chat_completion = self.groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=settings.GROQ_MODEL,
+                response_format={"type": "json_object"}
             )
+            classification = json.loads(chat_completion.choices[0].message.content)
+            
+            return {
+                "ocr_text": extracted_text,
+                "transaction_type": classification.get("transaction_type", "EXPENSE"),
+                "category": classification.get("category", "Uncategorized"),
+                "confidence_score": classification.get("confidence", 0.5)
+            }
+        except Exception as e:
+            print(f"Classification Error: {e}")
+            return {
+                "ocr_text": extracted_text,
+                "transaction_type": "EXPENSE",
+                "category": "Uncategorized",
+                "confidence_score": 0.3
+            }
 
-        # 2. Detect document type
-        if not document_type or document_type == "":
-            document_type = await self.detect_document_type(extracted_text)
-
-        # 3. Store in Vector DB
-        doc_id = str(uuid.uuid4())
-        vector_db_service.add_document(
-            doc_id=doc_id,
-            text=extracted_text,
-            metadata={"timestamp": datetime.now().isoformat(), "type": document_type.lower()}
-        )
-
-        # 4. Use Groq to generate structured JSON with field-level confidence
-        prompt = self._build_extraction_prompt(extracted_text, document_type)
+    async def extract_structured_data(self, ocr_text: str, transaction_type: str, category: str = "") -> OCRResponse:
+        """
+        Step 2: Full structured extraction based on confirmed type/category
+        """
+        document_type = await self.detect_document_type(ocr_text)
+        prompt = self._build_extraction_prompt(ocr_text, document_type)
+        
+        # Inject confirmed type/category into prompt instructions
+        prompt = f"Note: User confirmed this is a {transaction_type} in category {category}.\n\n" + prompt
 
         try:
             chat_completion = self.groq_client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that extracts structured data from financial documents. Return ONLY JSON with extracted data and confidence scores for each field."
+                        "content": "You are a helpful assistant that extracts structured data from financial documents. Return ONLY JSON."
                     },
                     {
                         "role": "user",
@@ -160,39 +190,36 @@ class OCRService:
             )
             
             extracted_json = json.loads(chat_completion.choices[0].message.content)
-            
-            # Extract field confidence scores
             field_confidence_data = extracted_json.pop('field_confidence', {})
             field_confidence = FieldConfidence(**field_confidence_data)
             
-            # Calculate overall confidence
             confidence_values = [v for v in field_confidence_data.values() if v is not None]
             overall_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.5
             
-            # Adjust confidence based on OCR quality
-            if not is_high_quality:
-                overall_confidence *= 0.7
-            
             data = ReceiptData(**extracted_json)
             data.document_type = document_type
-            
-        except Exception as e:
-            print(f"Groq Error: {e}")
-            # Fallback data if LLM fails
-            data = ReceiptData(
-                merchant_name="Unknown",
-                total_amount=0.0,
-                currency="INR",
-                category="Uncategorized",
-                document_type=document_type
-            )
-            overall_confidence = 0.0
-            field_confidence = FieldConfidence()
+            data.transaction_type = transaction_type # Ensure it matches user confirmation
+            if category:
+                data.category = category
 
-        return OCRResponse(
-            extracted_data=data,
-            confidence_score=overall_confidence,
-            field_confidence=field_confidence
+            return OCRResponse(
+                extracted_data=data,
+                confidence_score=overall_confidence,
+                field_confidence=field_confidence
+            )
+        except Exception as e:
+            print(f"Extraction Error: {e}")
+            raise e
+
+    async def process_receipt(self, file_contents: bytes, filename: str = "", document_type: str = "") -> OCRResponse:
+        """
+        Backward compatibility: Process document in one go
+        """
+        classification = await self.extract_and_classify(file_contents, filename)
+        return await self.extract_structured_data(
+            ocr_text=classification["ocr_text"],
+            transaction_type=classification["transaction_type"],
+            category=classification["category"]
         )
 
     def _build_extraction_prompt(self, text: str, document_type: str) -> str:

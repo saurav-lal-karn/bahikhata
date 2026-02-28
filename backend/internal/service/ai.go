@@ -21,6 +21,9 @@ import (
 
 type AIService interface {
 	AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID, documentType string) (interface{}, error)
+	OCRClassify(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID) (interface{}, uuid.UUID, error)
+	ExtractStructured(ctx context.Context, ocrText, transactionType, category string) (interface{}, error)
+	StoreDocument(ctx context.Context, fileID uuid.UUID, ocrText string, metadata map[string]interface{}) (interface{}, error)
 }
 
 type aiService struct {
@@ -101,8 +104,112 @@ func (s *aiService) callAIServerWithRetry(ctx context.Context, requestBody []byt
 		respBody, _ := io.ReadAll(resp.Body)
 		lastErr = fmt.Errorf("AI server returned status %d: %s", resp.StatusCode, string(respBody))
 	}
-	
+
 	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries+1, lastErr)
+}
+
+func (s *aiService) OCRClassify(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID) (interface{}, uuid.UUID, error) {
+	// 1. Save file locally
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+	defer file.Close()
+
+	uploadDir := "uploads"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return nil, uuid.Nil, err
+	}
+
+	fileID := uuid.New()
+	filename := fmt.Sprintf("%s%s", fileID.String(), filepath.Ext(fileHeader.Filename))
+	filePath := filepath.Join(uploadDir, filename)
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		return nil, uuid.Nil, err
+	}
+
+	// 2. Create Attachment in DB (AI_ANALYSIS type)
+	attachment := &model.Attachment{
+		ID:         fileID,
+		FileName:   fileHeader.Filename,
+		FilePath:   filePath,
+		FileSize:   int(fileHeader.Size),
+		FileType:   fileHeader.Header.Get("Content-Type"),
+		FamilyID:   familyID,
+		EntityType: "AI_ANALYSIS",
+		EntityID:   fileID, // Use fileID as temporary EntityID
+		UploadedBy: &userID,
+	}
+
+	if err := s.repo.Create(attachment); err != nil {
+		return nil, uuid.Nil, err
+	}
+
+	// 3. Call AI Server
+	fileURL := fmt.Sprintf("%s/uploads/%s", s.env.AppUrl, filename)
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"file_url":  fileURL,
+		"family_id": familyID,
+	})
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v1/analyzer/ocr-classify", s.env.AIServerUrl)
+	resp, err := s.callExternalAI(ctx, targetURL, requestBody)
+	return resp, attachment.ID, err
+}
+
+func (s *aiService) ExtractStructured(ctx context.Context, ocrText, transactionType, category string) (interface{}, error) {
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"ocr_text":         ocrText,
+		"transaction_type": transactionType,
+		"category":        category,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v1/analyzer/extract-structured", s.env.AIServerUrl)
+	return s.callExternalAI(ctx, targetURL, requestBody)
+}
+
+func (s *aiService) StoreDocument(ctx context.Context, fileID uuid.UUID, ocrText string, metadata map[string]interface{}) (interface{}, error) {
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"file_id":  fileID,
+		"ocr_text": ocrText,
+		"metadata": metadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v1/analyzer/store-document", s.env.AIServerUrl)
+	return s.callExternalAI(ctx, targetURL, requestBody)
+}
+
+func (s *aiService) callExternalAI(ctx context.Context, targetURL string, requestBody []byte) (interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
 }
 
 func (s *aiService) AnalyzeDocument(ctx context.Context, fileHeader *multipart.FileHeader, familyID, userID uuid.UUID, documentType string) (interface{}, error) {

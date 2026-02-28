@@ -1,10 +1,12 @@
+from typing import Dict
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Body
 import random
 from pydantic import BaseModel, HttpUrl
 from uuid import UUID
 from app.schemas.common import ResponseBase
 from app.schemas.analysis import AnalysisResponse, AnalysisResult
-from app.schemas.ocr import LineItem
+from app.schemas.ocr import LineItem, ClassificationResult, OCRResponse
 
 router = APIRouter()
 
@@ -14,6 +16,19 @@ class AnalyzeRequest(BaseModel):
     user_id: UUID
     family_id: UUID
     document_type: str
+
+class OCRClassifyRequest(BaseModel):
+    file_url: str
+
+class ExtractionRequest(BaseModel):
+    ocr_text: str
+    transaction_type: str
+    category: Optional[str] = None
+
+class StoreDocumentRequest(BaseModel):
+    file_id: UUID
+    ocr_text: str
+    metadata: Optional[Dict] = None
 
 from app.services.notification import notification_service
 import asyncio
@@ -116,3 +131,49 @@ async def analyze_document(request: AnalyzeRequest = Body(...)):
             n_type="TASK_ERROR"
         )
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/ocr-classify", response_model=ResponseBase[ClassificationResult])
+async def ocr_classify(request: OCRClassifyRequest = Body(...)):
+    """
+    Endpoint for Step 1: OCR and Classification
+    """
+    import httpx
+    from app.services.ocr_service import ocr_service
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(request.file_url)
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch file from {request.file_url}")
+        file_contents = response.content
+
+    result = await ocr_service.extract_and_classify(file_contents)
+    return ResponseBase(data=result)
+
+@router.post("/extract-structured", response_model=ResponseBase[OCRResponse])
+async def extract_structured(request: ExtractionRequest = Body(...)):
+    """
+    Endpoint for Step 2: Structured Extraction
+    """
+    from app.services.ocr_service import ocr_service
+    result = await ocr_service.extract_structured_data(
+        ocr_text=request.ocr_text,
+        transaction_type=request.transaction_type,
+        category=request.category
+    )
+    return ResponseBase(data=result)
+
+@router.post("/store-document", response_model=ResponseBase[Dict])
+async def store_document(request: StoreDocumentRequest = Body(...)):
+    """
+    Endpoint for Step 3: Store OCR text in persistent Vector DB
+    """
+    from app.services.vector_db_service import vector_db_service
+    metadata = request.metadata or {}
+    metadata["timestamp"] = datetime.now().isoformat()
+    
+    vector_db_service.add_document(
+        doc_id=str(request.file_id),
+        text=request.ocr_text,
+        metadata=metadata
+    )
+    return ResponseBase(data={"status": "stored", "file_id": request.file_id})

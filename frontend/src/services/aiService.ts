@@ -1,39 +1,33 @@
 import apiClient from "@/lib/axios";
 
-export interface AnalysisResponse {
-    filename: string;
-    file_id: string;
-    analysis: {
-        category: string;
-        confidence: number;
+export interface ReceiptData {
+    merchant_name: string;
+    total_amount: number;
+    currency: string;
+    date?: string;
+    category?: string;
+    description?: string;
+    line_items: Array<{
         description: string;
-        tags: string[];
-        merchant_name: string;
-        vendor?: string;
-        payer?: string;
-        project?: string;
-        location?: string;
-        payment_method?: string;
         amount: number;
-        date: string;
-        currency: string;
-        type: string;
-        transaction_type?: string; // EXPENSE or INCOME
-        document_type?: string; // RECEIPT, BILL, INVOICE
-        line_items: Array<{
-            description: string;
-            amount: number;
-            quantity?: number;
-        }>;
-        // Bill/Invoice specific fields
-        bill_number?: string;
-        due_date?: string;
-        invoice_number?: string;
-        // Field-level confidence scores
-        field_confidence?: {
-            [key: string]: number; // field name -> confidence (0-1)
-        };
-    };
+        quantity?: number;
+    }>;
+    payment_method?: string;
+    location?: string;
+    vendor?: string;
+    bill_number?: string;
+    invoice_number?: string;
+    document_type?: string;
+}
+
+export interface FieldConfidence {
+    [key: string]: number;
+}
+
+export interface AnalysisResponse {
+    extracted_data: ReceiptData;
+    confidence_score: number;
+    field_confidence?: FieldConfidence;
 }
 
 export const aiService = {
@@ -74,5 +68,55 @@ export const aiService = {
         );
 
         return response.data.data as AnalysisResponse;
+    },
+    ocrClassify: async (
+        file: File,
+        familyId: string
+    ): Promise<{
+        ocr_text: string;
+        transaction_type: string;
+        category: string;
+        confidence_score: number;
+    }> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await apiClient.post(
+            `/ai/ocr-classify?family_id=${familyId}`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
+
+        return response.data.data;
+    },
+    extractStructured: async (
+        ocrText: string,
+        transactionType: string,
+        category?: string
+    ): Promise<AnalysisResponse> => {
+        const response = await apiClient.post("/ai/extract-structured", {
+            ocr_text: ocrText,
+            transaction_type: transactionType,
+            category,
+        });
+
+        return response.data.data as AnalysisResponse;
+    },
+    storeDocument: async (
+        fileId: string,
+        ocrText: string,
+        metadata?: any
+    ): Promise<any> => {
+        const response = await apiClient.post("/ai/store-document", {
+            file_id: fileId,
+            ocr_text: ocrText,
+            metadata,
+        });
+
+        return response.data.data;
     },
 };

@@ -44,6 +44,12 @@ class ReceiptData(BaseModel):
     invoice_number: Optional[str] = None
     document_type: Optional[str] = "RECEIPT"  # RECEIPT, BILL, INVOICE
 
+class ClassificationResult(BaseModel):
+    ocr_text: str
+    transaction_type: str
+    category: Optional[str] = None
+    confidence_score: float
+
 class OCRResponse(BaseModel):
     extracted_data: ReceiptData
     confidence_score: float
